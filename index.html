@@ -204,7 +204,7 @@ label{font-size:13px; font-weight:600; color:var(--text); display:block; margin-
 }
 #intro .progress-fill{ height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-soft)); border-radius:3px; animation:progress 1.7s cubic-bezier(.65,0,.35,1) 1s forwards;}
 @keyframes progress{ to{ width:100%; } }
-#intro.fade-out{ animation:intro-out .6s ease forwards; }
+#intro.fade-out{ animation:intro-out .18s ease forwards; }
 @keyframes intro-out{ to{ opacity:0; transform:scale(1.03); visibility:hidden; } }
 
 /* ==========================================================================
@@ -2307,6 +2307,30 @@ body.cal-resizing,body.cal-resizing *{ cursor:ns-resize!important; user-select:n
 @keyframes spin{ to{ transform:rotate(360deg); } }
 .skeleton{ background:linear-gradient(90deg,#F2F2F8 25%,#E7E7F0 37%,#F2F2F8 63%); background-size:400% 100%; animation:sk 1.4s ease infinite; border-radius:9px; }
 @keyframes sk{ 0%{background-position:100% 0;} 100%{background-position:0 0;} }
+.dh-record-loading{
+  display:flex;align-items:center;gap:10px;padding:11px 14px;margin:0 0 10px;
+  background:linear-gradient(180deg,#FBFCFF,#F6F8FF);border:1px solid #DCE7FF;
+  border-radius:12px;color:#52627A;font-size:12px;font-weight:600;
+}
+.dh-record-loading .spinner{width:14px;height:14px;border-width:2px;flex:0 0 auto;}
+.dh-record-loading.hidden{display:none!important;}
+.dt-smart-shell{display:grid;grid-template-columns:1.35fr .65fr;gap:18px;}
+.dt-smart-hero{position:relative;overflow:hidden;border:1px solid #DCE7FF;border-radius:22px;padding:26px;background:
+  radial-gradient(80% 120% at 100% 0%,#EAF1FF 0%,transparent 58%),linear-gradient(135deg,#fff,#F8FAFF);}
+.dt-smart-hero h4{font-size:23px;font-weight:800;max-width:650px;}
+.dt-smart-hero p{margin:8px 0 20px;color:var(--text-secondary);font-size:13px;line-height:1.65;max-width:680px;}
+.dt-step-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:20px;}
+.dt-step{padding:10px;border:1px solid var(--border);border-radius:12px;background:#fff;}
+.dt-step b{display:block;font-size:11px;color:var(--accent);margin-bottom:4px;}
+.dt-step span{font-size:11.5px;font-weight:700;}
+.dt-smart-side{border:1px solid var(--border);border-radius:22px;padding:20px;background:#fff;box-shadow:var(--shadow-sm);}
+.dt-smart-side h5{font-size:14px;margin-bottom:12px;}
+.dt-signal{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #F0F2F6;}
+.dt-signal:last-child{border-bottom:0;}
+.dt-signal-icon{width:30px;height:30px;border-radius:9px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.dt-signal b{display:block;font-size:12px}.dt-signal span{display:block;color:var(--text-secondary);font-size:11px;margin-top:2px;}
+@media(max-width:900px){.dt-smart-shell{grid-template-columns:1fr}.dt-step-strip{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.dt-step-strip{grid-template-columns:1fr}.dt-smart-hero{padding:20px}}
 .center-loading{ display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 0; color:var(--text-secondary); gap:12px; font-size:13.5px;}
 .empty-state{ text-align:center; padding:50px 20px; color:var(--text-secondary); }
 .empty-state svg{ width:40px; height:40px; margin-bottom:12px; opacity:.4; }
@@ -6194,6 +6218,7 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
             <button class="btn btn-sm btn-danger hidden" id="bulk-delete-btn">Delete</button>
           </div>
           <div class="grid-shell" id="grid-shell">
+          <div id="dh-record-loading" class="dh-record-loading hidden"><span class="spinner dark"></span><span id="dh-record-loading-text">Loading database records…</span></div>
           <div class="fullscreen-topbar">
             <h4>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>
@@ -7270,12 +7295,35 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
             </div>
 
             <div class="settings-pane" id="pane-datatype">
-  <div class="panel dt-intelligence-panel">
-    <div class="dt-head"><div><div class="dt-eyebrow">IMPORT INTELLIGENCE</div><h4>Data-Type Intelligence</h4><p>Automatically recognize supported XLSX columns by name, synonyms, sample values and confirmed mapping history.</p></div><span class="pill pill-blue">Automatic</span></div>
-    <div class="dt-info"><strong>17 target fields</strong><span>Missing columns are optional.</span><span>Column order does not matter.</span><span>Unsupported columns remain unmapped.</span></div>
-    <div class="dt-targets" id="dt-targets-list"></div>
-    <div class="dt-memory-head"><div><h5>Confirmed Mapping Memory</h5><p>Mappings confirmed during import are reused for future XLSX files.</p></div><button class="btn btn-sm" id="dt-clear-memory-btn">Clear Memory</button></div>
-    <div id="dt-memory-list" class="dt-memory-list"></div>
+  <div class="dt-smart-shell">
+    <div class="dt-smart-hero">
+      <div class="dt-eyebrow">SMART DATA IMPORT</div>
+      <h4>Data-Type Intelligence</h4>
+      <p>Import any customer database and let SWIFT automatically understand, classify and map its columns before the data enters Data Hub.</p>
+      <button class="btn btn-primary" type="button" id="dt-smart-import-btn">
+        <span style="font-size:16px;">＋</span> Import Database
+      </button>
+      <div class="dt-step-strip">
+        <div class="dt-step"><b>01</b><span>Select File</span></div>
+        <div class="dt-step"><b>02</b><span>Understand Data</span></div>
+        <div class="dt-step"><b>03</b><span>Smart Mapping</span></div>
+        <div class="dt-step"><b>04</b><span>Confirm Import</span></div>
+      </div>
+    </div>
+    <div class="dt-smart-side">
+      <h5>Column Intelligence</h5>
+      <div class="dt-signal"><div class="dt-signal-icon">⌁</div><div><b>Header meaning</b><span>Uses names, synonyms and normalized labels.</span></div></div>
+      <div class="dt-signal"><div class="dt-signal-icon">✦</div><div><b>Sample values</b><span>Recognizes email, phone, URL and location patterns.</span></div></div>
+      <div class="dt-signal"><div class="dt-signal-icon">↔</div><div><b>Confidence</b><span>Shows automatic, review and unmapped states before import.</span></div></div>
+      <div class="dt-signal"><div class="dt-signal-icon">✓</div><div><b>Existing model</b><span>Reuses the current Data Hub target fields and phone handling.</span></div></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:18px;padding:18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <div><div style="font-weight:800;font-size:13px;">Existing target model</div><div class="hint">These are the current Data Hub destinations used by the import intelligence engine.</div></div>
+      <span class="pill pill-blue">Single mapping engine</span>
+    </div>
+    <div class="dt-targets" id="dt-targets-list" style="margin-top:14px;"></div>
   </div>
 </div>
 
@@ -7299,7 +7347,7 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
         <h4>Feedback Options</h4>
         <p>Manage the choices available in the Data Hub feedback dropdown.</p>
       </div>
-      <span class="pill pill-blue">Admin only</span>
+      <span class="pill pill-blue">All admins</span>
     </div>
     <div class="feedback-add-card">
       <div class="feedback-add-input-wrap">
@@ -10087,6 +10135,10 @@ const S = {
     // separate from the workspace-wide S.records cache, which is capped at 50,000 rows.
     openDbRecords:[],
     openDbLoadSeq:0,
+    // Per-database in-memory cache. Supabase remains the source of truth; this cache
+    // is only for avoiding duplicate reads while switching between database views.
+    recordCache:new Map(),
+    recordCacheMeta:new Map(),
     cardView:'grid', sort:'updated_desc',
     filters:{ assignment:[], status:[], source:[], size:[], date:'', dateFrom:'', dateTo:'', quality:[], qualityScore:[], users:[], duplicateCompany:[] },
     selectMode:false, selected:new Set(), savedViews:[],
@@ -10489,51 +10541,50 @@ async function signOut(){
 async function onAuthed(session){
   S.session = session;
   $('#auth-screen').classList.add('hidden');
-  await loadWorkspace();
+  // Reveal the existing workspace immediately. Data hydration happens in the background.
   $('#app').classList.remove('hidden');
+  await loadWorkspace();
 }
 
 async function loadWorkspace(){
+  // IMPORTANT: do not block the workspace on the large records/update/calendar queries.
+  // The existing UI is painted first, then Supabase data hydrates progressively.
   showCenterLoading();
   const uid = S.session.user.id;
 
   let { data: profile } = await supa.from('profiles').select('*').eq('id', uid).single();
   if (!profile){
-    // race with the DB trigger on very first signup — retry once shortly after
-    await new Promise(r=>setTimeout(r, 900));
-    ({ data: profile } = await supa.from('profiles').select('*').eq('id', uid).single());
+    // First-signup profile creation can race the client. Do not hold the whole app for 900ms.
+    setTimeout(async ()=>{
+      try{
+        const retry = await supa.from('profiles').select('*').eq('id', uid).single();
+        if (retry.data){
+          S.profile = retry.data;
+          S.isAdmin = String(retry.data.role || '').trim().toLowerCase() === 'admin';
+          renderSidebarUser();
+          applyDataHubRoleUI();
+        }
+      }catch(_){}
+    }, 900);
   }
-  S.profile = profile;
-  S.isAdmin = !!profile && String(profile.role || '').trim().toLowerCase() === 'admin';
+  S.profile = profile || { id:uid, full_name:S.session.user.email, role:'user', email:S.session.user.email };
+  S.isAdmin = String(S.profile.role || '').trim().toLowerCase() === 'admin';
 
-  await supa.from('profiles').update({ last_login: new Date().toISOString() }).eq('id', uid);
+  // Non-critical last-login write must never delay first paint.
+  supa.from('profiles').update({ last_login: new Date().toISOString() }).eq('id', uid).then(()=>{}).catch(()=>{});
 
   $('#admin-nav-label').classList.toggle('hidden', !S.isAdmin);
   $('#nav-audit').classList.toggle('hidden', !S.isAdmin);
-  $('#nav-analytics').classList.toggle('hidden', !S.isAdmin); // Analytics is Admin-only
-  $('#nav-joc').classList.toggle('hidden', !S.isAdmin); // JOC Library is Admin-only
-  // Re-apply after the profile role has been resolved so JOC never disappears for an Admin.
+  $('#nav-analytics').classList.toggle('hidden', !S.isAdmin);
+  $('#nav-joc').classList.toggle('hidden', !S.isAdmin);
   $('#nav-joc').style.display = S.isAdmin ? '' : 'none';
   $('#settings-nav-roles').classList.toggle('hidden', !S.isAdmin);
   $('#settings-nav-databases').classList.toggle('hidden', !S.isAdmin);
   applyDataHubRoleUI();
-
   renderSidebarUser();
-  // loadProfiles() now runs for every signed-in user, not just Admins: the Data Hub card
-  // grid needs the full name list so every user (not only Admins) gets a working, persistent
-  // "Assigned:" dropdown on each card (see dbbCardHtml / applyDbAssignment below).
-  await Promise.all([
-    loadAssignedNames(),
-    loadDatabases(),
-    loadRecords(),
-    loadUpdates(),
-    loadReminders(),
-    loadRatings(),
-    loadProfiles(),
-    loadFeedbackOptions().catch(e=>{ console.warn('[FEEDBACK OPTIONS STARTUP FALLBACK]',e); FEEDBACK_OPTIONS=DEFAULT_FEEDBACK_OPTIONS.map(o=>({...o})); })
-  ]);
-  await updRefreshAppointmentCalendarCache().catch(e=>console.warn('[APPOINTMENT CALENDAR LOAD FAILED]',e));
 
+  // Paint the existing shell with empty/previously cached state immediately.
+  // This intentionally preserves all existing page/render functions.
   renderDashboard();
   renderAllDataFilters();
   refreshAllDataView();
@@ -10543,24 +10594,68 @@ async function loadWorkspace(){
   renderAnalyticsPage();
   renderSettings();
   initFeedbackOptionsSettings();
-  if (S.isAdmin){
-    bindJOCPage();
-    loadJOCLibrary();
-  }
   renderNotifBadge();
-  maybeShowReminderPopup();
-  if (!S._ratingBootChecked){ S._ratingBootChecked = true; maybeShowAnyCompletionRating(); }
-  if (S.isAdmin) loadAuditLogs();
-  if (!S._realtimeStarted){ S._realtimeStarted = true; initAnalyticsRealtime(); initRecordsWorkSync(); }
-  // Started here (not unconditionally at script load, like JocLocalFolder) because it
-  // needs an authenticated session + S.databases loaded to compare fingerprints and
-  // assign imported databases (spec #3/#20).
-  if (!S._dataHubFolderInited){ S._dataHubFolderInited = true; DataHubFolder.init(); }
+  dhUpdateConnPill();
+  showCenterLoading();
+
+  // Hydrate everything else without blocking the already-visible workspace.
+  const hydrate = async ()=>{
+    try{
+      await Promise.all([
+        loadAssignedNames(),
+        loadDatabases(),
+        loadRecords(),
+        loadUpdates(),
+        loadReminders(),
+        loadRatings(),
+        loadProfiles(),
+        loadFeedbackOptions().catch(e=>{ console.warn('[FEEDBACK OPTIONS STARTUP FALLBACK]',e); FEEDBACK_OPTIONS=DEFAULT_FEEDBACK_OPTIONS.map(o=>({...o})); })
+      ]);
+
+      await updRefreshAppointmentCalendarCache().catch(e=>console.warn('[APPOINTMENT CALENDAR LOAD FAILED]',e));
+
+      // Refresh only after real data arrives; no full page reload and no schema changes.
+      renderDashboard();
+      renderAllDataFilters();
+      refreshAllDataView();
+      renderCalendar();
+      renderUpdatesPage();
+      renderAnalyticsFilters();
+      renderAnalyticsPage();
+      renderSettings();
+      initFeedbackOptionsSettings();
+      renderNotifBadge();
+      maybeShowReminderPopup();
+      if (!S._ratingBootChecked){ S._ratingBootChecked = true; maybeShowAnyCompletionRating(); }
+
+      if (S.isAdmin){
+        bindJOCPage();
+        loadJOCLibrary();
+        loadAuditLogs();
+      }
+      if (!S._realtimeStarted){
+        S._realtimeStarted = true;
+        initAnalyticsRealtime();
+        initRecordsWorkSync();
+      }
+      if (!S._dataHubFolderInited){
+        S._dataHubFolderInited = true;
+        DataHubFolder.init();
+      }
+    }catch(e){
+      console.error('[WORKSPACE BACKGROUND HYDRATION FAILED]',e);
+    }
+  };
+
+  // Let the browser paint the shell before starting the heavy Supabase work.
+  if ('requestIdleCallback' in window) requestIdleCallback(()=>hydrate(), {timeout:120});
+  else setTimeout(hydrate, 0);
 }
 
 function showCenterLoading(){
-  $('#page-container').style.opacity = '.5';
-  setTimeout(()=>{ $('#page-container').style.opacity = '1'; }, 400);
+  // Keep the existing helper but remove the artificial 400ms fade delay.
+  const el=$('#page-container');
+  if (el) el.style.opacity = '1';
 }
 
 function renderSidebarUser(){
@@ -11657,6 +11752,7 @@ function openImportForm(filename){
     userSel.innerHTML = `<option value="">Select a user…</option>` + users.map(p=>
       `<option value="${esc(p.id)}">${esc(p.full_name||p.email)}${p.role==='admin'?' (Admin)':''}</option>`
     ).join('');
+    userSel.value = S.session.user.id;
   } else {
     userField.classList.add('hidden');
     userSel.innerHTML = `<option value="${esc(S.session.user.id)}">${esc(S.profile?.full_name || S.session.user.email)}</option>`;
@@ -11680,7 +11776,9 @@ function renderImportMappingPreview(){
     const status=meta.status==='review' ? 'Review' : mapped ? 'Auto' : 'Unmapped';
     const cls=meta.status==='review'?'dt-status-review':mapped?'dt-status-auto':'dt-status-unmapped';
     const options='<option value="">— Unmapped —</option>'+targets.map(t=>`<option value="${esc(t.key)}" ${mapped===t.key?'selected':''}>${esc(t.label)}</option>`).join('');
-    return `<tr><td><strong>${esc(h)||'(blank)'}</strong><div class="dt-sample">${(meta.values||[]).slice(0,2).map(v=>esc(v)).join(' · ')}</div></td><td><select class="dt-map-select" data-index="${i}">${options}</select></td><td><span class="dt-status ${cls}">${status}</span></td></tr>`;
+    const confidence = Math.round(Math.max(0,Math.min(1,Number(meta.confidence)||0))*100);
+    const confidenceLabel = meta.status==='review' ? 'Review Required' : mapped ? `${confidence}% confidence` : 'No confident match';
+    return `<tr><td><strong>${esc(h)||'(blank)'}</strong><div class="dt-sample">${(meta.values||[]).slice(0,2).map(v=>esc(v)).join(' · ')}</div></td><td><select class="dt-map-select" data-index="${i}">${options}</select></td><td><span class="dt-status ${cls}">${status}</span><div style="margin-top:4px;font-size:9.5px;color:#667085;">${esc(confidenceLabel)}</div></td></tr>`;
   }).join('');
   table.innerHTML=`<thead><tr><th>XLSX Column</th><th>Mapped Field</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
   table.querySelectorAll('.dt-map-select').forEach(sel=>sel.addEventListener('change',()=>{
@@ -11797,8 +11895,16 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
   if (!S.session?.user){
     return { ok:false, error:'No authenticated user found. Please sign in again.' };
   }
-  if (!S.isAdmin){
-    return { ok:false, error:'Only Admins can import databases.' };
+  // Both Admins and regular authenticated users may import. The existing RLS
+  // boundary remains authoritative; the importer is automatically the assigned user
+  // unless the existing Admin assignment control explicitly chooses another user.
+  if (!assignUser.id){
+    assignUser = {
+      id:S.session.user.id,
+      name:S.profile?.full_name || S.session.user.email,
+      email:S.session.user.email
+    };
+    assignedTo = assignedTo || S.profile?.full_name || S.session.user.email;
   }
   const { data: profileCheck, error: profileErr } = await supa.from('profiles').select('id').eq('id', S.session.user.id).single();
   if (profileErr || !profileCheck){
@@ -11995,6 +12101,12 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
     await supa.from('databases').update({ status:'completed', row_count: finalRowCount, customer_count: finalCustomerCount }).eq('id', dbRow.id);
   }
 
+  // Existing database-assignment trigger normally creates the Updates card. Reconcile it
+  // after import so the card starts with the actual feedback-derived contacted count.
+  if (dbRow.assigned_user_id){
+    try{ await syncDatabaseContactedToUpdate(dbRow.id,{force:true}); }
+    catch(e){ console.warn('[IMPORT FEEDBACK UPDATE SYNC FAILED]',e); }
+  }
   logAudit('import_database', { database:dbName, rows:records.length, assignedTo, source: source || 'manual' });
   if (assignUser.id){
     logAudit('database_assigned', {
@@ -12275,6 +12387,49 @@ function feedbackDisplayLabel(r){
   return m ? m.label : r.feedback;
 }
 function syncFeedbackLabels(){ S.records.forEach(r=> { r.feedback_label = feedbackDisplayLabel(r); }); }
+
+/* Feedback is the authoritative contacted signal for Updates. The count is scoped to
+   one database and cached only for the current browser session; Supabase remains truth. */
+async function calculateDatabaseFeedbackContacted(databaseId, force=false){
+  const id=String(databaseId||'').trim();
+  if(!id)return 0;
+  const cachedRows=S.dbHub.recordCache.get(id);
+  const cacheMeta=S.dbHub.recordCacheMeta.get(id);
+  if(!force && cacheMeta?.complete && Array.isArray(cachedRows)){
+    return cachedRows.filter(r=>String(r.feedback||'').trim()!=='').length;
+  }
+  if(!force && S._feedbackContactedCache?.has(id)) return S._feedbackContactedCache.get(id);
+  const {count,error}=await supa.from('records')
+    .select('id',{count:'exact',head:true})
+    .eq('database_id',databaseId)
+    .not('feedback','is',null)
+    .neq('feedback','');
+  if(error){
+    console.warn('[FEEDBACK CONTACTED COUNT FAILED]',error);
+    return Number(S._feedbackContactedCache?.get(id)||0);
+  }
+  S._feedbackContactedCache ||= new Map();
+  S._feedbackContactedCache.set(id,Number(count||0));
+  return Number(count||0);
+}
+async function syncDatabaseContactedToUpdate(databaseId, opts={}){
+  const dbId=String(databaseId||'').trim();
+  if(!dbId)return {ok:false};
+  const db=(S.databases||[]).find(d=>String(d.id)===dbId);
+  const contacted=await calculateDatabaseFeedbackContacted(dbId,!!opts.force);
+  const {data:updates,error:loadError}=await supa.from('updates').select('id,total_customers,owner_id,assignment_id').eq('assignment_id',databaseId);
+  if(loadError){console.warn('[FEEDBACK UPDATE LOOKUP FAILED]',loadError);return {ok:false,error:loadError};}
+  for(const u of (updates||[])){
+    const {data,error}=await supa.from('updates').update({
+      customers_contacted:contacted,
+      updated_at:new Date().toISOString()
+    }).eq('id',u.id).select('*').single();
+    if(error){console.warn('[FEEDBACK UPDATE SYNC FAILED]',error);continue;}
+    const idx=S.updates.findIndex(x=>String(x.id)===String(u.id));
+    if(idx>=0)S.updates[idx]={...S.updates[idx],...data};
+  }
+  return {ok:true,contacted,updates:updates||[]};
+}
 function renderCompanyNameCell(r, val){
   const arrow = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>`;
   if (!val) return `<span class="cell-muted">No company name</span>`;
@@ -12311,6 +12466,39 @@ async function saveFeedback(rec, value, customText){
     renderVirtualGrid();
     return;
   }
+
+  // Keep every existing in-memory view/cache pointing at the saved row so the
+  // company highlight and custom label appear immediately, without changing
+  // the existing Feedback/Supabase data model.
+  const patchFeedbackRow = row => {
+    if(!row || String(row.id)!==String(rec.id)) return;
+    row.feedback = rec.feedback;
+    row.feedback_custom = rec.feedback_custom;
+    row.feedback_label = rec.feedback_label;
+  };
+  patchFeedbackRow(S.records.find(r=>String(r.id)===String(rec.id)));
+  patchFeedbackRow(S.filteredRecords.find(r=>String(r.id)===String(rec.id)));
+  patchFeedbackRow(S.dbHub?.openDbRecords?.find(r=>String(r.id)===String(rec.id)));
+  if(S.dbHub?.recordCache instanceof Map){
+    for(const rows of S.dbHub.recordCache.values()){
+      if(Array.isArray(rows)) patchFeedbackRow(rows.find(r=>String(r.id)===String(rec.id)));
+    }
+  }
+
+  if(value || prevFeedback){
+    S._feedbackContactedCache?.delete(String(rec.database_id||''));
+    await syncDatabaseContactedToUpdate(rec.database_id,{force:true});
+    const dbId=String(rec.database_id||'');
+    if(S.dbHub.openDbId && String(S.dbHub.openDbId)===dbId){
+      const cached=S.dbHub.recordCache.get(dbId);
+      if(cached){
+        const idx=cached.findIndex(r=>String(r.id)===String(rec.id));
+        if(idx>=0)cached[idx]={...cached[idx],feedback:rec.feedback,feedback_custom:rec.feedback_custom,feedback_label:rec.feedback_label};
+      }
+    }
+    if(S.dbHub.view==='table') applyGridFilters();
+    if(S.page==='updates' || $('#page-updates')?.classList.contains('active')) renderUpdatesPage();
+  }
   toast('Feedback saved', 'success');
   renderVirtualGrid();
   // If the record's detail drawer is currently open, refresh it in place so
@@ -12318,12 +12506,44 @@ async function saveFeedback(rec, value, customText){
   // — reuses the exact same drawer render path, nothing new to keep in sync.
   if (currentDrawerRecordId === rec.id) openRecordDetail(rec);
 }
+function dhResolveFeedbackRecord(recordId){
+  const id=String(recordId||'');
+  if(!id) return null;
+
+  // The Data Hub database-detail table can render records from openDbRecords /
+  // recordCache rather than S.records. Always resolve the exact visible row first.
+  const sources=[
+    S.dbHub?.openDbRecords,
+    S.filteredRecords,
+    S.records
+  ];
+  for(const rows of sources){
+    if(!Array.isArray(rows)) continue;
+    const hit=rows.find(r=>String(r?.id)===id);
+    if(hit) return hit;
+  }
+  if(S.dbHub?.recordCache instanceof Map){
+    for(const rows of S.dbHub.recordCache.values()){
+      if(!Array.isArray(rows)) continue;
+      const hit=rows.find(r=>String(r?.id)===id);
+      if(hit) return hit;
+    }
+  }
+  return null;
+}
+
 function onFeedbackSelectChange(e){
   const sel = e.target;
-  const rec = S.records.find(r=>String(r.id)===String(sel.dataset.id));
+  const rec = dhResolveFeedbackRecord(sel.dataset.id);
   if (!rec) return;
+
   const val = sel.value;
-  if (val === 'other'){ openFeedbackOtherModal(rec); return; }
+  if (val === 'other'){
+    // Keep the exact visible row as the modal target so the saved custom
+    // feedback is applied to the same company row immediately.
+    openFeedbackOtherModal(rec);
+    return;
+  }
   saveFeedback(rec, val, '');
 }
 let feedbackOtherRec = null;
@@ -15566,62 +15786,122 @@ function showTableView(){
   $('#alldata-table-view').classList.remove('hidden');
 }
 
-async function openDatabaseView(db){
+async function dhSetRecordLoading(show, textValue){
+  const el=$('#dh-record-loading');
+  if(!el)return;
+  el.classList.toggle('hidden',!show);
+  const t=$('#dh-record-loading-text');
+  if(t && textValue)t.textContent=textValue;
+}
+async function dhFetchDatabasePage(db, from, pageSize){
+  const databaseId=String(db.id);
+  const {data,error}=await supa.from('records').select('*')
+    .eq('database_id',db.id).order('id',{ascending:true}).range(from,from+pageSize-1);
+  return {data:data||[],error};
+}
+async function dhLoadDatabaseProgressively(db, loadSeq){
+  const dbId=String(db.id);
+  const PAGE=500;
+  const cached=S.dbHub.recordCache.get(dbId);
+  const meta=S.dbHub.recordCacheMeta.get(dbId);
+  if(cached && Array.isArray(cached) && meta?.complete){
+    S.dbHub.openDbRecords=cached.slice();
+    mergeRecordsIntoState(cached);
+    applyGridFilters();
+    dhSetRecordLoading(false);
+    return;
+  }
+
+  let rows = Array.isArray(cached) ? cached.slice() : [];
+  const seen=new Set(rows.map(r=>String(r.id)));
+  let from=rows.length;
+  let first=true;
+
+  while(true){
+    if(loadSeq!==S.dbHub.openDbLoadSeq || S.dbHub.openDbId!==db.id)return;
+    const {data,error}=await dhFetchDatabasePage(db,from,PAGE);
+    if(error){
+      // Legacy rows may only carry database_name. Only fall back to the name path
+      // when the primary database_id path has produced no rows.
+      if(first && !rows.length && String(db.name||'').trim()){
+        const name=String(db.name).trim();
+        const fallback=await supa.from('records').select('*').eq('database_name',name)
+          .order('id',{ascending:true}).range(0,PAGE-1);
+        if(!fallback.error){
+          (fallback.data||[]).forEach(r=>{if(!seen.has(String(r.id))){seen.add(String(r.id));rows.push(r);}});
+          from=rows.length;
+          first=false;
+          S.dbHub.openDbRecords=rows.slice();
+          S.dbHub.recordCache.set(dbId,rows.slice());
+          S.dbHub.recordCacheMeta.set(dbId,{complete:(fallback.data||[]).length<PAGE,lastFetched:Date.now()});
+          mergeRecordsIntoState(rows);
+          applyGridFilters();
+          if((fallback.data||[]).length<PAGE){dhSetRecordLoading(false);return;}
+          continue;
+        }
+      }
+      console.warn('[DATA HUB DATABASE LOAD FAILED]',error);
+      dhSetRecordLoading(false,'Could not load records.');
+      return;
+    }
+    first=false;
+    const batch=data||[];
+    batch.forEach(r=>{if(!seen.has(String(r.id))){seen.add(String(r.id));rows.push(r);}});
+    S.dbHub.openDbRecords=rows.slice();
+    S.dbHub.recordCache.set(dbId,rows.slice());
+    const complete=batch.length<PAGE;
+    S.dbHub.recordCacheMeta.set(dbId,{complete,lastFetched:Date.now()});
+    mergeRecordsIntoState(batch);
+
+    if(loadSeq===S.dbHub.openDbLoadSeq && S.dbHub.openDbId===db.id){
+      applyGridFilters();
+      dhSetRecordLoading(!complete, complete ? '' : `Loading records… ${rows.length.toLocaleString()} loaded`);
+    }
+    if(complete){dhSetRecordLoading(false);return;}
+    from+=PAGE;
+    // Yield to the browser between pages so sidebar/topbar/table interactions remain responsive.
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+}
+function openDatabaseView(db){
   if (!S.isAdmin && db.assigned_user_id !== S.session?.user?.id){
     toast("Access Restricted — you don't have permission to view this database. Please contact your administrator.", 'error');
     return;
   }
 
-  // Every database open starts with a clean, database-specific authoritative dataset.
-  // Never let rows from the workspace-wide 50,000-row cache decide what this database
-  // contains.
   const loadSeq = (S.dbHub.openDbLoadSeq || 0) + 1;
   S.dbHub.openDbLoadSeq = loadSeq;
-  S.dbHub.openDbRecords = [];
-
-  S.dbHub.view = 'table';
   S.dbHub.openDbId = db.id;
-  S.dbHub.newIds.delete(db.id); // opening a "new" database acknowledges it
+  S.dbHub.view = 'table';
+  S.dbHub.newIds.delete(db.id);
   S.grid.dbFilter = db.name;
-  S.grid.dbIdFilter = db.id; // primary filter — robust to renames/duplicate names, unlike name matching
+  S.grid.dbIdFilter = db.id;
   S.grid.assignedFilter = '';
   S.grid.pageIndex = 0;
   const sel = $('#filter-database'); if (sel) sel.value = db.name;
   const nameEl = $('#dbb-breadcrumb-name');
   if (nameEl){ nameEl.textContent = dhTrunc(db.name, 60); nameEl.title = db.name; }
   showTableView();
-  applyGridFilters(); // paint immediately with whatever's already cached, then reconcile below
 
-  console.log('OPEN DATABASE VIEW:', {
-    databaseId: db.id, databaseName: db.name,
-    currentUserId: S.session?.user?.id, isAdmin: S.isAdmin,
-    assignedUserId: db.assigned_user_id || null,
-  });
-
-  // Fetch this database's rows directly (bypasses the 50k-row global cap in loadRecords()).
-  const { rows, error } = await fetchAllRecordsForDatabase(db.id);
-
-  // Ignore a stale response if the user opened another database while this request
-  // was paging through Supabase.
-  if (loadSeq !== S.dbHub.openDbLoadSeq || S.dbHub.openDbId !== db.id) return;
-
-  if (!error){
-    setOpenDatabaseRecords(rows);
-    if (rows.length === 0 && !S.isAdmin && db.assigned_user_id && db.assigned_user_id !== S.session?.user?.id){
-      // Legitimate RLS/assignment scoping, not data loss: this database belongs to someone
-      // else and the current user isn't an admin, so `records` RLS correctly returns nothing.
-      console.log('DATABASE DETAIL: 0 records because this database is assigned to a different user and the viewer is not an admin.', {
-        databaseId: db.id, assignedUserId: db.assigned_user_id, currentUserId: S.session?.user?.id,
-      });
-    }
-  } else {
-    console.error('DATABASE DETAIL: authoritative record fetch failed.', {
-      databaseId: db.id, databaseName: db.name, error
-    });
+  const cached=S.dbHub.recordCache.get(String(db.id));
+  const meta=S.dbHub.recordCacheMeta.get(String(db.id));
+  if(cached?.length){
+    S.dbHub.openDbRecords=cached.slice();
+    mergeRecordsIntoState(cached);
+    applyGridFilters();
+    dhSetRecordLoading(meta?.complete ? false : true, meta?.complete ? '' : `Loading more records… ${cached.length.toLocaleString()} loaded`);
+  }else{
+    S.dbHub.openDbRecords=[];
+    dhSetRecordLoading(true,'Loading database records…');
+    applyGridFilters();
   }
 
-  // Only re-render if the user hasn't already navigated elsewhere while this was loading.
-  if (S.dbHub.openDbId === db.id && S.grid.dbIdFilter === db.id) applyGridFilters();
+  // The fetch is database-scoped and progressively rendered. A stale request can never
+  // overwrite a database opened after it.
+  dhLoadDatabaseProgressively(db,loadSeq).catch(e=>{
+    if(loadSeq===S.dbHub.openDbLoadSeq) dhSetRecordLoading(false,'Could not load database records.');
+    console.error('[DATA HUB PROGRESSIVE LOAD FAILED]',e);
+  });
 }
 
 function backToDatabaseList(){
@@ -17870,8 +18150,9 @@ function updRenderEntryPanel(card, rows, selectedDate, editId=null){
 
 function updRefreshCardSummary(card,rec,rows){
   const total=updAuthoritativeTotalCustomers(rec);
-  /* Total Contacted is the continued total from ALL permanently saved daily entries. */
-  const contacted=updOverallContacted(rows, rec.customers_contacted||0);
+  /* Contacted is authoritative from Data Hub feedback. Daily entries remain historical
+     work logs and are rendered below without changing this counter. */
+  const contacted=Math.max(0,Number(rec.customers_contacted||0));
   const pct=total>0?Math.min(100,(contacted/total)*100):0;
   const count=rows.length;
   const ce=$('[data-role="contacted-total"]',card), pp=$('[data-role="progress-pct"]',card), pf=$('[data-role="progress-fill"]',card), ec=$('[data-role="entry-count"]',card), ss=$('[data-role="save-state"]',card), hist=$('[data-role="history"]',card);
@@ -17907,29 +18188,26 @@ async function wireDailyUpdateCard(card){
   const canEdit=S.isAdmin || isAssignedUser;
   const rows=await updLoadDailyRows(id).catch(e=>{console.error('[UPDATE HISTORY LOAD FAILED]',e);return[];});
 
-  /* Reconcile the SAME updates row from the complete permanent daily history.
-     This never creates or deletes history. */
+  /* Feedback is now the authoritative contacted count. Daily entries remain permanent
+     history for appointments/remarks and are never deleted or used to increment contacts. */
   let effectiveRec=rec;
-  if(rows.length){
-    const chronological=[...rows].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
-    const latest=chronological[0];
-    const latestParsed=updParseDailyRow(latest);
-    const latestCustomers=updOverallContacted(rows, 0);
-    if(Number(rec.customers_contacted||0)!==latestCustomers){
-      try{
-        const {data:reconciled,error:reconcileError}=await supa.from('updates').update({
-          customers_contacted:latestCustomers,
-          appointments:Math.max(0,Number(latestParsed.appointments)||0),
-          remarks:String(latestParsed.remarks||'').trim()||null
-        }).eq('id',id).select('*').single();
-        if(!reconcileError && reconciled){
-          effectiveRec=reconciled;
-          const idx=S.updates.findIndex(u=>String(u.id)===String(id));
-          if(idx>=0) S.updates[idx]={...S.updates[idx],...reconciled};
-        }else console.warn('[UPDATE HISTORY RECONCILIATION FAILED]',reconcileError);
-      }catch(e){ console.warn('[UPDATE HISTORY RECONCILIATION FAILED]',e); }
-    }
-  }
+  try{
+    const feedbackContacted=await calculateDatabaseFeedbackContacted(rec.assignment_id||assignedDb?.id,{force:true});
+    const latest=rows.length ? [...rows].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')))[0] : null;
+    const latestParsed=latest ? updParseDailyRow(latest) : {appointments:0,remarks:''};
+    if(Number(rec.customers_contacted||0)!==feedbackContacted){
+      const {data:reconciled,error:reconcileError}=await supa.from('updates').update({
+        customers_contacted:feedbackContacted,
+        appointments:Math.max(0,Number(latestParsed.appointments)||0),
+        remarks:String(latestParsed.remarks||'').trim()||null
+      }).eq('id',id).select('*').single();
+      if(!reconcileError && reconciled){
+        effectiveRec=reconciled;
+        const idx=S.updates.findIndex(u=>String(u.id)===String(id));
+        if(idx>=0)S.updates[idx]={...S.updates[idx],...reconciled};
+      }else if(reconcileError)console.warn('[FEEDBACK UPDATE RECONCILIATION FAILED]',reconcileError);
+    }else effectiveRec={...rec,customers_contacted:feedbackContacted};
+  }catch(e){console.warn('[FEEDBACK CONTACTED RECONCILIATION FAILED]',e);}
   updRefreshCardSummary(card,effectiveRec,rows);
 
   $('[data-role="entry"]',card)?.addEventListener('click',()=>updRenderEntryPanel(card,rows,updEntryToday(),null));
@@ -19603,11 +19881,13 @@ document.addEventListener('click', e=>{
 });
 
 function renderDataTypeIntelligenceSettings(){
-  const list=$('#dt-targets-list'), mem=$('#dt-memory-list'); if(!list||!mem)return;
+  const list=$('#dt-targets-list'); if(!list)return;
   list.innerHTML=DATA_TYPE_TARGETS.map(t=>`<div class="dt-target-row"><div><strong>${esc(t.label)}</strong><span>${esc(t.synonyms.slice(0,5).join(' · '))}</span></div><code>${esc(t.key)}</code></div>`).join('');
-  const m=dtMemoryLoad(); const entries=Object.entries(m);
-  mem.innerHTML=entries.length ? entries.slice(0,30).map(([source,target])=>`<div class="dt-memory-row"><span>${esc(source)}</span><b>→</b><span>${esc(dataTypeLabel(target))}</span></div>`).join('') : '<div class="dt-empty">No confirmed mappings yet. They will appear here after an Admin confirms an import mapping.</div>';
-  const btn=$('#dt-clear-memory-btn'); if(btn && btn.dataset.bound!=='1'){ btn.dataset.bound='1'; btn.addEventListener('click',()=>{ dtMemorySave({}); renderDataTypeIntelligenceSettings(); toast('Mapping memory cleared','success'); }); }
+  const btn=$('#dt-smart-import-btn');
+  if(btn && btn.dataset.bound!=='1'){
+    btn.dataset.bound='1';
+    btn.addEventListener('click',()=>openImportModal());
+  }
 }
 
 function renderSettings(){
@@ -24520,12 +24800,14 @@ JocLocalFolder.init();
 
 async function boot(){
   if (!supa){
-    setTimeout(async ()=>{
-      $('#intro').classList.add('fade-out');
-      setTimeout(()=>{ $('#intro').style.display='none'; $('#auth-screen').classList.remove('hidden'); showAuthView('login');
-        $('#login-alert').className='auth-alert error'; $('#login-alert').textContent='Supabase is not configured yet — set CONFIG.SUPABASE_URL and CONFIG.SUPABASE_ANON_KEY at the top of the <script>.';
-      }, 650);
-    }, 2200);
+    $('#intro').classList.add('fade-out');
+    setTimeout(()=>{
+      $('#intro').style.display='none';
+      $('#auth-screen').classList.remove('hidden');
+      showAuthView('login');
+      $('#login-alert').className='auth-alert error';
+      $('#login-alert').textContent='Supabase is not configured yet — set CONFIG.SUPABASE_URL and CONFIG.SUPABASE_ANON_KEY at the top of the <script>.';
+    }, 180);
     return;
   }
 
@@ -24535,19 +24817,18 @@ async function boot(){
   supa.auth.onAuthStateChange((event, sess)=>{
     if (event === 'PASSWORD_RECOVERY'){
       $('#intro').classList.add('fade-out');
-      setTimeout(()=>{ $('#intro').style.display='none'; $('#auth-screen').classList.remove('hidden'); showAuthView('reset'); }, 400);
+      setTimeout(()=>{ $('#intro').style.display='none'; $('#auth-screen').classList.remove('hidden'); showAuthView('reset'); }, 180);
     }
   });
 
+  // No artificial 2.2s startup wait. Session is already known, so transition immediately.
+  $('#intro').classList.add('fade-out');
   setTimeout(async ()=>{
-    $('#intro').classList.add('fade-out');
-    setTimeout(async ()=>{
-      $('#intro').style.display='none';
-      if (isRecovery){ $('#auth-screen').classList.remove('hidden'); showAuthView('reset'); return; }
-      if (session){ await onAuthed(session); }
-      else { $('#auth-screen').classList.remove('hidden'); showAuthView('login'); }
-    }, 650);
-  }, 2200);
+    $('#intro').style.display='none';
+    if (isRecovery){ $('#auth-screen').classList.remove('hidden'); showAuthView('reset'); return; }
+    if (session){ await onAuthed(session); }
+    else { $('#auth-screen').classList.remove('hidden'); showAuthView('login'); }
+  }, 180);
 }
 
 
