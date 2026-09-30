@@ -3469,6 +3469,33 @@ table.reminder-table tbody tr:hover{ background:#FAFBFF; }
 .toolkit-card-more{ display:flex; align-items:center; justify-content:center; text-align:center; border-style:dashed; color:var(--text-secondary); cursor:default; }
 .toolkit-card-more:hover{ transform:none; box-shadow:var(--shadow-sm); border-color:var(--border); }
 
+/* ==========================================================================
+   TOOLKITS — COMPANY NAME EXACT LOOKUP & REMOVAL (additive; cx- prefixed)
+   ========================================================================== */
+.cx-steps{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; }
+.cx-step{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600; color:var(--text-secondary); }
+.cx-step-dot{ width:18px; height:18px; border-radius:50%; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; line-height:1; box-sizing:border-box; }
+.cx-step.active{ color:var(--text); }
+.cx-step.active .cx-step-dot{ border-color:var(--accent); border-top-color:transparent; animation:cx-spin .8s linear infinite; }
+.cx-step.done{ color:var(--text); }
+.cx-step.done .cx-step-dot{ background:var(--success); border-color:var(--success); color:#fff; }
+.cx-step.skipped{ opacity:.5; }
+@keyframes cx-spin{ to{ transform:rotate(360deg); } }
+.cx-error{ margin-top:12px; padding:11px 14px; border-radius:10px; background:#FEF2F2; color:#B91C1C; font-size:13px; font-weight:700; border:1px solid #FECACA; }
+.cx-warn{ margin:12px 0 0; padding:10px 12px; border-radius:8px; background:#FEF3C7; color:#92400E; font-size:13px; font-weight:600; }
+.cx-note{ font-size:12px; color:var(--text-secondary); margin-top:10px; line-height:1.5; }
+.cx-table-wrap{ max-height:340px; overflow:auto; border:1px solid var(--border); border-radius:12px; margin-top:14px; }
+.cx-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.cx-table th{ position:sticky; top:0; background:#F9FAFC; text-align:left; padding:9px 12px; font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--text-secondary); border-bottom:1px solid var(--border); white-space:nowrap; }
+.cx-table td{ padding:9px 12px; border-bottom:1px solid var(--border); word-break:break-word; }
+.cx-table tr:last-child td{ border-bottom:0; }
+.cx-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.cx-modal-stats{ display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+.cx-modal-stat{ display:flex; align-items:center; justify-content:space-between; padding:11px 14px; background:#F9FAFC; border:1px solid var(--border); border-radius:12px; font-size:13px; font-weight:600; color:var(--text-secondary); }
+.cx-modal-stat b{ font-size:18px; font-weight:800; color:var(--text); }
+.cx-modal-stat.danger b{ color:#B91C1C; }
+@media (max-width:700px){ #toolkits-cx .joc-stat-grid{ grid-template-columns:repeat(2,1fr); } }
+
 /* ---------- Premium JOC Data Processor card (redesign) ---------- */
 .jpc-card{
   background:#fff; border:1px solid var(--border); border-radius:30px;
@@ -6747,6 +6774,38 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
             </div>
           </div>
 
+          <!-- ---------- Premium Company Name Exact Lookup & Removal card ---------- -->
+          <div class="jpc-card" id="toolkit-card-cx">
+            <div class="jpc-top">
+              <div class="jpc-top-left">
+                <div class="jpc-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8.5 11h5"/></svg>
+                </div>
+                <div class="jpc-badge">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="3" fill="none"/></svg>
+                  EXACT MATCH ONLY
+                </div>
+              </div>
+            </div>
+
+            <div class="jpc-title">Company Name Exact Lookup &amp; Removal</div>
+            <div class="jpc-sub">Upload company names, find exact matches across Data Hub, and remove matched records.</div>
+
+            <div class="jpc-divider"></div>
+
+            <p class="jpc-desc">Deterministic, trimmed exact matching against the Company Name field in every Data Hub database you can access &mdash; no fuzzy, partial or AI matching. Nothing is deleted until you confirm, and removals follow your existing permissions.</p>
+
+            <div class="jpc-bottom">
+              <div class="jpc-bottom-group">
+                <div class="jpc-bottom-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></div>
+                <div><div class="jpc-bottom-label">Input</div><div class="jpc-bottom-val">Single-column .xlsx</div></div>
+              </div>
+              <div class="jpc-open-btn">Open Toolkit
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </div>
+            </div>
+          </div>
+
           <div class="toolkit-grid">
             <div class="toolkit-card toolkit-card-more">
               <div style="font-size:12.5px; line-height:1.5;">More toolkits<br>coming soon</div>
@@ -7086,6 +7145,79 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
                   <button class="btn btn-primary" id="sw-downloadBtn" style="flex:2;">Download Output Excel</button>
                   <button class="btn hidden" id="sw-reviewBtn" style="flex:1;">Review Manual Check</button>
                   <button class="btn hidden" id="sw-finalizeBtn" style="flex:1;">Finalize &amp; Recheck</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ---------- COMPANY NAME EXACT LOOKUP & REMOVAL TOOLKIT ---------- -->
+        <div id="toolkits-cx" class="hidden">
+          <div class="joc-back" id="cx-back-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+            Back to Toolkits
+          </div>
+
+          <div class="joc-head">
+            <div class="joc-head-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8.5 11h5"/></svg></div>
+            <div>
+              <h2>Company Name Exact Lookup &amp; Removal</h2>
+              <p>Upload company names, find exact matches across Data Hub, and remove matched records.</p>
+            </div>
+          </div>
+
+          <div class="joc-simple">
+
+            <!-- ── UPLOAD ── -->
+            <div class="panel" id="cx-upload-card">
+              <div class="joc-panel-label">Upload XLSX → Select File</div>
+              <div class="joc-dropzone" id="cx-zone">
+                <input type="file" id="cx-file" accept=".xlsx">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                <div class="dz-name">Company Names (.xlsx)</div>
+                <div class="dz-sub">Exactly one column &mdash; any header name. The first row is treated as the header.</div>
+                <div class="dz-file" id="cx-fileName"></div>
+              </div>
+              <div class="joc-cloud-sub" id="cx-fileMeta" style="margin-top:8px;"></div>
+              <div class="cx-error hidden" id="cx-error" role="alert"></div>
+              <div class="cx-note">Matching is exact after trimming leading/trailing spaces only &mdash; letter case, spelling, punctuation and abbreviations must be identical. Your uploaded file is never modified.</div>
+            </div>
+
+            <!-- ── PROGRESS ── -->
+            <div class="panel hidden" id="cx-progress-card">
+              <div class="joc-panel-label">Progress</div>
+              <ul class="cx-steps" id="cx-steps"></ul>
+              <div class="progress-outer" id="cx-progressWrap"><div class="progress-inner" id="cx-progressFill"></div></div>
+              <div class="joc-cloud-sub" id="cx-progressText" style="margin-top:6px;"></div>
+            </div>
+
+            <!-- ── PREVIEW (before deletion) ── -->
+            <div class="panel hidden" id="cx-preview-card">
+              <div class="joc-panel-label">Exact Matches Found</div>
+              <div class="joc-stat-grid" id="cx-preview-stats"></div>
+              <div id="cx-preview-warn"></div>
+              <div id="cx-preview-table"></div>
+              <div class="cx-actions">
+                <button class="btn btn-danger" id="cx-removeBtn" type="button" style="width:auto; padding:11px 22px;">Remove Matched Records</button>
+                <button class="btn" id="cx-cancelBtn" type="button" style="width:auto; padding:11px 22px;">Start Over</button>
+              </div>
+            </div>
+
+            <!-- ── RESULTS ── -->
+            <div id="cx-results" class="hidden">
+              <div class="joc-download">
+                <div class="joc-download-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.4" style="width:18px;height:18px;"><path d="M20 6 9 17l-5-5"/></svg>
+                  <span id="cx-resultsTitle">Completed</span>
+                </div>
+                <div class="joc-download-sub" id="cx-resultsSub"></div>
+                <div class="joc-stat-grid" id="cx-result-stats"></div>
+                <div id="cx-result-warn"></div>
+                <div class="cx-actions" style="margin-top:4px;">
+                  <button class="btn btn-primary" id="cx-downloadBtn" type="button" style="flex:2;">Download Result XLSX</button>
+                  <button class="btn" id="cx-againBtn" type="button" style="flex:1;">Process Another File</button>
                 </div>
               </div>
             </div>
@@ -8041,6 +8173,23 @@ stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 
     <div class="hint" id="sw-review-hint" style="margin-bottom:10px;">Zero-Risk Decision Mode: at most 50 highest-risk records are shown here. Use ✓ Swift / ✕ Non-Swift / → Skip, or keyboard shortcuts 1 / 2 / 3.</div>
     <div id="sw-review-progress" style="margin-bottom:14px;"></div>
     <div id="sw-review-list"></div>
+  </div>
+</div>
+
+<!-- ============================== COMPANY EXACT LOOKUP & REMOVAL — CONFIRM MODAL ============================== -->
+<div class="modal-overlay hidden" id="cx-confirm-overlay">
+  <div class="modal" style="max-width:460px;" role="dialog" aria-modal="true" aria-labelledby="cx-confirm-title">
+    <div class="modal-head"><h3 id="cx-confirm-title">Permanent removal</h3></div>
+    <div class="hint" style="margin-bottom:16px;">Exact matches found. Do you want to permanently remove these Data Hub records?</div>
+    <div class="cx-modal-stats">
+      <div class="cx-modal-stat"><span>Uploaded companies</span><b id="cx-confirm-uploaded">0</b></div>
+      <div class="cx-modal-stat"><span>Exact matches</span><b id="cx-confirm-matches">0</b></div>
+      <div class="cx-modal-stat danger"><span>Records that will be removed</span><b id="cx-confirm-records">0</b></div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn" id="cx-confirm-cancel" type="button" style="flex:1;">Cancel</button>
+      <button class="btn btn-danger" id="cx-confirm-ok" type="button" style="flex:1;">Remove Matched Records</button>
+    </div>
   </div>
 </div>
 
@@ -9479,8 +9628,14 @@ const assignDismissedFps = new Set(); // fingerprints skipped this session — w
     } catch(e){ return 'denied'; }
   }
 
+  const folderUiYield = () => new Promise(resolve => {
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(()=>resolve(), {timeout:40});
+    else setTimeout(resolve, 0);
+  });
+
   async function scanEntries(handle){
     const files = [];
+    let visited = 0;
     for await (const [name, entryHandle] of handle.entries()){
       if (entryHandle.kind !== 'file') continue;
       if (!EXCEL_EXT.test(name)) continue;
@@ -9491,6 +9646,8 @@ const assignDismissedFps = new Set(); // fingerprints skipped this session — w
       } catch(e){
         files.push({ name, size:null, lastModified:null, handle:entryHandle, unreadable:true });
       }
+      // Large folders must never monopolize the main event loop.
+      if (++visited % 40 === 0) await folderUiYield();
     }
     return files;
   }
@@ -9521,6 +9678,37 @@ const assignDismissedFps = new Set(); // fingerprints skipped this session — w
   // a file that hasn't changed on repeat scans (SCAN ≠ PROCESS).
   const classifyCache = new Map();
 
+  /* Parse XLSX away from the UI thread. SheetJS parsing + sheet_to_json on a 100k+
+     row workbook is CPU-heavy and was the main cause of Folder Scan freezes. */
+  async function parseFolderWorkbookOffThread(file){
+    if (typeof Worker === 'undefined') return null;
+    const workerCode = `
+      self.onmessage = async (e) => {
+        try {
+          importScripts('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+          const wb = XLSX.read(e.data, { type:'array' });
+          const first = wb.SheetNames[0];
+          const rows = first ? XLSX.utils.sheet_to_json(wb.Sheets[first], { header:1, defval:'', raw:true, blankrows:false }) : [];
+          self.postMessage({ ok:true, sheetNames:wb.SheetNames, rows });
+        } catch (err) {
+          self.postMessage({ ok:false, error:String(err && err.message || err) });
+        }
+      };`;
+    const url = URL.createObjectURL(new Blob([workerCode], {type:'text/javascript'}));
+    const worker = new Worker(url);
+    try{
+      const buf = await file.arrayBuffer();
+      return await new Promise((resolve, reject)=>{
+        worker.onmessage = e => e.data?.ok ? resolve(e.data) : reject(new Error(e.data?.error || 'Workbook worker failed'));
+        worker.onerror = e => reject(new Error(e.message || 'Workbook worker failed'));
+        worker.postMessage(buf, [buf]);
+      });
+    } finally {
+      worker.terminate();
+      URL.revokeObjectURL(url);
+    }
+  }
+
   /* ---------- read a workbook once and classify it by CONTENT, never by filename ---------- */
   async function readAndClassify(fmeta){
     const fp = fileKey(fmeta);
@@ -9528,10 +9716,23 @@ const assignDismissedFps = new Set(); // fingerprints skipped this session — w
     let result;
     try{
       const file = await fmeta.handle.getFile();
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type:'array' });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const allRows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:'' });
+      let parsed = null;
+      try{ parsed = await parseFolderWorkbookOffThread(file); }
+      catch(workerErr){ console.warn('[Folder XLSX] Worker parse unavailable; using main-thread fallback.', workerErr); }
+      let allRows, sheetNames;
+      if (parsed){
+        allRows = parsed.rows || [];
+        sheetNames = parsed.sheetNames || [];
+      } else {
+        // Compatibility fallback only. Yield before/after so browsers can paint status updates.
+        await folderUiYield();
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type:'array' });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        allRows = XLSX.utils.sheet_to_json(sheet, { header:1, defval:'', raw:true, blankrows:false });
+        sheetNames = wb.SheetNames || [];
+        await folderUiYield();
+      }
       if (!allRows.length){
         result = { ok:false, error:'That file looks empty.' };
       } else {
@@ -9544,11 +9745,11 @@ const assignDismissedFps = new Set(); // fingerprints skipped this session — w
           fileType = 'database';
         } else if (typeof JOCToolkit !== 'undefined' && JOCToolkit.detectLookupWorkbook){
           try{
-            const lookup = JOCToolkit.detectLookupWorkbook(wb.SheetNames);
+            const lookup = JOCToolkit.detectLookupWorkbook(sheetNames);
             if (lookup && lookup.isLookup) fileType = 'lookup';
           } catch(e){ /* best-effort label only — never blocks classification */ }
         }
-        result = { ok:true, wb, headers, dataRows, dbClass, fileType };
+        result = { ok:true, headers, dataRows, dbClass, fileType };
       }
     } catch(e){
       result = { ok:false, error: 'Unable to read workbook: ' + (e.message || e) };
@@ -9616,6 +9817,17 @@ const assignDismissedFps = new Set(); // fingerprints skipped this session — w
           continue;
         }
         const fp = fileKey(f);
+        // Fast path: if this known database has the same fingerprint, do NOT open/parse its
+        // XLSX again. This turns repeat scans into cheap metadata checks instead of 100k-row work.
+        const known = findExistingDb(f.name);
+        if (known){
+          const quick = statusFor({ ...f, fp });
+          if (quick.status === 'unchanged'){
+            models.push({ name:f.name, size:f.size, lastModified:f.lastModified, fp, handle:f.handle,
+              status:'unchanged', existing:quick.existing, fileType:'database', dbClass:null });
+            continue;
+          }
+        }
         const classified = await readAndClassify(f);
         if (!classified.ok){
           models.push({ name:f.name, size:f.size, lastModified:f.lastModified, fp, handle:f.handle, status:'error', errorMsg:classified.error, fileType:'other' });
@@ -11288,19 +11500,71 @@ function recordIdentityKey(rec){
    S.records is intentionally capped at 50,000 rows, so using it for duplicate prevention
    can miss an older matching customer. This paginated identity-only query makes duplicate
    protection workspace-wide while keeping the payload much smaller than select('*'). */
-async function fetchWorkspaceIdentityKeys(){
+function dhDuplicateIdentityValues(rec){
+  const out = new Set();
+  if (!rec) return out;
+  const phoneFields = ['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','company_website_number_1','company_website_number_2'];
+  phoneFields.forEach(field=>{
+    dhParsePhoneCell(rec[field]).forEach(p=>{ if (p?.identity) out.add('phone:' + p.identity); });
+  });
+  ['business_email_1','business_email_2','personal_email_1','personal_email_2','linkedin_1','company_website_1'].forEach(field=>{
+    const value = normalizeForMatch(rec[field]);
+    if (value) out.add(field + ':' + value);
+  });
+  return out;
+}
+
+function isTrueDuplicateRecord(incomingRecord, existingRecord){
+  const incomingCompany = normalizeCompanyName(incomingRecord?.company_name);
+  const existingCompany = normalizeCompanyName(existingRecord?.company_name);
+  if (!incomingCompany || !existingCompany || incomingCompany !== existingCompany){
+    return { duplicate:false, reason:'different-or-uncertain-company' };
+  }
+  const incomingSupporting = dhDuplicateIdentityValues(incomingRecord);
+  const existingSupporting = dhDuplicateIdentityValues(existingRecord);
+  for (const value of incomingSupporting){
+    if (existingSupporting.has(value)){
+      return { duplicate:true, reason:'exact normalized company + supporting identity match', matchedIdentity:value };
+    }
+  }
+  return { duplicate:false, reason:'same-company-no-supporting-match' };
+}
+
+function buildFolderDuplicateIndex(records){
+  const byCompany = new Map();
+  const bySupporting = new Map();
+
+  (records || []).forEach(record=>{
+    const company = normalizeCompanyName(record?.company_name);
+    if (company){
+      let list = byCompany.get(company);
+      if (!list){ list=[]; byCompany.set(company,list); }
+      list.push(record);
+    }
+
+    dhDuplicateIdentityValues(record).forEach(identity=>{
+      let list = bySupporting.get(identity);
+      if (!list){ list=[]; bySupporting.set(identity,list); }
+      list.push(record);
+    });
+  });
+
+  return { byCompany, bySupporting };
+}
+
+async function fetchWorkspaceIdentityRecords(){
   const PAGE = 1000;
   const fields = 'company_name,contact_person,personal_email_1,personal_email_2,business_email_1,business_email_2,mobile_phone_1,mobile_phone_2,work_phone_1,work_phone_2,linkedin_1,company_website_1,company_website_number_1,company_website_number_2';
-  const keys = new Set();
+  const records = [];
   let from = 0;
   while (true){
     const { data, error } = await supa.from('records').select(fields).order('id',{ascending:true}).range(from, from + PAGE - 1);
     if (error) throw error;
-    (data || []).forEach(r=> recordIdentityKeys(r).forEach(k=> keys.add(k)));
+    records.push(...(data || []));
     if (!data || data.length < PAGE) break;
     from += PAGE;
   }
-  return keys;
+  return records;
 }
 // Groups whatever is currently cached in S.records by normalized Company Name and keeps only
 // the companies that span 2+ distinct databases. Recomputed on demand (records are cheap to
@@ -11896,9 +12160,12 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
     return { ok:false, error:'No authenticated user found. Please sign in again.' };
   }
   // Both Admins and regular authenticated users may import. The existing RLS
-  // boundary remains authoritative; the importer is automatically the assigned user
-  // unless the existing Admin assignment control explicitly chooses another user.
-  if (!assignUser.id){
+  // Assignment boundary: Folder XLSX Import MUST always create a new database as
+  // Unassigned. Keep the existing manual-import fallback unchanged.
+  if (source === 'folder'){
+    assignUser = { id:null, name:null, email:null };
+    assignedTo = '';
+  } else if (!assignUser?.id){
     assignUser = {
       id:S.session.user.id,
       name:S.profile?.full_name || S.session.user.email,
@@ -11915,11 +12182,13 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
   // A customer is counted ONLY when at least one of the six approved phone
   // fields contains a value. A row with all six phone fields blank is not a
   // customer, even if it has a company/contact name.
-  const mappedValidRows = validRows.map(r => {
-    const out = {};
+  const mappedValidRows = [];
+  for (let i=0; i<validRows.length; i++){
+    const r = validRows[i], out = {};
     Object.entries(mapping).forEach(([idx,key]) => { if (key) out[key] = r[idx]; });
-    return dhNormalizeImportedRecordPhones(out);
-  });
+    mappedValidRows.push(dhNormalizeImportedRecordPhones(out));
+    if (source === 'folder' && i && i % 1500 === 0) await new Promise(resolve=>setTimeout(resolve,0));
+  }
   const customerCount = countCountableCustomers(mappedValidRows);
   const nowIso = new Date().toISOString();
 
@@ -11998,11 +12267,14 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
       const fetched = await fetchAllRecordsForDatabase(existingDbId);
       existingRecordsForDb = fetched.rows || [];
     }
-    const existingKeys = await fetchWorkspaceIdentityKeys();
-    const seenInThisBatch = new Set();
+    const existingIdentityRecords = await fetchWorkspaceIdentityRecords();
+    const existingDuplicateIndex = buildFolderDuplicateIndex(existingIdentityRecords);
+    const seenInThisBatch = [];
+    const seenDuplicateIndex = { byCompany:new Map(), bySupporting:new Map() };
 
     records = [];
-    validRows.forEach(row=>{
+    for (let rowIndex=0; rowIndex<validRows.length; rowIndex++){
+      const row = validRows[rowIndex];
       const rec = {
         database_id: dbRow.id, owner_id: assignUser?.id || S.session.user.id,
         database_name: dbName, assigned_to: assignedTo || null,
@@ -12014,15 +12286,86 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
         rec[field] = String(row[idx] ?? '').trim();
       });
       Object.assign(rec, dhNormalizeImportedRecordPhones(rec));
-      const keys = recordIdentityKeys(rec);
-      const isDuplicate = keys.some(k => existingKeys.has(k) || seenInThisBatch.has(k));
-      if (isDuplicate){
-        duplicatesSkipped++;
-        return; // already exists anywhere in Data Hub, or repeated within this file — skip
+
+      let duplicateMatch = null;
+      const incomingCompany = normalizeCompanyName(rec.company_name);
+
+      // Only records with the SAME normalized company can be candidates for a
+      // duplicate. This avoids O(incoming × entire-workspace) comparisons.
+      const existingCandidates = incomingCompany
+        ? (existingDuplicateIndex.byCompany.get(incomingCompany) || [])
+        : [];
+      for (const existing of existingCandidates){
+        const comparison = isTrueDuplicateRecord(rec, existing);
+        if (comparison.duplicate){
+          duplicateMatch = { existing, comparison, source:'existing' };
+          break;
+        }
       }
-      keys.forEach(k=> seenInThisBatch.add(k));
+
+      if (!duplicateMatch && incomingCompany){
+        const batchCandidates = seenDuplicateIndex.byCompany.get(incomingCompany) || [];
+        for (const previous of batchCandidates){
+          const comparison = isTrueDuplicateRecord(rec, previous);
+          if (comparison.duplicate){
+            duplicateMatch = { existing:previous, comparison, source:'batch' };
+            break;
+          }
+        }
+      }
+
+      if (duplicateMatch){
+        duplicatesSkipped++;
+        console.debug('[DUPLICATE SKIPPED]', {
+          incomingCompany: String(rec.company_name || '').trim(),
+          matchedExistingCompany: String(duplicateMatch.existing?.company_name || '').trim(),
+          reason: duplicateMatch.comparison.reason,
+          matchedIdentity: duplicateMatch.comparison.matchedIdentity || null,
+          source: duplicateMatch.source,
+          rowIndex: rowIndex + 1,
+          file: originalFilename
+        });
+        continue;
+      }
+
+      const incomingSupporting = dhDuplicateIdentityValues(rec);
+      let sharedFieldRecord = null;
+      for (const identity of incomingSupporting){
+        const candidates = existingDuplicateIndex.bySupporting.get(identity) || [];
+        sharedFieldRecord = candidates.find(existing=>{
+          return normalizeCompanyName(existing.company_name) !== incomingCompany;
+        }) || null;
+        if (sharedFieldRecord) break;
+      }
+      if (sharedFieldRecord){
+        console.debug('[UNIQUE IMPORT]', {
+          incomingCompany: String(rec.company_name || '').trim(),
+          sharedIdentityDetected: true,
+          sharedWithCompany: String(sharedFieldRecord.company_name || '').trim(),
+          decision: 'IMPORT — different company identity',
+          rowIndex: rowIndex + 1,
+          file: originalFilename
+        });
+      }
+
+      seenInThisBatch.push(rec);
       records.push(rec);
-    });
+
+      // Add accepted rows to the in-memory batch index so a later row in the
+      // same XLSX is compared only against rows with the same company/supporting
+      // identity, while still allowing shared fields across different companies.
+      if (incomingCompany){
+        let list = seenDuplicateIndex.byCompany.get(incomingCompany);
+        if (!list){ list=[]; seenDuplicateIndex.byCompany.set(incomingCompany,list); }
+        list.push(rec);
+      }
+      incomingSupporting.forEach(identity=>{
+        let list = seenDuplicateIndex.bySupporting.get(identity);
+        if (!list){ list=[]; seenDuplicateIndex.bySupporting.set(identity,list); }
+        list.push(rec);
+      });
+      if (source === 'folder' && rowIndex && rowIndex % 1000 === 0) await new Promise(resolve=>setTimeout(resolve,0));
+    }
 
     const BATCH = 500;
     // A handful of batches in flight at once, rather than one-at-a-time — cuts total wait
@@ -12067,11 +12410,33 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, chunks.length) || 1 }, worker));
 
     if (firstError){
-      console.error('RECORD INSERT ERROR:', firstError, { file: originalFilename, databaseId: dbRow.id, rowsAttempted: records.length });
+      const failedRows = Math.max(0, records.length - completedRecords);
+      const totalRows = validRows.length;
+      const importedRows = completedRecords;
+      const accountedRows = importedRows + duplicatesSkipped + failedRows;
+      console.error('RECORD INSERT ERROR:', firstError, {
+        file: originalFilename,
+        databaseId: dbRow.id,
+        rowsAttempted: records.length,
+        totalRows,
+        importedRows,
+        duplicatesSkipped,
+        failedRows,
+        accountingReconciles: accountedRows === totalRows
+      });
       dbRow.status = 'error'; delete dbRow._importPct;
       upsertLocalDatabase(dbRow); refreshDataHubCardsOnly();
       await failImport(dbRow.id, 'Failed to import rows: ' + firstError.message);
-      return { ok:false, error:'Failed to import rows: ' + firstError.message, dbRow };
+      return {
+        ok:false,
+        error:'Failed to import rows: ' + firstError.message,
+        dbRow,
+        totalRows,
+        validRows: validRows.length,
+        importedRows,
+        duplicatesSkipped,
+        failedRows
+      };
     }
   } catch(err){
     console.error('IMPORT PIPELINE ERROR:', err, { file: originalFilename, databaseId: dbRow.id });
@@ -12138,7 +12503,48 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
     renderDashboard(); renderAllDataFilters(); refreshAllDataView(); renderCalendar(); renderAnalyticsFilters(); renderAnalyticsPage(); renderSettings();
   }
 
-  return { ok:true, dbRow, count: records.length, customerCount: finalCustomerCount, duplicatesSkipped, insertedCount: records.length, totalRecords: finalRowCount };
+  const totalRows = validRows.length;
+  const importedRows = records.length;
+  const failedRows = 0;
+  const accountedRows = importedRows + duplicatesSkipped + failedRows;
+  if (accountedRows !== totalRows){
+    console.error('[IMPORT ACCOUNTING ERROR]', {
+      file: originalFilename,
+      totalRows,
+      importedRows,
+      duplicatesSkipped,
+      failedRows,
+      accountedRows
+    });
+    dbRow.status = 'error';
+    upsertLocalDatabase(dbRow);
+    refreshDataHubCardsOnly();
+    await failImport(dbRow.id, 'Import accounting mismatch: rows could not be fully reconciled.');
+    return {
+      ok:false,
+      error:'Import accounting mismatch: rows could not be fully reconciled.',
+      dbRow,
+      totalRows,
+      validRows: validRows.length,
+      importedRows,
+      duplicatesSkipped,
+      failedRows
+    };
+  }
+
+  return {
+    ok:true,
+    dbRow,
+    count: importedRows,
+    customerCount: finalCustomerCount,
+    duplicatesSkipped,
+    insertedCount: importedRows,
+    totalRecords: finalRowCount,
+    totalRows,
+    validRows: validRows.length,
+    importedRows,
+    failedRows
+  };
 }
 
 async function runImport(dbName, assignedTo, assignUser, existingDbId){
@@ -24795,6 +25201,442 @@ const SwiftToolkit = (() => {
   return { init, classifyJOCShippers, resolveSwiftCustomer };
 })();
 SwiftToolkit.init();
+
+/* ==========================================================================
+   TOOLKITS — COMPANY NAME EXACT LOOKUP & REMOVAL
+   Additive module. It only READS the existing `records` / `databases` tables
+   through the app's authenticated `supa` client and deletes exact-match rows
+   through the same `supa.from('records').delete()` path the Data Hub already
+   uses (RLS + Admin-only rule preserved). No new tables, no schema changes.
+
+   MATCH RULE (deterministic, no fuzzy logic of any kind):
+     trim(uploaded) === trim(records.company_name)
+   Case, spelling, punctuation, abbreviations and inner spacing are NOT altered.
+   (normalizeCompanyName() is deliberately NOT used: it strips "Ltd/Limited/Pvt"
+   and punctuation, which would make "ABC LIMITED" match "ABC LTD".)
+   ========================================================================== */
+const CompanyExactRemovalToolkit = (() => {
+  const CASE_SENSITIVE = true;   // exact means exact; flip only if the business rule changes
+  const PAGE = 1000, CONCURRENCY = 4, DELETE_BATCH = 200, PREVIEW_ROWS = 200;
+  const ONE_COLUMN_ERROR = 'Please upload an Excel file containing only one column.';
+
+  const byId = id => document.getElementById(id);
+  const tick = () => new Promise(r => setTimeout(r, 0));
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  const clean = v => String(v ?? '').trim();
+  const keyOf = v => CASE_SENSITIVE ? clean(v) : clean(v).toLowerCase();
+  const fmt = n => Number(n || 0).toLocaleString();
+  const isAdminUser = () => typeof S !== 'undefined' && !!S.isAdmin;
+  const escH = s => (typeof esc === 'function') ? esc(s) : String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const notify = (msg, type) => { if (typeof toast === 'function') toast(msg, type || ''); };
+
+  const st = { busy:false, upload:null, lookup:null, summary:null, blob:null, filename:'' };
+
+  // ── progress steps ──────────────────────────────────────────────────────
+  const STEP_KEYS = ['read','check','found','remove','generate','done'];
+  const STEP_DEFAULT = {
+    read:'Reading Excel...', check:'Checking Data Hub databases...', found:'Exact matches found: 0',
+    remove:'Removing matched records...', generate:'Generating result file...', done:'Completed'
+  };
+  let stepState = {}, stepLabel = {};
+  function resetSteps(){ stepState = {}; stepLabel = { ...STEP_DEFAULT }; paintSteps(); }
+  function setStep(k, state, label){
+    stepState[k] = state; if (label) stepLabel[k] = label; paintSteps();
+  }
+  function paintSteps(){
+    const ul = byId('cx-steps'); if (!ul) return;
+    ul.innerHTML = STEP_KEYS.map(k => {
+      const s = stepState[k] || 'pending';
+      return `<li class="cx-step ${s}"><span class="cx-step-dot">${s === 'done' ? '✓' : ''}</span><span>${escH(stepLabel[k])}</span></li>`;
+    }).join('');
+  }
+  function setProgress(pct, text){
+    const f = byId('cx-progressFill'); if (f) f.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    const t = byId('cx-progressText'); if (t && text !== undefined) t.textContent = text;
+  }
+  const show = (id, on) => { const el = byId(id); if (el) el.classList.toggle('hidden', !on); };
+
+  // ── errors ──────────────────────────────────────────────────────────────
+  function showError(msg){ const e = byId('cx-error'); if (e){ e.textContent = msg; e.classList.remove('hidden'); } }
+  function clearError(){ const e = byId('cx-error'); if (e){ e.textContent = ''; e.classList.add('hidden'); } }
+
+  // ── reset ───────────────────────────────────────────────────────────────
+  function resetAll(){
+    st.upload = st.lookup = st.summary = st.blob = null; st.filename = '';
+    clearError();
+    show('cx-progress-card', false); show('cx-preview-card', false); show('cx-results', false);
+    const inp = byId('cx-file'); if (inp) inp.value = '';
+    const z = byId('cx-zone'); if (z) z.classList.remove('loaded');
+    const n = byId('cx-fileName'); if (n) n.textContent = '';
+    const m = byId('cx-fileMeta'); if (m) m.textContent = '';
+    setProgress(0, ''); resetSteps();
+  }
+
+  // ── 1. READ + VALIDATE the workbook (never modifies the file) ────────────
+  async function parseWorkbook(file){
+    const buf = await file.arrayBuffer(); await tick();
+    const wb = XLSX.read(buf, { type:'array' });
+    if (!wb.SheetNames.length) throw new Error('The workbook contains no sheets.');
+    const sheetName = wb.SheetNames[0];
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header:1, defval:'', blankrows:false, raw:true });
+    await tick();
+
+    // Columns that actually hold data (fully blank columns/rows are ignored).
+    const used = new Set();
+    for (const r of rows) for (let c = 0; c < r.length; c++) if (clean(r[c]) !== '') used.add(c);
+    if (used.size === 0) throw new Error('The uploaded file is empty — no company names were found.');
+    if (used.size > 1) throw new Error(ONE_COLUMN_ERROR);
+
+    const col = [...used][0];
+    const header = clean(rows[0][col]);                       // any header name is accepted
+    const names = rows.slice(1).map(r => clean(r[col])).filter(Boolean);
+    if (!names.length) throw new Error('The file has a header but no company names below it.');
+
+    // Duplicate uploaded names → each unique name is processed once.
+    const seen = new Map();
+    names.forEach(n => { const k = keyOf(n); if (!seen.has(k)) seen.set(k, n); });
+    const unique = [...seen.values()];
+    return { sheetName, header, totalRows:names.length, unique, duplicateRows:names.length - unique.length };
+  }
+
+  // ── 2. EXACT LOOKUP across every Data Hub database the user can read ─────
+  async function fetchDatabases(){
+    const map = new Map(); let from = 0;
+    while (true){
+      const { data, error } = await supa.from('databases').select('id,name').order('id',{ascending:true}).range(from, from + PAGE - 1);
+      if (error) throw error;
+      (data || []).forEach(d => map.set(String(d.id), clean(d.name)));
+      if (!data || data.length < PAGE) break;
+      from += PAGE;
+    }
+    return map;
+  }
+  async function fetchPage(from){
+    let lastErr;
+    for (let attempt = 0; attempt < 3; attempt++){
+      const { data, error } = await supa.from('records')
+        .select('id,company_name,database_id,database_name')
+        .order('id',{ascending:true}).range(from, from + PAGE - 1);
+      if (!error) return data || [];
+      lastErr = error; await delay(400 * (attempt + 1));
+    }
+    throw lastErr;
+  }
+
+  async function runLookup(unique){
+    const dbMap = await fetchDatabases();
+    const wanted = new Set(unique.map(keyOf));
+    const hits = new Map();            // key → [record, …]
+    let scanned = 0;
+    const onRows = rows => {
+      for (const r of rows){
+        const k = keyOf(r.company_name);
+        if (k && wanted.has(k)){
+          if (!hits.has(k)) hits.set(k, []);
+          hits.get(k).push(r);
+        }
+      }
+      scanned += rows.length;
+    };
+    const paint = total => {
+      setStep('found', 'active', `Exact matches found: ${fmt(hits.size)}`);
+      setProgress(total ? Math.min(99, (scanned / total) * 100) : 50,
+        `Scanned ${fmt(scanned)}${total ? ' of ' + fmt(total) : ''} Data Hub records across ${fmt(dbMap.size)} database(s)`);
+    };
+
+    let total = null;
+    try {
+      const { count, error } = await supa.from('records').select('id',{count:'exact',head:true});
+      if (!error && typeof count === 'number') total = count;
+    } catch (_) {}
+
+    const starts = [];
+    if (total) for (let s = 0; s < total; s += PAGE) starts.push(s);
+    let next = 0, aborted = false;
+    const worker = async () => {
+      while (!aborted){
+        const i = next++; if (i >= starts.length) return;
+        try { onRows(await fetchPage(starts[i])); }
+        catch (e){ aborted = true; throw e; }
+        paint(total); await tick();
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, starts.length) }, worker));
+    // Sequential tail: also covers rows added mid-scan (and the no-count case).
+    let from = starts.length * PAGE;
+    while (true){
+      const rows = await fetchPage(from); onRows(rows); paint(total); await tick();
+      if (rows.length < PAGE) break;
+      from += PAGE;
+    }
+    if (total && scanned < total)
+      throw new Error(`Data Hub scan was incomplete (${fmt(scanned)} of ${fmt(total)} records read). Nothing was changed — please try again.`);
+
+    // Build result rows in uploaded order.
+    const matchedRows = [], notFound = [];
+    unique.forEach(name => {
+      const recs = hits.get(keyOf(name));
+      if (!recs || !recs.length){ notFound.push(name); return; }
+      recs.map(r => ({
+        uploaded: name,
+        matchedName: r.company_name,
+        dbName: dbMap.get(String(r.database_id)) || clean(r.database_name) || 'Database name unavailable',
+        recordId: r.id,
+        status: 'Pending'
+      })).sort((a, b) => a.dbName.localeCompare(b.dbName) || String(a.recordId).localeCompare(String(b.recordId), undefined, { numeric:true }))
+        .forEach(x => matchedRows.push(x));
+    });
+    return { matchedRows, notFound, exactMatches:hits.size, databasesChecked:dbMap.size, scanned };
+  }
+
+  // ── stat helpers / rendering ─────────────────────────────────────────────
+  const statCard = (label, value) => `<div class="joc-stat-card"><div class="joc-stat-value">${escH(value)}</div><div class="joc-stat-label">${escH(label)}</div></div>`;
+
+  function renderPreview(){
+    const { upload, lookup } = st;
+    byId('cx-preview-stats').innerHTML = [
+      statCard('Total Uploaded', fmt(upload.totalRows)),
+      statCard('Unique Names', fmt(upload.unique.length)),
+      statCard('Exact Matches', fmt(lookup.exactMatches)),
+      statCard('Records To Remove', fmt(lookup.matchedRows.length)),
+      statCard('Not Found', fmt(lookup.notFound.length)),
+      statCard('Databases Checked', fmt(lookup.databasesChecked))
+    ].join('');
+
+    const warn = [];
+    if (upload.duplicateRows) warn.push(`${fmt(upload.duplicateRows)} repeated name row(s) in the file were processed once.`);
+    if (!isAdminUser()) warn.push('Only Admins can delete Data Hub records (same rule as the Data Hub). You can review the matches, but removal is disabled for your account.');
+    byId('cx-preview-warn').innerHTML = warn.length ? `<div class="cx-warn">${warn.map(escH).join('<br>')}</div>` : '';
+
+    const shown = lookup.matchedRows.slice(0, PREVIEW_ROWS);
+    byId('cx-preview-table').innerHTML = `
+      <div class="cx-table-wrap"><table class="cx-table">
+        <thead><tr><th>Uploaded Company Name</th><th>Matched Company Name</th><th>Database Name</th><th>Record ID</th></tr></thead>
+        <tbody>${shown.map(m => `<tr><td>${escH(m.uploaded)}</td><td>${escH(m.matchedName)}</td><td>${escH(m.dbName)}</td><td>${escH(m.recordId)}</td></tr>`).join('')}</tbody>
+      </table></div>
+      ${lookup.matchedRows.length > shown.length ? `<div class="cx-note">Showing the first ${fmt(shown.length)} of ${fmt(lookup.matchedRows.length)} matches. The full list is in the result file.</div>` : ''}`;
+
+    const rm = byId('cx-removeBtn'); rm.disabled = !isAdminUser();
+    show('cx-preview-card', true);
+  }
+
+  function renderResults(summary){
+    const removedNote = summary.recordsNotRemoved
+      ? `<div class="cx-warn">${fmt(summary.recordsNotRemoved)} matched record(s) could NOT be removed (blocked by permissions or a database error). They are marked in the Status column of the result file.</div>` : '';
+    byId('cx-resultsTitle').textContent = 'Completed';
+    byId('cx-resultsSub').textContent = `Processed ${summary.processedAt}. Result workbook contains the Matched, Not Matched and Summary sheets.`;
+    byId('cx-result-stats').innerHTML = [
+      statCard('Total Uploaded', fmt(summary.totalUploaded)),
+      statCard('Exact Matches', fmt(summary.exactMatches)),
+      statCard('Records Removed', fmt(summary.recordsRemoved)),
+      statCard('Not Found', fmt(summary.notFound)),
+      statCard('Databases Checked', fmt(summary.databasesChecked)),
+      statCard('Unique Names', fmt(summary.uniqueNames))
+    ].join('');
+    byId('cx-result-warn').innerHTML = removedNote;
+    show('cx-preview-card', false); show('cx-results', true);
+  }
+
+  // ── 3. RESULT WORKBOOK ───────────────────────────────────────────────────
+  function buildWorkbook(summary){
+    const { matchedRows, notFound } = st.lookup;
+    const wb = XLSX.utils.book_new();
+
+    const matched = [['Uploaded Company Name','Matched Company Name','Database Name','Record ID','Status'],
+      ...matchedRows.map(m => [m.uploaded, m.matchedName, m.dbName, m.recordId, m.status])];
+    const wsM = XLSX.utils.aoa_to_sheet(matched);
+    wsM['!cols'] = [{wch:38},{wch:38},{wch:28},{wch:38},{wch:26}];
+    XLSX.utils.book_append_sheet(wb, wsM, 'Matched');
+
+    const nm = [['Uploaded Company Name','Status'], ...notFound.map(n => [n, 'Not Found'])];
+    const wsN = XLSX.utils.aoa_to_sheet(nm);
+    wsN['!cols'] = [{wch:44},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, wsN, 'Not Matched');
+
+    const rowsS = [['Metric','Value'],
+      ['Total Uploaded', summary.totalUploaded],
+      ['Unique Company Names Processed', summary.uniqueNames],
+      ['Repeated Name Rows Skipped', summary.duplicateRows],
+      ['Exact Matches', summary.exactMatches],
+      ['Records Removed', summary.recordsRemoved],
+      ['Matched Records Not Removed', summary.recordsNotRemoved],
+      ['Not Found', summary.notFound],
+      ['Databases Checked', summary.databasesChecked],
+      ['Matching Rule', 'Exact match after trimming surrounding spaces' + (CASE_SENSITIVE ? ' (case-sensitive)' : '')],
+      ['Processing Date/Time', summary.processedAt]];
+    const wsS = XLSX.utils.aoa_to_sheet(rowsS);
+    wsS['!cols'] = [{wch:36},{wch:52}];
+    XLSX.utils.book_append_sheet(wb, wsS, 'Summary');
+
+    const out = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+    return new Blob([out], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+  function downloadResult(){
+    if (!st.blob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(st.blob); a.download = st.filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+  function stamp(){
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  }
+
+  // Generates the workbook, shows results, refreshes existing Data Hub views.
+  async function finalize(recordsRemoved, recordsNotRemoved){
+    setStep('generate', 'active'); setProgress(96, 'Generating result file…'); await tick();
+    const { upload, lookup } = st;
+    const summary = {
+      totalUploaded: upload.totalRows, uniqueNames: upload.unique.length, duplicateRows: upload.duplicateRows,
+      exactMatches: lookup.exactMatches, recordsRemoved, recordsNotRemoved,
+      notFound: lookup.notFound.length, databasesChecked: lookup.databasesChecked,
+      processedAt: new Date().toLocaleString()
+    };
+    st.summary = summary;
+    st.blob = buildWorkbook(summary);
+    st.filename = `Company_Exact_Lookup_Removal_${stamp()}.xlsx`;
+    setStep('generate', 'done'); setStep('done', 'done'); setProgress(100, 'Completed');
+    renderResults(summary);
+  }
+
+  // ── 4. REMOVE exact matches (existing delete path; RLS is respected) ─────
+  async function removeMatched(){
+    if (st.busy || !st.lookup) return;
+    if (!isAdminUser()){ notify('Only Admins can delete records.', 'error'); return; }
+    st.busy = true; closeModal();
+    show('cx-preview-card', false);
+    try {
+      const { matchedRows } = st.lookup;
+      const ids = [...new Set(matchedRows.map(m => m.recordId))];
+      setStep('remove', 'active'); setProgress(0, `Removing 0 of ${fmt(ids.length)} records…`);
+      const removed = new Set(), failed = new Map();
+      for (let i = 0; i < ids.length; i += DELETE_BATCH){
+        const batch = ids.slice(i, i + DELETE_BATCH);
+        try {
+          // .select('id') returns only the rows actually deleted, so a delete that RLS
+          // silently blocks is reported honestly instead of being counted as removed.
+          const { data, error } = await supa.from('records').delete().in('id', batch).select('id');
+          if (error) throw error;
+          (data || []).forEach(d => removed.add(String(d.id)));
+        } catch (e){
+          batch.forEach(id => failed.set(String(id), (e && e.message) || 'Database error'));
+        }
+        setProgress(Math.min(94, ((i + batch.length) / ids.length) * 94), `Removing ${fmt(Math.min(i + DELETE_BATCH, ids.length))} of ${fmt(ids.length)} records…`);
+        await tick();
+      }
+      let notRemoved = 0;
+      matchedRows.forEach(m => {
+        const id = String(m.recordId);
+        if (removed.has(id)) m.status = 'Removed';
+        else { notRemoved++; m.status = failed.has(id) ? `Not Removed – ${failed.get(id)}` : 'Not Removed – blocked by permissions'; }
+      });
+      setStep('remove', 'done');
+
+      // Refresh the app's existing views exactly as the Data Hub's own delete flows do.
+      try {
+        if (typeof loadRecords === 'function') await loadRecords();
+        if (typeof refreshAllDataView === 'function') refreshAllDataView();
+        if (typeof renderDatabaseList === 'function') renderDatabaseList();
+        if (typeof renderDashboard === 'function') renderDashboard();
+      } catch (e){ console.warn('[CX toolkit] view refresh failed', e); }
+
+      await finalize(removed.size, notRemoved);
+      if (typeof logAudit === 'function') logAudit('company_exact_lookup_removal', {
+        uploaded: st.upload.totalRows, unique: st.upload.unique.length, exact_matches: st.lookup.exactMatches,
+        records_removed: removed.size, records_not_removed: notRemoved, not_found: st.lookup.notFound.length
+      });
+      notify(`${fmt(removed.size)} record(s) removed.`, notRemoved ? '' : 'success');
+    } catch (e){
+      console.error('[CX toolkit] removal failed', e);
+      notify('Removal failed: ' + ((e && e.message) || e), 'error');
+      show('cx-preview-card', true);
+    } finally { st.busy = false; }
+  }
+
+  // ── modal ────────────────────────────────────────────────────────────────
+  function openModal(){
+    if (!st.lookup || !st.lookup.matchedRows.length) return;
+    if (!isAdminUser()){ notify('Only Admins can delete records.', 'error'); return; }
+    byId('cx-confirm-uploaded').textContent = fmt(st.upload.unique.length);
+    byId('cx-confirm-matches').textContent  = fmt(st.lookup.exactMatches);
+    byId('cx-confirm-records').textContent  = fmt(new Set(st.lookup.matchedRows.map(m => m.recordId)).size);
+    byId('cx-confirm-overlay').classList.remove('hidden');
+  }
+  function closeModal(){ byId('cx-confirm-overlay').classList.add('hidden'); }
+
+  // ── file handling (whole pipeline up to the confirmation step) ───────────
+  async function handleFile(file){
+    if (st.busy) return;
+    resetAll();
+    const zone = byId('cx-zone');
+    if (!/\.xlsx$/i.test(file.name)){ showError('Only .xlsx files are supported.'); return; }
+    byId('cx-fileName').textContent = file.name; zone.classList.add('loaded');
+    st.busy = true;
+    show('cx-progress-card', true); resetSteps();
+    try {
+      setStep('read', 'active'); setProgress(5, 'Reading Excel…'); await tick();
+      st.upload = await parseWorkbook(file);
+      setStep('read', 'done');
+      byId('cx-fileMeta').textContent =
+        `Column “${st.upload.header || '(no header)'}” · sheet “${st.upload.sheetName}” · ${fmt(st.upload.totalRows)} company name(s)` +
+        (st.upload.duplicateRows ? ` (${fmt(st.upload.duplicateRows)} repeated, will be processed once)` : '');
+
+      setStep('check', 'active'); setProgress(8, 'Checking Data Hub databases…'); await tick();
+      st.lookup = await runLookup(st.upload.unique);
+      setStep('check', 'done');
+      setStep('found', 'done', `Exact matches found: ${fmt(st.lookup.exactMatches)}`);
+      setProgress(100, `Lookup finished — ${fmt(st.lookup.scanned)} records checked`);
+
+      if (!st.lookup.matchedRows.length){
+        setStep('remove', 'skipped', 'Removing matched records… (nothing to remove)');
+        await finalize(0, 0);
+        notify('No exact matches found. Nothing was removed.', '');
+      } else {
+        renderPreview();
+        notify(`${fmt(st.lookup.exactMatches)} exact match(es) found. Review, then confirm removal.`, 'success');
+      }
+    } catch (e){
+      console.error('[CX toolkit]', e);
+      show('cx-progress-card', false);
+      const msg = (e && e.message) || String(e);
+      showError(msg);
+      if (msg === ONE_COLUMN_ERROR) notify(msg, 'error');
+      byId('cx-zone').classList.remove('loaded'); byId('cx-fileName').textContent = '';
+      byId('cx-file').value = '';
+    } finally { st.busy = false; }
+  }
+
+  // ── view switching + init ────────────────────────────────────────────────
+  function openLanding(){ byId('toolkits-landing').classList.remove('hidden'); byId('toolkits-cx').classList.add('hidden'); }
+  function openView(){ byId('toolkits-landing').classList.add('hidden'); byId('toolkits-cx').classList.remove('hidden'); }
+
+  let initialized = false;
+  function init(){
+    if (initialized) return; initialized = true;
+    const card = byId('toolkit-card-cx'); if (card) card.addEventListener('click', openView);
+    const back = byId('cx-back-btn'); if (back) back.addEventListener('click', openLanding);
+
+    const zone = byId('cx-zone'), input = byId('cx-file');
+    if (zone && input){
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+      zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
+      input.addEventListener('change', () => { if (input.files[0]) handleFile(input.files[0]); });
+    }
+    byId('cx-removeBtn').addEventListener('click', openModal);
+    byId('cx-cancelBtn').addEventListener('click', () => { if (!st.busy) resetAll(); });
+    byId('cx-againBtn').addEventListener('click', () => { if (!st.busy) resetAll(); });
+    byId('cx-downloadBtn').addEventListener('click', downloadResult);
+    byId('cx-confirm-cancel').addEventListener('click', closeModal);
+    byId('cx-confirm-ok').addEventListener('click', removeMatched);
+    // Clicking the backdrop or pressing Esc only ever CANCELS — it can never confirm a deletion.
+    byId('cx-confirm-overlay').addEventListener('click', e => { if (e.target.id === 'cx-confirm-overlay') closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !byId('cx-confirm-overlay').classList.contains('hidden')) closeModal(); });
+    resetSteps();
+  }
+  return { init };
+})();
+CompanyExactRemovalToolkit.init();
 JocDataLocation.init();
 JocLocalFolder.init();
 
