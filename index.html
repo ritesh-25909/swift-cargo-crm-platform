@@ -11541,102 +11541,57 @@ async function loadAuditLogs(){
 // ============================================================================
 
 async function loadUpdates(){
-
-    const { data, error } = await supa
-        .from('updates')
-        .select('*')
-        .order('assigned_date', { ascending:false });
-
-    let updates = error ? [] : (data || []);
-
-    // ===========================================
-    // REPLACE ONLY THIS ENTIRE BLOCK
-    // ===========================================
-
-    if (updates.length) {
-
-       const userIds = [
-    ...new Set(
-        updates
-            .map(u => u.owner_id)
-            .filter(Boolean)
-    )
-];
-        let profilesById = {};
-
-        if (userIds.length) {
-
-            const { data: profs, error: profErr } = await supa
-                .from("profiles")
-                .select("id,full_name,email,role,avatar_url")
-                .in("id", userIds);
-
-            if (profErr) {
-                console.error(profErr);
-            }
-
-            (profs || []).forEach(profile=>{
-                profilesById[profile.id]=profile;
-            });
-        }
-
-        updates = updates.map(update=>{
-
-            const userId = update.owner_id;
-
-            let profile =
-                profilesById[userId] ||
-                S.profiles.find(p=>p.id===userId);
-
-            if(!profile){
-
-                profile={
-
-                    id:userId,
-
-                    full_name:
-                        update.assigned_user_name ||
-                        "Unknown User",
-
-                    username:
-                        update.assigned_user_name ||
-                        "",
-
-                    email:
-                        update.assigned_user_email ||
-                        "",
-
-                    role:"user",
-
-                    avatar_url:null
-                };
-
-            }
-
-            return{
-
-                ...update,
-
-                _profile:profile,
-
-                assigned_user_name:
-                    profile.full_name,
-
-                assigned_user_email:
-                    profile.email,
-
-                assigned_user_role:
-                    profile.role
-
-            };
-
-        });
-
+  const { data, error } = await supa.from('updates').select('*').order('assigned_date',{ascending:false});
+  if(error){
+    console.error('[UPDATES LOAD FAILED]',error);
+    S.updatesLoadError=error; S.updates=[]; return;
+  }
+  S.updatesLoadError=null;
+  let updates=data||[];
+  // Repair missing cards from existing assignments using the existing updates table.
+  const visibleDbs=(S.databases||[]).filter(db=>db.assigned_user_id &&
+    (S.isAdmin || String(db.assigned_user_id)===String(S.session?.user?.id)));
+  for(const db of visibleDbs){
+    let row=updates.find(u=>String(u.assignment_id||'')===String(db.id));
+    if(!row){
+      const payload={assignment_id:db.id,owner_id:db.assigned_user_id,database_name:db.name,
+        total_customers:Number(db.customer_count||0),customers_contacted:0,appointments:0,remarks:null,
+        assigned_date:db.assigned_at||new Date().toISOString(),updated_at:new Date().toISOString()};
+      const ins=await supa.from('updates').insert(payload).select('*').maybeSingle();
+      if(!ins.error&&ins.data){row=ins.data;updates.push(row);}
+      else console.warn('[UPDATES CARD REPAIR BLOCKED BY RLS/PERMISSIONS]',ins.error);
+    }else{
+      const patch={};
+      if(String(row.owner_id||'')!==String(db.assigned_user_id))patch.owner_id=db.assigned_user_id;
+      if(String(row.database_name||'')!==String(db.name||''))patch.database_name=db.name;
+      if(Number(row.total_customers||0)!==Number(db.customer_count||0))patch.total_customers=Number(db.customer_count||0);
+      if(Object.keys(patch).length&&S.isAdmin){
+        const upd=await supa.from('updates').update({...patch,updated_at:new Date().toISOString()}).eq('id',row.id).select('*').maybeSingle();
+        if(!upd.error&&upd.data)Object.assign(row,upd.data);
+        else console.warn('[UPDATES ASSIGNMENT RECONCILIATION FAILED]',upd.error);
+      }else Object.assign(row,patch);
     }
-
-    S.updates = updates;
-
-} // ← THIS closing brace MUST exist
+  }
+  const userIds=[...new Set([...updates.map(u=>u.owner_id),...visibleDbs.map(d=>d.assigned_user_id)].filter(Boolean))];
+  const profilesById={};
+  if(userIds.length){
+    const {data:profs,error:profErr}=await supa.from('profiles').select('id,full_name,username,email,role,avatar_url').in('id',userIds);
+    if(profErr)console.warn('[UPDATES PROFILES LOAD FAILED]',profErr);
+    (profs||[]).forEach(p=>profilesById[String(p.id)]=p);
+  }
+  updates=updates.map(u=>{
+    const db=(S.databases||[]).find(d=>String(d.id)===String(u.assignment_id));
+    const ownerId=db?.assigned_user_id||u.owner_id;
+    const profile=profilesById[String(ownerId)]||S.profiles.find(p=>String(p.id)===String(ownerId))||{
+      id:ownerId,full_name:db?.assigned_user_name||u.assigned_user_name||'Assigned User',
+      username:'',email:db?.assigned_user_email||u.assigned_user_email||'',role:'user',avatar_url:null};
+    return {...u,owner_id:ownerId,database_name:db?.name||u.database_name,
+      total_customers:Number(db?.customer_count??u.total_customers??0),_profile:profile,
+      assigned_user_name:profile.full_name||profile.username||'Assigned User',
+      assigned_user_email:profile.email||'',assigned_user_role:profile.role||'user'};
+  });
+  S.updates=updates;
+}
 
 /* ---------- Reminders ---------- */
 
@@ -12130,7 +12085,7 @@ function animateKpiNumbers(container){
 function renderUpdatesStatsPanel(){
   const grid = $('#upd-stats-grid');
   if (!grid) return;
-  const rows = S.isAdmin ? S.updates : S.updates.filter(u=>u.owner_id===S.session.user.id);
+  const rows = S.isAdmin ? S.updates : S.updates.filter(u=>{ const db=(S.databases||[]).find(d=>String(d.id)===String(u.assignment_id)); return String(db?.assigned_user_id||u.owner_id||'')===String(S.session?.user?.id||''); });
   const totalUpdates = rows.length;
   const totalAssigned = rows.reduce((s,u)=> s + Number(u.total_customers||0), 0);
   // Each update row stores the overall total for that assignment. Use one
@@ -13129,26 +13084,32 @@ function syncFeedbackLabels(){ S.records.forEach(r=> { r.feedback_label = feedba
 /* Feedback is the authoritative contacted signal for Updates. The count is scoped to
    one database and cached only for the current browser session; Supabase remains truth. */
 async function calculateDatabaseFeedbackContacted(databaseId, force=false){
-  const id=String(databaseId||'').trim();
-  if(!id)return 0;
-  const cachedRows=S.dbHub.recordCache.get(id);
-  const cacheMeta=S.dbHub.recordCacheMeta.get(id);
-  if(!force && cacheMeta?.complete && Array.isArray(cachedRows)){
-    return cachedRows.filter(r=>String(r.feedback||'').trim()!=='').length;
+  const id=String(databaseId||'').trim(); if(!id)return 0;
+  const phoneFields=['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','company_website_number_1','company_website_number_2'];
+  const cachedRows=S.dbHub?.recordCache?.get(id), cacheMeta=S.dbHub?.recordCacheMeta?.get(id);
+  const hasPhone=r=>phoneFields.some(k=>String(r?.[k]??'').trim()!=='');
+  if(!force&&cacheMeta?.complete&&Array.isArray(cachedRows))
+    return new Set(cachedRows.filter(r=>String(r.feedback||'').trim()!==''&&hasPhone(r)).map(r=>String(r.id))).size;
+  if(!force&&S._feedbackContactedCache?.has(id))return S._feedbackContactedCache.get(id);
+  let offset=0;const pageSize=1000;const contactedIds=new Set();
+  while(true){
+    const {data,error}=await supa.from('records')
+      .select('id,feedback,mobile_phone_1,mobile_phone_2,work_phone_1,work_phone_2,company_website_number_1,company_website_number_2')
+      .eq('database_id',databaseId).range(offset,offset+pageSize-1);
+    if(error){
+      console.warn('[FEEDBACK CONTACTED COUNT FAILED]',error);
+      // Do not silently show a stale/zero count as if it were authoritative.
+      throw error;
+    }
+    const rows=data||[];
+    for(const r of rows){
+      if(String(r.feedback||'').trim()!==''&&hasPhone(r)&&r.id!=null)contactedIds.add(String(r.id));
+    }
+    if(rows.length<pageSize)break;
+    offset+=pageSize;
   }
-  if(!force && S._feedbackContactedCache?.has(id)) return S._feedbackContactedCache.get(id);
-  const {count,error}=await supa.from('records')
-    .select('id',{count:'exact',head:true})
-    .eq('database_id',databaseId)
-    .not('feedback','is',null)
-    .neq('feedback','');
-  if(error){
-    console.warn('[FEEDBACK CONTACTED COUNT FAILED]',error);
-    return Number(S._feedbackContactedCache?.get(id)||0);
-  }
-  S._feedbackContactedCache ||= new Map();
-  S._feedbackContactedCache.set(id,Number(count||0));
-  return Number(count||0);
+  const count=contactedIds.size;
+  S._feedbackContactedCache ||= new Map();S._feedbackContactedCache.set(id,count);return count;
 }
 async function syncDatabaseContactedToUpdate(databaseId, opts={}){
   const dbId=String(databaseId||'').trim();
@@ -17841,22 +17802,55 @@ function filteredUpdateRows(){
   const f = S_updFilters;
   if (f.from) rows = rows.filter(u=> new Date(u.assigned_date) >= new Date(f.from));
   if (f.to) rows = rows.filter(u=> new Date(u.assigned_date) <= new Date(f.to+'T23:59:59'));
-  if (f.user) rows = rows.filter(u=> (S.records.find(r=>r.database_name===u.database_name)?.assigned_to || '') === f.user || u.assigned_to===f.user);
+  if (f.user) rows = rows.filter(u=>{
+    const db=(S.databases||[]).find(d=>String(d.id)===String(u.assignment_id));
+    const profile=u._profile||S.profiles.find(pr=>String(pr.id)===String(db?.assigned_user_id||u.owner_id))||{};
+    const candidates=[
+      db?.assigned_user_name, db?.assigned_to, db?.assigned_user_id,
+      u.assigned_user_name, u.assigned_to, u.owner_id,
+      profile.full_name, profile.username, profile.email
+    ].filter(Boolean).map(v=>String(v).trim().toLowerCase());
+    return candidates.includes(String(f.user).trim().toLowerCase());
+  });
   if (f.quarter) rows = rows.filter(u=> updQuarterOf(u.assigned_date)===f.quarter);
   if (f.status) rows = rows.filter(u=> updProgressStatus(updContactRate(u)).key===f.status);
-  if (f.db) rows = rows.filter(u=> u.database_name===f.db);
+  if (f.db) rows = rows.filter(u=> String(u.database_name||'')===String(f.db));
   return rows;
 }
 function populateUpdateFilterOptions(){
   const rows = myUpdates();
   const dbSel = $('#upd-filter-db'), userSel = $('#upd-filter-user');
   if (dbSel){
+    const previous=S_updFilters.db;
     const dbs = [...new Set(rows.map(u=>u.database_name).filter(Boolean))].sort();
-    dbSel.innerHTML = `<option value="">All Databases</option>` + dbs.map(d=>`<option value="${esc(d)}" ${S_updFilters.db===d?'selected':''}>${esc(d)}</option>`).join('');
+    dbSel.innerHTML = `<option value="">All Databases</option>` + dbs.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+    dbSel.value=dbs.includes(previous)?previous:'';
+    if(!dbs.includes(previous)) S_updFilters.db='';
   }
   if (userSel){
-    const users = [...new Set(S.databases.map(d=>d.assigned_user_name || d.assigned_to).filter(Boolean))].sort();
-    userSel.innerHTML = `<option value="">All assigned users</option>` + users.map(u=>`<option value="${esc(u)}" ${S_updFilters.user===u?'selected':''}>${esc(u)}</option>`).join('');
+    // Build choices from the actual update-card owners first, then include assigned
+    // databases. Never retain a stale/default name (e.g. Ananya) when Admin logs in.
+    const choices=new Map();
+    rows.forEach(u=>{
+      const db=(S.databases||[]).find(d=>String(d.id)===String(u.assignment_id));
+      const p=u._profile||S.profiles.find(pr=>String(pr.id)===String(db?.assigned_user_id||u.owner_id))||{};
+      const name=String(p.full_name||db?.assigned_user_name||u.assigned_user_name||p.username||db?.assigned_to||'').trim();
+      const id=String(db?.assigned_user_id||u.owner_id||'').trim();
+      if(name) choices.set(name,{name,id});
+    });
+    (S.databases||[]).forEach(d=>{
+      const name=String(d.assigned_user_name||d.assigned_to||'').trim();
+      const id=String(d.assigned_user_id||'').trim();
+      if(name) choices.set(name,{name,id});
+    });
+    const options=[...choices.values()].sort((a,b)=>a.name.localeCompare(b.name));
+    const previous=S_updFilters.user;
+    userSel.innerHTML = `<option value="">All assigned users</option>` + options.map(x=>`<option value="${esc(x.name)}">${esc(x.name)}</option>`).join('');
+    // On Admin's first render or when an old filter no longer exists, default to All.
+    if(!options.some(x=>x.name===previous)){
+      S_updFilters.user='';
+      userSel.value='';
+    }else userSel.value=previous;
   }
 }
 function renderUpdatesKPISummary(){
@@ -18938,8 +18932,7 @@ function updRenderEntryPanel(card, rows, selectedDate, editId=null){
       // Re-read after the write and derive all counters from permanent history.
       const freshRows=await updLoadDailyRows(live.id);
       const allSaved=updAllSavedAppointmentDetails(freshRows);
-      const overallCustomers=updOverallContacted(freshRows,0);
-      if(overallCustomers>total) throw new Error(`Overall Contacted (${overallCustomers}) cannot exceed Total Customers (${total}). Check the daily entries.`);
+      const overallCustomers=await calculateDatabaseFeedbackContacted(live.assignment_id,{force:true});
       const overallAppointments=allSaved.length;
       const latestByTime=[...freshRows].sort((a,b)=>{
         const ak=`${a.entry_date||''} ${a.entry_time||''} ${a.updated_at||a.created_at||''}`;
@@ -20689,7 +20682,16 @@ function populateTwuExportUserSelect(){
     const p = S.profiles.find(pr=>pr.id===id);
     return { id, name: p?.full_name || p?.username || 'Unknown user' };
   }).sort((a,b)=> a.name.localeCompare(b.name));
-  sel.innerHTML = options.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  const currentId=String(S.session?.user?.id||'');
+  const currentProfile=S.profile||S.profiles.find(p=>String(p.id)===currentId)||{};
+  const currentName=String(currentProfile.full_name||currentProfile.username||S.session?.user?.email||'').trim();
+  // Keep the Admin's export selector aligned with the authenticated session.
+  // Options still include other users so Admin can deliberately export their data.
+  const optionMap=new Map(options.map(o=>[String(o.id),o]));
+  if(currentId&&!optionMap.has(currentId)&&currentName)optionMap.set(currentId,{id:currentId,name:currentName});
+  const finalOptions=[...optionMap.values()].sort((a,b)=>a.name.localeCompare(b.name));
+  sel.innerHTML = finalOptions.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  if(currentId&&finalOptions.some(o=>String(o.id)===currentId))sel.value=currentId;
 }
 $('#twu-export-btn').addEventListener('click', ()=>{
   const ownerId = S.isAdmin ? $('#twu-export-user-select').value : S.session.user.id;
