@@ -451,6 +451,19 @@ label{font-size:13px; font-weight:600; color:var(--text); display:block; margin-
 .dh-removed-db-tag{display:inline-flex;align-items:center;margin:3px 5px 0 0;padding:5px 8px;border:1px solid #E2E8F0;background:#F8FAFC;border-radius:7px;color:#334155;font-size:11.5px;}
 @media(max-width:760px){.dbb-action-chip{width:100%;justify-content:center;}}
 
+
+/* Full database-name popup trigger: compact, centered, and consistent across cards. */
+.dbb-view-name-row{display:flex;justify-content:center;align-items:center;margin-top:auto;padding-top:2px;}
+.dbb-view-name-btn{min-width:68px;padding:6px 16px;border:1px solid #D7E2FF;border-radius:9px;background:#F5F8FF;color:var(--accent);font-size:12px;font-weight:800;line-height:1.3;cursor:pointer;transition:background-color .15s,border-color .15s;}
+.dbb-view-name-btn:hover{background:var(--accent-light);border-color:#AFC3FF;transform:none;box-shadow:none;}
+.dbb-name-modal-backdrop{position:fixed;inset:0;z-index:10050;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,23,42,.42);}
+.dbb-name-modal{width:min(100%,480px);max-height:min(80vh,560px);overflow:auto;background:#fff;border:1px solid #E5EAF4;border-radius:18px;box-shadow:0 24px 70px rgba(15,23,42,.22);padding:22px;}
+.dbb-name-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
+.dbb-name-modal-title{font:800 16px/1.3 'Manrope','Inter',sans-serif;color:#101828;}
+.dbb-name-modal-close{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1px solid #E4E7EC;border-radius:9px;background:#fff;color:#475467;font-size:20px;cursor:pointer;}
+.dbb-name-modal-value{padding:14px 15px;border:1px solid #E4EAF5;border-radius:12px;background:#F8FAFF;color:#172554;font-size:14px;font-weight:650;line-height:1.6;overflow-wrap:anywhere;user-select:text;}
+@media(max-width:600px){.dbb-name-modal{padding:18px;border-radius:15px;}}
+
 /* ---------- Data Hub: premium database card grid ----------
    Responsive target: 1 col mobile, 2 cols tablet, 3 cols desktop, 4 on large desktop —
    achieved with auto-fill/minmax so it also degrades gracefully at in-between widths. */
@@ -1324,6 +1337,26 @@ table.analytics-table tbody tr:last-child td{ border-bottom:none; }
 .analytics-table-foot{ display:flex; align-items:center; justify-content:space-between; padding:12px 20px; border-top:1px solid var(--border); font-size:12.5px; color:var(--text-secondary); background:#FAFAFD; flex-wrap:wrap; gap:10px; }
 .analytics-empty{ text-align:center; padding:60px 20px; color:var(--text-secondary); }
 .analytics-empty svg{ width:36px; height:36px; opacity:.3; margin-bottom:10px; }
+
+
+
+/* Analytics-only interaction affordances */
+#page-analytics .an-click-row{cursor:pointer;transition:background .15s ease,transform .15s ease}
+#page-analytics .an-click-row:hover{background:#F4F7FF;transform:translateX(2px)}
+#page-analytics .an-click-row:focus-visible{outline:2px solid #5B8CFF;outline-offset:2px;border-radius:8px}
+#page-analytics .an-active-filter{grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border:1px solid #DCE7FF;border-radius:11px;background:#F7F9FF;color:#334155;font-size:12px}
+#page-analytics .an-active-filter .btn{margin-left:auto}
+/* CRM Intelligence Center — scoped to Analytics only */
+.an-intelligence-center{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;margin:0 0 24px}
+.an-panel{min-width:0;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-sm)}
+.an-panel h3{font-size:14px;font-weight:800;letter-spacing:-.015em;color:var(--text);margin:0}
+.an-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:16px}
+.an-panel-sub{font-size:11.5px;color:var(--text-secondary);margin-top:4px}
+.an-span-8{grid-column:span 8}.an-span-6{grid-column:span 6}.an-span-4{grid-column:span 4}.an-span-12{grid-column:span 12}
+.an-trend{width:100%;height:170px;display:block;overflow:visible}.an-chart-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-secondary);margin-top:8px}.an-legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.an-bars{display:flex;flex-direction:column;gap:12px}.an-bar-row{display:grid;grid-template-columns:minmax(90px,1fr) minmax(70px,2fr) 42px;gap:10px;align-items:center;font-size:12px}.an-bar-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);font-weight:600}.an-bar-track{height:8px;background:#EFF2FA;border-radius:20px;overflow:hidden}.an-bar-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,#4169E1,#6B8CFF)}.an-bar-value{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}.an-status-list{display:flex;flex-direction:column;gap:12px}.an-status-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:9px;align-items:center;font-size:12px}.an-status-swatch{width:9px;height:9px;border-radius:3px}.an-status-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.an-status-value{font-weight:800}.an-quality-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.an-quality-metric{border:1px solid #EEF0F6;border-radius:12px;padding:12px}.an-quality-metric .v{font-size:20px;font-weight:800;letter-spacing:-.03em}.an-quality-metric .k{font-size:11px;color:var(--text-secondary);margin-top:4px}.an-rank-list{display:flex;flex-direction:column;gap:10px}.an-rank-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #F0F2F8}.an-rank-row:last-child{border-bottom:0}.an-rank-no{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:#EEF3FF;color:#2348D8;font-size:11px;font-weight:800}.an-rank-name{font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.an-rank-meta{font-size:10.5px;color:var(--text-secondary);margin-top:3px}.an-rank-score{font-size:13px;font-weight:800;white-space:nowrap}.an-alert-line{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid #F0F2F8;font-size:12px}.an-alert-line:last-child{border-bottom:0}.an-alert-mark{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}.an-alert-title{font-weight:750}.an-alert-meta{font-size:10.5px;color:var(--text-secondary);margin-top:4px;line-height:1.4}.an-empty{font-size:12px;color:var(--text-secondary);padding:20px 8px;text-align:center;background:#FAFBFE;border:1px dashed #E0E5F0;border-radius:12px}.an-kpi-click{cursor:pointer;transition:transform .15s,box-shadow .15s}.an-kpi-click:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+@media(max-width:1000px){.an-span-8,.an-span-6,.an-span-4{grid-column:span 12}}
+@media(max-width:560px){.an-panel{padding:15px}.an-bar-row{grid-template-columns:minmax(75px,1fr) minmax(45px,1fr) 34px;gap:7px}.an-quality-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.an-trend{height:145px}}
 
 /* ---------- Admin Analytics Workspace (aw-*) ---------- */
 .aw-toolbar{ position:relative; }
@@ -3818,6 +3851,53 @@ table.reminder-table tbody tr:hover{ background:#FAFBFF; }
 .upd-appt-save svg{width:14px;height:14px;}
 @media(max-width:650px){.upd-appt-details{grid-template-columns:1fr!important}.upd-appt-details .full{grid-column:auto!important}.upd-appt-modal{border-radius:18px!important}.upd-appt-hero{padding:16px}.upd-appt-body{padding:16px 16px 6px!important}.upd-appt-footer{padding:12px 16px 15px;}.upd-appt-cancel{flex-basis:38%;}}
 
+
+/* Analytics reference layout — scoped strictly to Analytics */
+#page-analytics .an-ref-header{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:14px}
+#page-analytics .an-ref-header .section-desc{margin:3px 0 0;color:#607397}
+#page-analytics .an-ref-actions{display:flex;align-items:center;gap:10px}
+#page-analytics .an-live-note{font-size:11px;color:#18794E;background:#ECFDF3;border:1px solid #C7F0D7;border-radius:20px;padding:6px 10px;font-weight:700}
+#page-analytics .an-ref-kpis{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+#page-analytics .an-ref-kpi{position:relative;min-height:112px;padding:16px 16px 13px 66px;border:1px solid #E7ECF4;border-radius:15px;box-shadow:0 3px 12px rgba(25,50,100,.04);background:#fff}
+#page-analytics .an-ref-icon{position:absolute;left:15px;top:16px;width:43px;height:43px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800}
+#page-analytics .an-ref-kpi-label{font-size:12px;color:#354767;line-height:1.35;margin-bottom:7px}
+#page-analytics .an-ref-kpi-value{font:800 27px/1.1 'Manrope','Inter',sans-serif;color:#07143B;letter-spacing:-.03em}
+#page-analytics .an-ref-kpi-meta{font-size:11px;color:#1677F2;margin-top:5px;font-weight:700}
+#page-analytics .an-intelligence-center{display:block;margin:0}
+#page-analytics .an-ref-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-bottom:12px}
+#page-analytics .an-ref-panel{background:#fff;border:1px solid #E6EBF3;border-radius:16px;box-shadow:0 4px 14px rgba(25,50,100,.035);padding:17px 18px;min-width:0}
+#page-analytics .an-ref-panel-head h3,#page-analytics .an-ref-table-head h3{font:800 17px/1.25 'Manrope','Inter',sans-serif;color:#09163A;margin:0}
+#page-analytics .an-ref-panel-head p,#page-analytics .an-ref-table-head p{font-size:12px;color:#617393;margin:4px 0 0}
+#page-analytics .an-ref-donut-body{display:flex;align-items:center;gap:15px;min-height:220px}
+#page-analytics .an-ref-chart{width:48%;height:220px;min-width:0;position:relative}
+#page-analytics .an-ref-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+#page-analytics .an-ref-legend-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto 38px;align-items:center;gap:8px;font-size:12px;color:#263958}
+#page-analytics .an-ref-legend-row i{width:10px;height:10px;border-radius:4px}
+#page-analytics .an-ref-legend-row strong{font-size:13px;color:#07143B}
+#page-analytics .an-ref-legend-row small{text-align:right;color:#64748B;font-size:11px}
+#page-analytics .an-ref-month-chart{height:245px;margin-top:10px;position:relative}
+#page-analytics .an-ref-table-panel{padding:16px 14px 12px}
+#page-analytics .an-ref-table-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 13px;padding:0 3px}
+#page-analytics .an-ref-table-actions{display:flex;align-items:center;gap:9px}
+#page-analytics .an-ref-table-actions input{width:220px;max-width:45vw;height:36px;border:1px solid #DCE3EF;border-radius:10px;padding:8px 11px;font-size:12px}
+#page-analytics .an-ref-table-wrap{overflow-x:auto}
+#page-analytics .an-ref-table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:11.5px}
+#page-analytics .an-ref-table th{background:#F5F8FC;color:#34425F;font-size:10.5px;font-weight:800;text-align:left;padding:11px 9px;border-bottom:1px solid #E5EAF2}
+#page-analytics .an-ref-table td{padding:9px;border-bottom:1px solid #EDF1F6;color:#253653}
+#page-analytics .an-ref-table tbody tr:hover{background:#F8FAFF}
+#page-analytics .an-ref-table tfoot th{background:#EDF3FC;color:#101D42;font-size:12px;padding:11px 9px}
+#page-analytics .an-ref-db-name{font-weight:650;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+#page-analytics .an-ref-rate{display:inline-block;min-width:42px;font-weight:700;margin-right:6px}
+#page-analytics .an-ref-progress{display:inline-block;vertical-align:middle;width:72px;height:8px;background:#E7EDF5;border-radius:10px;overflow:hidden}
+#page-analytics .an-ref-progress i{display:block;height:100%;background:linear-gradient(90deg,#1677F2,#16A36A);border-radius:10px}
+#page-analytics .an-ref-view{padding:4px 11px;border-radius:7px;color:#1456C5;background:#fff;border-color:#DCE5F3}
+#page-analytics .an-ref-empty{text-align:center;padding:24px!important;color:#64748B!important}
+#page-analytics .an-ref-source-note{font-size:10.5px;line-height:1.5;color:#7A879B;margin:10px 3px 0}
+#page-analytics .analytics-filters{margin:0 0 12px;padding:12px;background:#fff;border:1px solid #E7ECF4;border-radius:14px}
+#page-analytics .aw-layout{display:none!important}
+@media(max-width:1100px){#page-analytics .an-ref-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}#page-analytics .an-ref-grid{grid-template-columns:1fr}}
+@media(max-width:650px){#page-analytics .an-ref-header{align-items:flex-start}#page-analytics .an-ref-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}#page-analytics .an-ref-kpi{padding-left:58px}#page-analytics .an-ref-icon{left:10px;width:38px;height:38px}#page-analytics .an-ref-kpi-value{font-size:22px}#page-analytics .an-ref-donut-body{flex-direction:column}#page-analytics .an-ref-chart{width:100%;height:210px}#page-analytics .an-ref-legend{width:100%}#page-analytics .an-ref-table-head{align-items:flex-start;flex-direction:column}#page-analytics .an-ref-table-actions{width:100%}#page-analytics .an-ref-table-actions input{flex:1;max-width:none;width:auto}}
+
 </style>
 
 
@@ -5872,6 +5952,78 @@ body.upd-abv-open{overflow:hidden!important}
 }
 </style>
 
+
+<style id="swift-dashboard-quality-note-cleanup">
+/* Hide the low-value placeholder note shown on database cards.
+   Quality details remain available when the database is opened. */
+.dbb-quality-empty { display: none !important; }
+</style>
+<style id="swift-dashboard-logistics-hero">
+/* Improve logistics photo clarity while keeping the left text area readable. */
+.kpi-card.kpi-featured{
+  position:relative !important;
+  isolation:isolate;
+  overflow:hidden;
+  background-color:#1745b4 !important;
+  background-image:
+    linear-gradient(90deg,
+      rgba(20,57,174,.99) 0%,
+      rgba(24,66,184,.96) 24%,
+      rgba(24,66,184,.72) 42%,
+      rgba(17,47,128,.18) 62%,
+      rgba(17,47,128,.03) 100%),
+    url('https://i.ibb.co/b4CTr7K/IMGBB.png') !important;
+  background-size:cover, cover !important;
+  background-position:center, right center !important;
+  background-repeat:no-repeat !important;
+  border-color:rgba(31,72,180,.9) !important;
+}
+.kpi-card.kpi-featured::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  /* Keep extra tint confined to the left rather than washing out the photo. */
+  background:linear-gradient(90deg,rgba(16,48,143,.10) 0%,rgba(16,48,143,.03) 34%,transparent 58%) !important;
+  opacity:1 !important;
+}
+.kpi-card.kpi-featured > *{position:relative; z-index:1}
+@media(max-width:700px){
+  .kpi-card.kpi-featured{
+    background-image:
+      linear-gradient(90deg,rgba(20,57,174,.99) 0%,rgba(24,66,184,.86) 34%,rgba(24,66,184,.48) 56%,rgba(17,47,128,.08) 100%),
+      url('https://i.ibb.co/b4CTr7K/IMGBB.png') !important;
+    background-position:center, 68% center !important;
+  }
+}
+</style>
+<style id="analytics-reference-layout-hotfix">
+
+/* Analytics-only visual correction: neutralize the global oversized KPI skin,
+   which was forcing the five compact reference cards to 230px and overlapping labels/icons. */
+#page-analytics .an-ref-kpis{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:12px!important;align-items:stretch;margin:0 0 14px!important}
+#page-analytics .kpi-card.an-ref-kpi{display:block!important;position:relative!important;isolation:auto!important;min-width:0!important;min-height:138px!important;height:138px!important;padding:17px 15px 14px 66px!important;border:1px solid #E5EAF3!important;border-radius:16px!important;background:linear-gradient(160deg,#F8FAFF 0%,#fff 68%)!important;box-shadow:0 4px 14px rgba(17,43,92,.055)!important;overflow:hidden!important;cursor:default!important;transform:none!important}
+#page-analytics .kpi-card.an-ref-kpi:before,#page-analytics .kpi-card.an-ref-kpi:after{display:none!important}
+#page-analytics .an-ref-icon{position:absolute!important;left:14px!important;top:16px!important;width:42px!important;height:42px!important;display:flex!important;align-items:center!important;justify-content:center!important;border-radius:12px!important;font-size:23px!important;line-height:1!important}
+#page-analytics .an-ref-kpi-label{display:block!important;position:static!important;margin:3px 0 0!important;padding:0!important;font:500 12px/1.4 'Inter',sans-serif!important;letter-spacing:0!important;text-transform:none!important;color:#344767!important;min-height:34px!important;overflow-wrap:anywhere}
+#page-analytics .an-ref-kpi-value{display:block!important;margin:8px 0 0!important;font:800 27px/1.05 'Manrope','Inter',sans-serif!important;letter-spacing:-.035em!important;color:#08163C!important;white-space:nowrap}
+#page-analytics .an-ref-kpi-meta{font-size:10.5px!important;margin-top:6px!important;line-height:1.2!important}
+#page-analytics .analytics-filters{display:grid!important;grid-template-columns:minmax(160px,1.2fr) repeat(2,minmax(140px,1fr)) repeat(2,minmax(125px,.8fr)) auto auto!important;gap:10px!important;align-items:end!important;margin:0 0 14px!important;padding:12px 14px!important;background:#fff!important;border:1px solid #E5EAF3!important;border-radius:15px!important;box-shadow:0 3px 12px rgba(25,50,100,.035)!important}
+#page-analytics .analytics-filters .f-field{min-width:0!important}
+#page-analytics .analytics-filters label{font-size:11px!important;font-weight:650!important;color:#4B5D7A!important;margin-bottom:5px!important;letter-spacing:0!important;text-transform:none!important}
+#page-analytics .analytics-filters input,#page-analytics .analytics-filters select{width:100%!important;min-width:0!important;height:38px!important;border-radius:9px!important;font-size:12px!important}
+#page-analytics .analytics-filters .f-spacer{display:none!important}
+#page-analytics .an-ref-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:14px!important;margin-bottom:14px!important}
+#page-analytics .an-ref-panel{min-width:0!important;padding:17px 18px!important;border-radius:16px!important}
+#page-analytics .an-ref-donut-body{min-height:230px!important;gap:18px!important}
+#page-analytics .an-ref-chart{height:225px!important;min-width:180px!important}
+#page-analytics .an-ref-month-chart{height:245px!important}
+#page-analytics .an-ref-table-panel{padding:16px 14px 12px!important}
+@media(max-width:1100px){#page-analytics .an-ref-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important}#page-analytics .analytics-filters{grid-template-columns:repeat(3,minmax(0,1fr))!important}#page-analytics .an-ref-grid{grid-template-columns:1fr!important}}
+@media(max-width:650px){#page-analytics .an-ref-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}#page-analytics .kpi-card.an-ref-kpi{height:128px!important;min-height:128px!important;padding:14px 9px 10px 55px!important}#page-analytics .an-ref-icon{left:9px!important;top:13px!important;width:36px!important;height:36px!important;font-size:20px!important}#page-analytics .an-ref-kpi-label{font-size:11px!important;min-height:31px!important}#page-analytics .an-ref-kpi-value{font-size:22px!important}#page-analytics .analytics-filters{grid-template-columns:repeat(2,minmax(0,1fr))!important}#page-analytics .an-ref-grid{grid-template-columns:1fr!important}#page-analytics .an-ref-donut-body{flex-direction:column!important}#page-analytics .an-ref-chart{width:100%!important;height:205px!important}#page-analytics .an-ref-legend{width:100%!important}}
+
+</style>
 </head>
 <body>
 
@@ -6584,11 +6736,7 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
 
       <!-- ---------- ANALYTICS ---------- -->
       <section class="page" id="page-analytics">
-        <div class="section-title">Analytics</div>
-        <div class="section-desc" id="an-desc">Executive overview of every user and their assigned databases.</div>
-
-        <div class="kpi-grid" id="an-kpi-grid" style="margin-bottom:22px;"></div>
-
+        <div class="an-ref-header"><div><div class="section-title">Analytics</div><div class="section-desc" id="an-desc">Salesperson-wise Contact &amp; Appointment Intelligence</div></div><div class="an-ref-actions"><span class="an-live-note">Live Supabase data</span></div></div>
         <div class="analytics-filters aw-toolbar">
           <div class="f-field" style="min-width:200px;">
             <label>Search Database</label>
@@ -6600,6 +6748,10 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
           <div class="f-field">
             <label>Assigned User</label>
             <select id="an-filter-user"><option value="">All users</option></select>
+          </div>
+          <div class="f-field">
+            <label>Database</label>
+            <select id="an-filter-database"><option value="">All databases</option></select>
           </div>
           <div class="f-field">
             <label>Status</label>
@@ -6638,6 +6790,8 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
             </div>
           </div>
         </div>
+        <div class="kpi-grid an-ref-kpis" id="an-kpi-grid" style="margin-bottom:14px;"></div>
+        <div id="an-intelligence-center" class="an-intelligence-center" aria-live="polite"></div>
 
         <div class="aw-layout">
           <div class="aw-main">
@@ -7985,11 +8139,11 @@ stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 
 
     <div id="import-step-form" class="hidden">
       <div class="field"><label>Database Name</label><input type="text" id="import-db-name"></div>
-      <div class="field">
+      <div class="field hidden" id="import-assigned-field">
         <label>Assigned To</label>
         <select id="import-assigned"></select>
       </div>
-      <div class="field" id="import-assign-user-field">
+      <div class="field hidden" id="import-assign-user-field">
         <label>Assign to User <span style="color:#DC2626;">*</span></label>
         <select id="import-assign-user"></select>
         <div class="hint" style="margin-top:4px;">Only this user will be able to see this database in their Data Hub.</div>
@@ -10358,7 +10512,7 @@ const S = {
   cal: { view:'month', cursor:new Date(), search:'', filter:'', events:[] },
   updates: [], updatesSearch: '', editingUpdateId: null,
   analytics: {
-    userFilter:'', statusFilter:'', dateFrom:'', dateTo:'', search:'', _currentRows:[],
+    userFilter:'', statusFilter:'', recordStatusFilter:'', dateFrom:'', dateTo:'', search:'', _currentRows:[],
   },
   importFile: null, importRows: [], importHeaders: [], importMapping: {},
   charts: {},
@@ -10408,7 +10562,7 @@ function normalizePhoneValue(v){
 }
 
 /* DATA HUB — surgical smart phone parsing. */
-const DH_PHONE_DESTINATION_FIELDS=['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2'];
+const DH_PHONE_DESTINATION_FIELDS=['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','company_website_number_1','company_website_number_2'];
 const DH_PHONE_SOURCE_FIELDS=[...DH_PHONE_DESTINATION_FIELDS,'company_website_number_1','company_website_number_2'];
 function dhPhoneDigits(v){return String(v??'').replace(/\D/g,'');}
 function dhPhonePlaceholder(v){const s=normalizePhoneValue(v).toLowerCase().replace(/[._\-\/\\\s]+/g,'');return !s||['na','n/a','nil','none','null','undefined','nan','notavailable','notapplicable'].includes(s);}
@@ -10452,7 +10606,36 @@ function dhNormalizeImportedRecordPhones(record){
     result[field]='';
   }
   // Extra values always fill the first blank destination in the mandated order.
-  for(const value of queued){const slot=DH_PHONE_DESTINATION_FIELDS.find(f=>!normalizePhoneValue(result[f]));if(!slot)break;result[slot]=value;}
+  const overflowPhones=[];
+  for(const value of queued){const slot=DH_PHONE_DESTINATION_FIELDS.find(f=>!normalizePhoneValue(result[f]));if(!slot){overflowPhones.push(value);continue;}result[slot]=value;}
+  if(overflowPhones.length){const note='Additional phone numbers (no free phone field): '+overflowPhones.join(', ');result.remark=[String(result.remark||'').trim(),note].filter(Boolean).join(' | ');}
+  return result;
+}
+
+/* Import-time email parsing: validate complete addresses and fan out extras only
+   into blank slots of the same email family. Existing values are never replaced. */
+function dhExtractEmails(value){
+  const raw=String(value??'');
+  const matches=raw.match(/[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?)+/gi)||[];
+  return [...new Set(matches.map(x=>x.trim()).filter(x=>/^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?)+$/i.test(x)))];
+}
+function dhNormalizeImportedRecordEmails(record){
+  const result={...record};
+  for(const family of ['business_email','personal_email']){
+    const first=`${family}_1`,second=`${family}_2`;
+    for(const field of [first,second]){
+      const raw=String(result[field]??'');
+      if(!raw.trim())continue;
+      const emails=dhExtractEmails(raw);
+      // A URL or arbitrary text must not be accepted as an email merely because it
+      // contains .com. Keep invalid values out of email destinations.
+      if(!emails.length){if(raw.includes('@')||/\.com\b/i.test(raw))result[field]='';continue;}
+      result[field]=emails[0];
+      const extras=emails.slice(1).filter(email=>email.toLowerCase()!==String(result[first]||'').toLowerCase()&&email.toLowerCase()!==String(result[second]||'').toLowerCase());
+      if(extras.length&&!String(result[second]||'').trim())result[second]=extras.shift();
+      if(extras.length){const note='Additional email addresses (no free email field): '+extras.join(', ');result.remark=[String(result.remark||'').trim(),note].filter(Boolean).join(' | ');}
+    }
+  }
   return result;
 }
 
@@ -10502,14 +10685,14 @@ function normalizeHeader(h){
 function normalizeHeaderCompact(h){ return normalizeHeader(h).replace(/\s+/g,''); }
 
 const DATA_TYPE_TARGETS = [
-  {key:'contact_person',label:'Contact Person',synonyms:['contact','contact name','contact person','contact person name','full name','person name','contactname']},
+  {key:'contact_person',label:'Contact Person',synonyms:['contact','contact name','contact person','contact person name','full name','person name','contactname','person in charge','pic','representative','contact individual']},
   {key:'position',label:'Position',synonyms:['position','designation','job title','title','role']},
-  {key:'company_name',label:'Company Name',synonyms:['company','company name','customer','customer name','client name','organization','organisation','organization name','organisation name']},
-  {key:'location',label:'Location',synonyms:['location','city','address','region','place']},
+  {key:'company_name',label:'Company Name',synonyms:['company','company name','customer','customer name','client name','organization','organisation','organization name','organisation name','business name','exporter name','shipper name','company legal name']},
+  {key:'location',label:'Location',synonyms:['location','city','address','region','place','office address','registered address','registered office address','postal address','full address','business address','street address']},
   {key:'personal_email',label:'Personal Email',synonyms:['personal email','personal mail','personal email id','personal email address']},
-  {key:'business_email',label:'Business Email',synonyms:['business email','business mail','work email','office email','corporate email','company email']},
-  {key:'mobile_phone',label:'Mobile Phone',synonyms:['mobile','mobile phone','mobile no','mobile number','cell','cell number','cell phone']},
-  {key:'work_phone',label:'Work Phone',synonyms:['work phone','work number','office phone','office number','business phone','landline','telephone office']},
+  {key:'business_email',label:'Business Email',synonyms:['business email','business mail','work email','office email','corporate email','company email','email','email id','e mail address','email address','e-mail address','work email id']},
+  {key:'mobile_phone',label:'Mobile Phone',synonyms:['mobile','mobile phone','mobile no','mobile number','mobile no.','cell','cell number','cell phone','cellphone','cell phone number','phone number','contact number']},
+  {key:'work_phone',label:'Work Phone',synonyms:['work phone','work number','office phone','office number','business phone','landline','telephone office','telephone','telephone number','office telephone','office phone number']},
   {key:'company_website_number',label:'Numbers From Company Website',synonyms:['numbers from company website','company website number','website phone','website number','phone from website']},
   {key:'linkedin',label:'Linkedin',synonyms:['linkedin','linkedin url','linkedin profile','linkedin profile url']},
   {key:'company_website',label:'Company Website',synonyms:['website','company website','company web','company web address','company url','web address','url','site']},
@@ -10549,75 +10732,172 @@ function dtSampleValues(rows,index){
 function dtValueTypeScore(field,values){
   if(!values.length)return 0;
   let hits=0;
-  for(const v of values){
-    if(field.includes('email') && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) hits++;
-    else if(field.includes('phone') || field==='company_website_number') { if(/[+()\d][\d\s().+\-]{5,}/.test(v) && !/@/.test(v)) hits++; }
-    else if(field==='linkedin' && /linkedin\.com/i.test(v)) hits++;
-    else if(field==='company_website' && /^https?:\/\//i.test(v) && !/linkedin\.com/i.test(v)) hits++;
-    else if(field==='location' && /^[A-Za-z .,'-]{2,60}$/.test(v) && !/@/.test(v) && !/^https?:/i.test(v)) hits++;
-    else if(field==='remark' && v.length>20) hits++;
+  for(const raw of values){
+    const v=String(raw??'').trim();
+    if(!v)continue;
+    if(field.includes('email')){ if(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(v))hits++; }
+    else if(field.includes('phone') || field==='company_website_number'){
+      const digits=v.replace(/\D/g,'');
+      const idLike=/\b\d{2,4}[-/]\d{1,2}[-/]\d{1,4}\b/.test(v)||/\b\d{6}\b/.test(v)||/\b\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]\b/i.test(v)||/\b(?:GSTIN|GST|INVOICE|INV|ORDER|ID|PIN)\b/i.test(v);
+      if(digits.length>9&&digits.length<=15&&!idLike&&!/@/.test(v)&&!/^https?:\/\//i.test(v))hits++;
+    }
+    else if(field==='linkedin' && /linkedin\.com/i.test(v))hits++;
+    else if(field==='company_website' && /(?:https?:\/\/|www\.)[^\s]+|\b[a-z0-9-]+\.(?:com|in|org|net|co\.in)\b/i.test(v) && !/@/.test(v))hits++;
+    else if(field==='company_name'){
+      const companySignal=/\b(?:pvt\.?|private|ltd\.?|limited|llp|inc\.?|industries|exports?|corporation|company|co\.?|enterprise|enterprise[s]?)\b/i.test(v);
+      if(companySignal && v.length>=4 && !/@/.test(v) && !/\d{6}/.test(v))hits++;
+    }
+    else if(field==='contact_person'){
+      const words=v.replace(/[.,]/g,' ').trim().split(/\s+/);
+      if(words.length>=2&&words.length<=5&&words.every(w=>/^[A-Za-z][A-Za-z'-]*$/.test(w))&&!/\b(?:manager|director|owner|proprietor|ceo|president|sales|export|purchase|logistics|industries|limited|private|corporation|pvt|ltd)\b/i.test(v))hits++;
+    }
+    else if(field==='position' && /\b(?:ceo|director|managing director|owner|proprietor|export manager|sales manager|purchase manager|manager|head|president|vice president|coordinator|executive|officer|founder|partner)\b/i.test(v))hits++;
+    else if(field==='location'){
+      const pin=/\b[1-9][0-9]{5}\b/.test(v), india=/\bindia\b/i.test(v), addressTerms=/\b(?:road|rd\.?|street|st\.?|plot|floor|building|bldg|unit|suite|industrial area|estate|sector|nagar|marg|lane|highway|phase|district|state|maharashtra|gujarat|delhi|mumbai|chennai|kolkata|bengaluru|hyderabad|pune)\b/i.test(v);
+      if(v.length>=24&&(pin||india)&&addressTerms)hits++;
+      else if(v.length>=28&&addressTerms&&/[,.]/.test(v))hits++;
+    }
+    else if(field==='remark' && v.length>20)hits++;
   }
   return hits/values.length;
 }
-function dtExtractExplicitNumber(header){ const m=String(header).trim().match(/(?:^|\s)([12])\s*$/); return m?m[1]:null; }
-function dtBaseHeader(header){ return normalizeHeader(String(header).replace(/\s+[12]\s*$/,'')); }
+function dtHeaderSignal(field,header){
+  const n=normalizeHeaderCompact(header), h=normalizeHeader(header);
+  const rules={
+    contact_person:/contactperson|contactname|personincharge|pic|representative|fullname|contact/i,
+    position:/designation|jobtitle|position|role|title/i,
+    company_name:/companyname|businessname|customername|clientname|organizationname|organisationname|exportername|shippername/i,
+    location:/address|location|postaladdress|registeredoffice|officeaddress|citystate|fulladdress/i,
+    personal_email:/personalemail|personalmail|privateemail/i,
+    business_email:/businessemail|workemail|officeemail|corporateemail|companyemail|emailaddress|email|e mail/i,
+    mobile_phone:/mobile|cellphone|mobilenumber|mobileno|phonenumber|telephone|contactnumber|phone/i,
+    work_phone:/workphone|officephone|landline|telephoneoffice/i,
+    company_website_number:/websitenumber|companywebsitenumber|numberfromwebsite/i,
+    linkedin:/linkedin/i, company_website:/website|companyurl|webaddress|url/i, remark:/remark|notes?|comments?/i
+  };
+  return rules[field]?.test(n) ? (h.includes('email')&&field==='business_email'?0.94:0.96) : 0;
+}
+function dtEmailValueScore(values){
+  if(!values.length)return 0;
+  let valid=0, possible=0;
+  for(const raw of values){const v=String(raw??'');if(v.includes('@')||/\.com\b/i.test(v))possible++;if(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/i.test(v))valid++;}
+  return Math.min(1,(valid/values.length)*0.98+(possible/values.length)*0.12);
+}
+function dtPhoneValueScore(values){
+  if(!values.length)return 0;
+  let hits=0;
+  for(const raw of values){const v=String(raw??'').trim();
+    const excluded=/\b(?:GSTIN|GST|INVOICE|INV|ORDER|CUSTOMER\s*ID|ACCOUNT\s*NO|PIN)\b/i.test(v)||/\b\d{2,4}[-/]\d{1,2}[-/]\d{1,4}\b/.test(v)||/\b\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]\b/i.test(v);
+    const sequences=(v.match(/\+?\d[\d\s().-]{7,}\d/g)||[]).map(x=>x.replace(/\D/g,''));
+    if(!excluded&&!/^https?:\/\//i.test(v)&&!/@/.test(v)&&sequences.some(d=>d.length>9&&d.length<=15))hits++;
+  }
+  return hits/values.length;
+}
+function dtCompanySignalScore(values){
+  if(!values.length)return 0;let hits=0;
+  for(const raw of values){const v=String(raw??'').trim();if(/\b(?:Pvt\.?|Private|Ltd\.?|Limited|LLP|Inc\.?|Industries|Exports?|Corporation)\b/i.test(v)&&v.length>=5&&!/^https?:/i.test(v))hits++;}
+  return hits/values.length;
+}
+function dtAddressSignalScore(values){
+  if(!values.length)return 0;let hits=0;
+  for(const raw of values){const v=String(raw??'').trim();const pin=/\b[1-9][0-9]{5}\b/.test(v),india=/\bindia\b/i.test(v),parts=/\b(?:road|street|plot|floor|building|bldg|unit|suite|industrial area|estate|sector|nagar|marg|lane|phase|district|state|maharashtra|gujarat|delhi|mumbai|chennai|kolkata|bengaluru|hyderabad|pune)\b/i.test(v);if(v.length>=24&&(pin||india)&&parts)hits++;else if(v.length>=28&&parts&&/[,.]/.test(v))hits++;}
+  return hits/values.length;
+}
+function dtPersonSignalScore(values){
+  if(!values.length)return 0;let hits=0;
+  for(const raw of values){const v=String(raw??'').trim(),words=v.replace(/[.,]/g,' ').trim().split(/\s+/);if(words.length>=2&&words.length<=5&&words.every(w=>/^[A-Za-z][A-Za-z'-]*$/.test(w))&&!/\b(?:manager|director|owner|proprietor|ceo|president|sales|export|purchase|logistics|industries|limited|private|corporation|pvt|ltd)\b/i.test(v))hits++;}
+  return hits/values.length;
+}
+function dtDesignationSignalScore(values){if(!values.length)return 0;return values.filter(v=>/\b(?:CEO|Director|Managing Director|Owner|Proprietor|Export Manager|Sales Manager|Purchase Manager|Manager|Head|President|Vice President|Coordinator|Executive|Officer|Founder|Partner)\b/i.test(String(v))).length/values.length;}
+function dtExtractExplicitNumber(header){
+  // Recognize numbered variants regardless of spaces, underscores, hyphens or punctuation.
+  const compact=normalizeHeaderCompact(header);
+  const m=compact.match(/([12])$/);
+  return m ? m[1] : null;
+}
+function dtBaseHeader(header){
+  const compact=normalizeHeaderCompact(header).replace(/[12]$/,'');
+  return normalizeHeader(compact);
+}
 
 function inferDataTypeMapping(rawHeader, sampleValues, usedTargets){
-  const source=String(rawHeader??'').trim(); const normalized=normalizeHeader(source); const compact=normalizeHeaderCompact(source);
-  const memory=dtMemoryLoad();
-  const remembered=memory[normalized];
-  if(remembered && DATA_TYPE_BY_KEY[remembered] && !usedTargets.has(remembered)){
-    const slot=remembered; return {field:slot,confidence:0.99,status:'auto',reason:'Previously confirmed mapping',explicitNum:dtExtractExplicitNumber(source)};
-  }
-  const explicitNum=dtExtractExplicitNumber(source);
-  const base=dtBaseHeader(source);
-  const candidates=[];
+  const source=String(rawHeader??'').trim(), base=dtBaseHeader(source), normalized=normalizeHeader(source);
+  const explicitNum=dtExtractExplicitNumber(source), candidates=[];
+  const memory=dtMemoryLoad(), remembered=memory[normalized];
   for(const t of DATA_TYPE_TARGETS){
     let score=0;
     const exact=t.synonyms.some(x=>normalizeHeader(x)===base);
-    if(exact) score=0.94;
-    for(const syn of t.synonyms) score=Math.max(score,dtSimilarity(base,syn)*0.82);
-    score=Math.max(score,dtValueTypeScore(t.key,sampleValues)*0.72);
-    candidates.push({field:t.key,score});
+    if(exact)score=0.88;
+    for(const syn of t.synonyms)score=Math.max(score,dtSimilarity(base,syn)*0.78);
+    const headerSignal=dtHeaderSignal(t.key,source);
+    const valuesScore=dtValueTypeScore(t.key,sampleValues);
+    score=Math.max(score,valuesScore*0.70,headerSignal);
+    if(t.key==='business_email'||t.key==='personal_email')score=Math.max(score,dtEmailValueScore(sampleValues)*0.78);
+    if(['mobile_phone','work_phone','company_website_number'].includes(t.key))score=Math.max(score,dtPhoneValueScore(sampleValues)*0.78);
+    if(t.key==='company_name')score=Math.max(score,dtCompanySignalScore(sampleValues)*0.82);
+    if(t.key==='location')score=Math.max(score,dtAddressSignalScore(sampleValues)*0.86);
+    if(t.key==='contact_person')score=Math.max(score,dtPersonSignalScore(sampleValues)*0.70);
+    if(t.key==='position')score=Math.max(score,dtDesignationSignalScore(sampleValues)*0.82);
+    candidates.push({field:t.key,score,headerSignal,valuesScore});
   }
-  // Explicit semantics should dominate value-only inference.
-  const n=compact;
-  if(/linkedin/.test(n)) candidates.find(x=>x.field==='linkedin').score=Math.max(candidates.find(x=>x.field==='linkedin').score,.98);
-  if(/company.*website|website.*company|company.*url/.test(n)) candidates.find(x=>x.field==='company_website').score=Math.max(candidates.find(x=>x.field==='company_website').score,.98);
-  if(/website.*number|number.*website/.test(n)) candidates.find(x=>x.field==='company_website_number').score=Math.max(candidates.find(x=>x.field==='company_website_number').score,.98);
-  if(/business|work|corporate|office/.test(n) && /email|mail/.test(n)) candidates.find(x=>x.field==='business_email').score=Math.max(candidates.find(x=>x.field==='business_email').score,.96);
-  if(/personal/.test(n) && /email|mail/.test(n)) candidates.find(x=>x.field==='personal_email').score=Math.max(candidates.find(x=>x.field==='personal_email').score,.96);
-  if(/mobile|cell/.test(n)) candidates.find(x=>x.field==='mobile_phone').score=Math.max(candidates.find(x=>x.field==='mobile_phone').score,.96);
-  if(/work|office|landline/.test(n) && /phone|number|telephone/.test(n)) candidates.find(x=>x.field==='work_phone').score=Math.max(candidates.find(x=>x.field==='work_phone').score,.96);
-  if(/remark|note|comment/.test(n)) candidates.find(x=>x.field==='remark').score=Math.max(candidates.find(x=>x.field==='remark').score,.96);
-  if(/company|customer|client|organization|organisation/.test(n) && /name|company$/.test(n)) candidates.find(x=>x.field==='company_name').score=Math.max(candidates.find(x=>x.field==='company_name').score,.96);
-  if(/contact|person|full name/.test(base)) candidates.find(x=>x.field==='contact_person').score=Math.max(candidates.find(x=>x.field==='contact_person').score,.95);
-  if(/position|designation|job title|role|title/.test(base)) candidates.find(x=>x.field==='position').score=Math.max(candidates.find(x=>x.field==='position').score,.96);
-  if(/location|city|address|region|place/.test(base)) candidates.find(x=>x.field==='location').score=Math.max(candidates.find(x=>x.field==='location').score,.96);
+  const n=normalizeHeaderCompact(source);
+  // Deterministic header aliases take precedence over weak fuzzy/sample signals.
+  if(/^(?:email|emailid|emailaddress|emailidaddress|emailaddress1|emailaddress2|email1|email2|emailprimary|emailaddress)$/.test(n)) candidates.find(x=>x.field==='business_email').score=Math.max(candidates.find(x=>x.field==='business_email').score,.985);
+  // Exact family aliases are deterministic and independent of fuzzy-score ordering.
+  if(/^(?:personalemail|personalmail|personalemailid|personalemailaddress)[12]?$/.test(n)) candidates.find(x=>x.field==='personal_email').score=Math.max(candidates.find(x=>x.field==='personal_email').score,.995);
+  if(/^(?:businessemail|businessmail|workemail|officeemail|corporateemail|companyemail)[12]?$/.test(n)) candidates.find(x=>x.field==='business_email').score=Math.max(candidates.find(x=>x.field==='business_email').score,.995);
+  if(/^(?:mobile|mobileno|mobilenumber|cell|cellphone|cellnumber|cellphonenumber|mobilephone|mobilephone[number]?|phonenumber|contactnumber)$/.test(n)) candidates.find(x=>x.field==='mobile_phone').score=Math.max(candidates.find(x=>x.field==='mobile_phone').score,.985);
+  if(/^(?:telephone|telephonenumber|officephone|officephonenumber|landline|worknumber|workphone|workphonenumber|officetelephone)$/.test(n)) candidates.find(x=>x.field==='work_phone').score=Math.max(candidates.find(x=>x.field==='work_phone').score,.985);
+  if(/^(?:company|companyname|businessname|exportername|shippername|customername|clientname)$/.test(n)) candidates.find(x=>x.field==='company_name').score=Math.max(candidates.find(x=>x.field==='company_name').score,.985);
+  if(/^(?:contactperson|contactname|personincharge|pic|representative|contactpersonname)$/.test(n)) candidates.find(x=>x.field==='contact_person').score=Math.max(candidates.find(x=>x.field==='contact_person').score,.985);
+  if(/^(?:designation|jobtitle|position|professionaltitle)$/.test(n)) candidates.find(x=>x.field==='position').score=Math.max(candidates.find(x=>x.field==='position').score,.985);
+  if(/^(?:address|officeaddress|registeredaddress|registeredofficeaddress|postaladdress|fulladdress|businessaddress|streetaddress)$/.test(n)) candidates.find(x=>x.field==='location').score=Math.max(candidates.find(x=>x.field==='location').score,.985);
+  if(/linkedin/.test(n))candidates.find(x=>x.field==='linkedin').score=Math.max(candidates.find(x=>x.field==='linkedin').score,.99);
+  if(/company.*website|website.*company|company.*url/.test(n))candidates.find(x=>x.field==='company_website').score=Math.max(candidates.find(x=>x.field==='company_website').score,.99);
+  if(/website.*number|number.*website/.test(n))candidates.find(x=>x.field==='company_website_number').score=Math.max(candidates.find(x=>x.field==='company_website_number').score,.99);
+  if(/business|work|corporate|office/.test(n)&&/email|mail/.test(n))candidates.find(x=>x.field==='business_email').score=Math.max(candidates.find(x=>x.field==='business_email').score,.97);
+  if(/personal/.test(n)&&/email|mail/.test(n))candidates.find(x=>x.field==='personal_email').score=Math.max(candidates.find(x=>x.field==='personal_email').score,.97);
+  if(/mobile|cell/.test(n))candidates.find(x=>x.field==='mobile_phone').score=Math.max(candidates.find(x=>x.field==='mobile_phone').score,.97);
+  if(/work|office|landline/.test(n)&&/phone|number|telephone/.test(n))candidates.find(x=>x.field==='work_phone').score=Math.max(candidates.find(x=>x.field==='work_phone').score,.97);
+  if(/remark|note|comment/.test(n))candidates.find(x=>x.field==='remark').score=Math.max(candidates.find(x=>x.field==='remark').score,.97);
+  if(/company|customer|client|organization|organisation|exporter|shipper/.test(n)&&/name/.test(n))candidates.find(x=>x.field==='company_name').score=Math.max(candidates.find(x=>x.field==='company_name').score,.97);
+  if(/contactperson|contactname|personincharge|representative|pic|fullname/.test(n))candidates.find(x=>x.field==='contact_person').score=Math.max(candidates.find(x=>x.field==='contact_person').score,.97);
+  if(/position|designation|jobtitle|role/.test(n))candidates.find(x=>x.field==='position').score=Math.max(candidates.find(x=>x.field==='position').score,.97);
+  if(/address|location|registeredoffice|postaladdress/.test(n))candidates.find(x=>x.field==='location').score=Math.max(candidates.find(x=>x.field==='location').score,.97);
+  if(remembered&&DATA_TYPE_BY_KEY[remembered]){const c=candidates.find(x=>x.field===remembered);if(c)c.score=Math.max(c.score,0.90);}
   candidates.sort((a,b)=>b.score-a.score);
-  const best=candidates[0], second=candidates[1]||{score:0};
-  if(!best || best.score<.58) return {field:null,confidence:best?.score||0,status:'unmapped',reason:'No sufficiently confident match',explicitNum};
-  if(usedTargets.has(best.field) && !NUMBERED_FIELDS.has(best.field)) return {field:null,confidence:best.score,status:'review',reason:'Target already used',explicitNum};
-  const ambiguous=(best.score<.82 || (best.score-second.score)<.08);
-  return {field:best.field,confidence:best.score,status:ambiguous?'review':'auto',reason:ambiguous?'Ambiguous match':'High-confidence match',explicitNum};
+  const best=candidates[0],second=candidates[1]||{score:0};
+  if(!best||best.score<0.52)return {field:null,confidence:best?.score||0,status:'unmapped',reason:'No sufficiently confident match; manual review recommended',explicitNum,candidates};
+  if(usedTargets.has(best.field)&&!NUMBERED_FIELDS.has(best.field))return {field:null,confidence:best.score,status:'review',reason:'Target already used; choose manually',explicitNum,candidates};
+  const ambiguous=best.score<0.80||(best.score-second.score)<0.10;
+  return {field:best.field,confidence:best.score,status:ambiguous?'review':'auto',reason:ambiguous?'Competing signals; review suggested':'Header and sample values agree',explicitNum,candidates};
 }
-function detectColumns(headers, rows){
-  const used={}; const mapping={}; const meta={};
+function detectColumns(headers,rows){
+  const used=new Set(),counts={},mapping={},meta={};
   (headers||[]).forEach((h,idx)=>{
-    const result=inferDataTypeMapping(h,dtSampleValues(rows,idx),new Set());
-    let field=result.field;
-    if(field && NUMBERED_FIELDS.has(field)){
+    const values=dtSampleValues(rows,idx),result=inferDataTypeMapping(h,values,new Set(used));
+    let field=result.field, target=null;
+    if(field&&NUMBERED_FIELDS.has(field)){
       const explicit=result.explicitNum;
-      let slot=explicit||((used[field]||0)+1);
-      while(used[`${field}_${slot}`]) slot=Number(slot)+1;
-      if(Number(slot)>2){ field=null; result.status='unmapped'; result.reason='No available destination slot'; }
-      else { used[`${field}_${slot}`]=true; mapping[idx]=`${field}_${slot}`; used[field]=(used[field]||0)+1; }
-    } else if(field && SINGLE_SUFFIX_FIELDS.has(field)) {
-      const target=`${field}_1`; if(used[target]){field=null;result.status='review';result.reason='Target already used';} else {used[target]=true;mapping[idx]=target;}
-    } else if(field){ if(used[field]){field=null;result.status='review';result.reason='Target already used';} else {used[field]=true;mapping[idx]=field;} }
-    if(!field) mapping[idx]=null;
-    meta[idx]={header:String(h??''),field:mapping[idx]||null,confidence:result.confidence,status:result.status,reason:result.reason,values:dtSampleValues(rows,idx)};
+      // Honor explicit suffixes when free; otherwise choose the first free slot.
+      const slots=explicit ? [Number(explicit), ...[1,2].filter(n=>n!==Number(explicit))] : [1,2];
+      const slot=slots.find(n=>!used.has(`${field}_${n}`));
+      if(slot){target=`${field}_${slot}`;used.add(target);counts[field]=(counts[field]||0)+1;}
+      else {field=null;result.status='review';result.reason='Both supported destination slots are already used; choose a different field';}
+    }else if(field&&SINGLE_SUFFIX_FIELDS.has(field)){
+      target=`${field}_1`;
+      if(used.has(target)){field=null;target=null;result.status='review';result.reason='Target already used; choose manually';}
+      else used.add(target);
+    }else if(field){
+      target=field;
+      if(used.has(target)){field=null;target=null;result.status='review';result.reason='Target already used; choose manually';}
+      else used.add(target);
+    }
+    mapping[idx]=field?target:null;
+    if(field && result.status==='review' && result.confidence>=0.80) result.status='auto';
+    meta[idx]={header:String(h??''),field:mapping[idx]||null,confidence:result.confidence,status:result.status,reason:result.reason,values,candidates:result.candidates||[]};
   });
+  S.importMappingMeta=meta;
   return mapping;
 }
 
@@ -11052,9 +11332,9 @@ async function fetchAllRecordsForDatabase(databaseOrId){
     const resolution = dhResolveRecordDatabase(r, db, databaseMap);
     if (resolution.included) {
       byId.set(String(r.id), r);
-      console.debug('[DATA HUB RECORD INCLUDED]', { ...resolution.diagnostic, fetchPath:path });
+      if (window.SWIFT_DEBUG_PERF) console.debug('[DATA HUB RECORD INCLUDED]', { ...resolution.diagnostic, fetchPath:path });
     } else {
-      console.debug('[DATA HUB RECORD EXCLUDED]', { ...resolution.diagnostic, fetchPath:path });
+      if (window.SWIFT_DEBUG_PERF) console.debug('[DATA HUB RECORD EXCLUDED]', { ...resolution.diagnostic, fetchPath:path });
     }
   };
 
@@ -11093,13 +11373,21 @@ async function fetchAllRecordsForDatabase(databaseOrId){
 /* Merges freshly-fetched rows for one database into S.records without duplicating rows
    already present (e.g. from the capped loadRecords() load), so the rest of the app (which
    reads S.records/myAssignedRecords()) sees them too. */
-function mergeRecordsIntoState(rows){
+function mergeRecordsIntoState(rows, options){
   if (!rows || !rows.length) return;
   const seen = new Set((S.records||[]).map(r=>String(r.id)));
   const fresh = rows.filter(r=> !seen.has(String(r.id)));
   if (fresh.length) S.records = (S.records||[]).concat(fresh);
-  flagDuplicates();
-  syncFeedbackLabels();
+  // Reopening a fully cached database often contributes zero new rows. In that case
+  // all derived flags are already valid, so do not rescan the entire workspace.
+  if (!fresh.length) return;
+  // Progressive database loading can deliver hundreds of pages. Recomputing duplicate
+  // flags (including parsing every phone number) for the entire workspace on each page
+  // turns paging into repeated full-workspace scans. Defer derived work until the load ends.
+  if (!options?.skipDerived) {
+    flagDuplicates();
+    syncFeedbackLabels();
+  }
 }
 
 /* Keep the opened database dataset authoritative and isolated from the global
@@ -11118,6 +11406,21 @@ function setOpenDatabaseRecords(rows){
    waiting on the full import to finish. This never touches the network: it patches the
    already-loaded S.databases array in place and re-renders only the Data Hub browse grid,
    not the dashboard/analytics/calendar (those still refresh via the existing paths). */
+async function ensureUpdateCardForAssignedDatabase(dbRow){
+  if(!dbRow?.id || !dbRow?.assigned_user_id) return {ok:false,error:new Error('Database has no valid user assignment.')};
+  const {data:existing,error:readError}=await supa.from('updates').select('id,assignment_id').eq('assignment_id',dbRow.id).limit(1);
+  if(readError) return {ok:false,error:readError};
+  if(!existing?.length){
+    const payload={assignment_id:dbRow.id,owner_id:dbRow.assigned_user_id,database_name:dbRow.name,total_customers:Number(dbRow.customer_count)||0,customers_contacted:0,appointments:0,remarks:null,assigned_date:dbRow.assigned_at||new Date().toISOString(),created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    const {error:insertError}=await supa.from('updates').insert(payload);
+    if(insertError && !/duplicate|unique/i.test(String(insertError.message||''))) return {ok:false,error:insertError};
+  }
+  const {data:verified,error:verifyError}=await supa.from('updates').select('id,assignment_id').eq('assignment_id',dbRow.id).limit(1);
+  if(verifyError) return {ok:false,error:verifyError};
+  if(!verified?.length) return {ok:false,error:new Error('Update card was not persisted or is not visible under current Supabase permissions.')};
+  return {ok:true,data:verified[0]};
+}
+
 function upsertLocalDatabase(dbRow){
   if (!dbRow) return;
   const idx = (S.databases||[]).findIndex(d=> String(d.id)===String(dbRow.id));
@@ -11435,6 +11738,41 @@ function flagDuplicates(){
     });
   });
   refreshDuplicateCompanyIndex(); // keep the cross-database "Duplicate Companies" index in sync with S.records
+  if (typeof _dhQualityCache !== 'undefined') _dhQualityCache.clear();
+}
+// Same exact duplicate semantics as flagDuplicates(), but yields between bounded
+// batches so opening a large database does not monopolize the browser main thread.
+async function dhFlagDuplicatesYielding(batchSize=750){
+  const seen = { company:Object.create(null), bemail:Object.create(null), pemail:Object.create(null), mobile:Object.create(null), site:Object.create(null), li:Object.create(null), phone:Object.create(null) };
+  const rows = S.records || [];
+  for (let start=0; start<rows.length; start+=batchSize){
+    const end = Math.min(rows.length, start+batchSize);
+    for (let i=start; i<end; i++){
+      const r = rows[i];
+      r._dup = false;
+      const keys = [
+        ['company', r.company_name], ['bemail', r.business_email_1], ['pemail', r.personal_email_1],
+        ['mobile', r.mobile_phone_1], ['site', r.company_website_1], ['li', r.linkedin_1]
+      ];
+      for (const [bucket,val] of keys){
+        if (!val) continue;
+        const k = String(val).trim().toLowerCase();
+        if (!k) continue;
+        if (seen[bucket][k]) r._dup = true;
+        seen[bucket][k] = true;
+      }
+      for (const field of DH_PHONE_SOURCE_FIELDS){
+        const parsed = dhParsePhoneCell(r[field]);
+        for (const phone of parsed){
+          if (seen.phone[phone.identity]) r._dup = true;
+          seen.phone[phone.identity] = true;
+        }
+      }
+    }
+    if (end < rows.length) await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  refreshDuplicateCompanyIndex();
+  if (typeof _dhQualityCache !== 'undefined') _dhQualityCache.clear();
 }
 
 /* ==========================================================================
@@ -11687,7 +12025,10 @@ function renderDashboard(){
   const recentDb = myDbs[0];
   const todayStr = new Date().toDateString();
   const todaysImports = myDbs.filter(d=> new Date(d.upload_date).toDateString()===todayStr).length;
-  const assignedToMe = myDbs.length;
+  // Count only rows with a real assigned_user_id that resolves to an existing profile.
+  // Admin KPI covers the workspace; regular users remain scoped to their own assigned rows.
+  const validProfileIds = new Set((S.profiles||[]).map(p=>String(p.id)));
+  const assignedToMe = (myDbs||[]).filter(d=>d.assigned_user_id && validProfileIds.has(String(d.assigned_user_id))).length;
 
   const kpis = [
     { label:'Recently Added Database', value: recentDb ? recentDb.name : '—', wrap:true, featured:true,
@@ -11990,9 +12331,8 @@ function handleFile(file){
     if (!rows.length){ toast('That file looks empty.', 'error'); return; }
     S.importHeaders = rows[0].map(h=>String(h||'').trim());
     S.importRows = rows.slice(1).filter(r=> r.some(c=> String(c||'').trim()!==''));
-    S.importMapping = detectColumns(S.importHeaders, S.importRows);
     S.importMappingMeta = {};
-    S.importHeaders.forEach((h,i)=>{ S.importMappingMeta[i] = { header:h, field:S.importMapping[i]||null, confidence:S.importMapping[i] ? 1 : 0, status:S.importMapping[i] ? "auto" : "unmapped", reason:S.importMapping[i] ? "Detected by Data-Type Intelligence" : "No confident match" }; });
+    S.importMapping = detectColumns(S.importHeaders, S.importRows);
     openImportForm(file.name);
   };
   reader.readAsArrayBuffer(file);
@@ -12004,24 +12344,16 @@ function openImportForm(filename){
   const base = filename.replace(/\.xlsx$/i,'');
   $('#import-db-name').value = base;
 
+  const currentUserName = S.profile?.full_name || S.session.user.email;
   const sel = $('#import-assigned');
-  sel.innerHTML = S.assignedNames.map(n=>`<option value="${esc(n.name)}">${esc(n.name)}</option>`).join('') + `<option value="__add_new__">+ Add new…</option>`;
+  sel.innerHTML = `<option value="${esc(currentUserName)}">${esc(currentUserName)}</option>`;
+  sel.value = currentUserName;
+  $('#import-assigned-field')?.classList.add('hidden');
   $('#new-name-field').classList.add('hidden');
-
   const userSel = $('#import-assign-user');
-  const userField = $('#import-assign-user-field');
-  if (S.isAdmin){
-    userField.classList.remove('hidden');
-    const users = [...S.profiles].sort((a,b)=> (a.full_name||a.email||'').localeCompare(b.full_name||b.email||''));
-    userSel.innerHTML = `<option value="">Select a user…</option>` + users.map(p=>
-      `<option value="${esc(p.id)}">${esc(p.full_name||p.email)}${p.role==='admin'?' (Admin)':''}</option>`
-    ).join('');
-    userSel.value = S.session.user.id;
-  } else {
-    userField.classList.add('hidden');
-    userSel.innerHTML = `<option value="${esc(S.session.user.id)}">${esc(S.profile?.full_name || S.session.user.email)}</option>`;
-    userSel.value = S.session.user.id;
-  }
+  userSel.innerHTML = `<option value="${esc(S.session.user.id)}">${esc(currentUserName)}</option>`;
+  userSel.value = S.session.user.id;
+  $('#import-assign-user-field')?.classList.add('hidden');
 
   // Show the SAME phone-based customer count that will actually be saved to the database.
   // This prevents the import preview from counting rows that only contain a company/contact
@@ -12034,7 +12366,9 @@ function openImportForm(filename){
 
 function renderImportMappingPreview(){
   const table=$('#map-preview-table'); if(!table)return;
-  const targets=DATA_TYPE_TARGETS.map(t=>({key:t.key,label:t.label}));
+  const targets=DATA_TYPE_TARGETS.flatMap(t=>NUMBERED_FIELDS.has(t.key)
+    ? [1,2].map(n=>({key:`${t.key}_${n}`,label:`${t.label} ${n}`}))
+    : SINGLE_SUFFIX_FIELDS.has(t.key) ? [{key:`${t.key}_1`,label:`${t.label} 1`}] : [{key:t.key,label:t.label}]);
   const rows=S.importHeaders.map((h,i)=>{
     const mapped=S.importMapping[i]||''; const meta=S.importMappingMeta?.[i]||{};
     const status=meta.status==='review' ? 'Review' : mapped ? 'Auto' : 'Unmapped';
@@ -12042,7 +12376,7 @@ function renderImportMappingPreview(){
     const options='<option value="">— Unmapped —</option>'+targets.map(t=>`<option value="${esc(t.key)}" ${mapped===t.key?'selected':''}>${esc(t.label)}</option>`).join('');
     const confidence = Math.round(Math.max(0,Math.min(1,Number(meta.confidence)||0))*100);
     const confidenceLabel = meta.status==='review' ? 'Review Required' : mapped ? `${confidence}% confidence` : 'No confident match';
-    return `<tr><td><strong>${esc(h)||'(blank)'}</strong><div class="dt-sample">${(meta.values||[]).slice(0,2).map(v=>esc(v)).join(' · ')}</div></td><td><select class="dt-map-select" data-index="${i}">${options}</select></td><td><span class="dt-status ${cls}">${status}</span><div style="margin-top:4px;font-size:9.5px;color:#667085;">${esc(confidenceLabel)}</div></td></tr>`;
+    return `<tr><td><strong>${esc(h)||'(blank)'}</strong><div class="dt-sample">${(meta.values||[]).slice(0,3).map(v=>esc(v)).join(' · ')}</div></td><td><select class="dt-map-select" data-index="${i}">${options}</select></td><td><span class="dt-status ${cls}">${status}</span><div style="margin-top:4px;font-size:9.5px;color:#667085;">${esc(confidenceLabel)}${meta.reason?` · ${esc(meta.reason)}`:''}</div></td></tr>`;
   }).join('');
   table.innerHTML=`<thead><tr><th>XLSX Column</th><th>Mapped Field</th><th>Status</th></tr></thead><tbody>${rows}</tbody>`;
   table.querySelectorAll('.dt-map-select').forEach(sel=>sel.addEventListener('change',()=>{
@@ -12070,26 +12404,13 @@ $('#import-assigned').addEventListener('change', (e)=>{
 });
 
 $('#import-confirm-btn').addEventListener('click', async ()=>{
-  if(!guardSupa()) return;
-  let assignedTo = $('#import-assigned').value;
-  if (assignedTo === '__add_new__'){
-    const newName = $('#import-new-name').value.trim();
-    if (!newName){ toast('Enter a name.', 'error'); return; }
-    const { error } = await supa.from('assigned_names').insert({ name:newName, created_by:S.session.user.id });
-    if (error && !String(error.message).includes('duplicate')){ toast(error.message, 'error'); return; }
-    assignedTo = newName;
-    await loadAssignedNames();
-  }
-  const assignUserId = $('#import-assign-user').value;
-  if (!assignUserId){ toast('Please select a user to assign this database to.', 'error'); return; }
-  const assignedUser = S.isAdmin ? S.profiles.find(p=>p.id===assignUserId) : S.profile;
+  if(!guardSupa() || !S.session?.user) return;
   const dbName = $('#import-db-name').value.trim() || 'Untitled Database';
+  const currentUser = S.profile || {};
+  const assignedTo = currentUser.full_name || S.session.user.email;
+  const assignUser = { id:S.session.user.id, name:assignedTo, email:currentUser.email || S.session.user.email };
   confirmImportMappingsToMemory();
-  await runImport(dbName, assignedTo, {
-    id: assignUserId,
-    name: assignedUser?.full_name || assignedUser?.email || 'Unknown User',
-    email: assignedUser?.email || null,
-  });
+  await runImport(dbName, assignedTo, assignUser);
 });
 
 /* ==========================================================================
@@ -12186,8 +12507,8 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
   for (let i=0; i<validRows.length; i++){
     const r = validRows[i], out = {};
     Object.entries(mapping).forEach(([idx,key]) => { if (key) out[key] = r[idx]; });
-    mappedValidRows.push(dhNormalizeImportedRecordPhones(out));
-    if (source === 'folder' && i && i % 1500 === 0) await new Promise(resolve=>setTimeout(resolve,0));
+    mappedValidRows.push(dhNormalizeImportedRecordEmails(dhNormalizeImportedRecordPhones(out)));
+    if (i && i % 1000 === 0) await new Promise(resolve=>setTimeout(resolve,0));
   }
   const customerCount = countCountableCustomers(mappedValidRows);
   const nowIso = new Date().toISOString();
@@ -12244,6 +12565,16 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
     dbRow = data;
   }
 
+  // Ensure the normal Updates workflow has a durable card for this assignment.
+  // The database trigger remains the primary path; this is an idempotent fallback and read-back verification.
+  if (dbRow.assigned_user_id){
+    const updateCardResult = await ensureUpdateCardForAssignedDatabase(dbRow);
+    if (!updateCardResult.ok) {
+      console.error('[IMPORT UPDATE CARD PERSISTENCE FAILED]', updateCardResult.error);
+      return {ok:false,error:'Database was created, but its Update card could not be verified: '+(updateCardResult.error?.message||'Unknown Supabase error'),dbRow};
+    }
+  }
+
   // FAST IMPORT PHASE ends here: the database row exists with its real name, correct
   // customer_count, and a 'processing' status. Show its card in Data Hub RIGHT NOW —
   // don't wait for the record batch-insert loop below (which can take a while for
@@ -12283,9 +12614,9 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
       Object.entries(mapping).forEach(([idx, field])=>{
         if (!field) return;
         if (!IMPORT_VALID_FIELDS.has(field)){ console.warn('Ignoring invalid field:', field); return; }
-        rec[field] = String(row[idx] ?? '').trim();
+        rec[field] = (field === 'company_name' || field === 'location') ? String(row[idx] ?? '') : String(row[idx] ?? '').trim();
       });
-      Object.assign(rec, dhNormalizeImportedRecordPhones(rec));
+      Object.assign(rec, dhNormalizeImportedRecordEmails(dhNormalizeImportedRecordPhones(rec)));
 
       let duplicateMatch = null;
       const incomingCompany = normalizeCompanyName(rec.company_name);
@@ -12316,7 +12647,7 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
 
       if (duplicateMatch){
         duplicatesSkipped++;
-        console.debug('[DUPLICATE SKIPPED]', {
+        if (window.SWIFT_DEBUG_PERF) console.debug('[DUPLICATE SKIPPED]', {
           incomingCompany: String(rec.company_name || '').trim(),
           matchedExistingCompany: String(duplicateMatch.existing?.company_name || '').trim(),
           reason: duplicateMatch.comparison.reason,
@@ -12338,7 +12669,7 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
         if (sharedFieldRecord) break;
       }
       if (sharedFieldRecord){
-        console.debug('[UNIQUE IMPORT]', {
+        if (window.SWIFT_DEBUG_PERF) console.debug('[UNIQUE IMPORT]', {
           incomingCompany: String(rec.company_name || '').trim(),
           sharedIdentityDetected: true,
           sharedWithCompany: String(sharedFieldRecord.company_name || '').trim(),
@@ -12364,7 +12695,8 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
         if (!list){ list=[]; seenDuplicateIndex.bySupporting.set(identity,list); }
         list.push(rec);
       });
-      if (source === 'folder' && rowIndex && rowIndex % 1000 === 0) await new Promise(resolve=>setTimeout(resolve,0));
+      // Keep the main thread responsive during both manual and folder imports.
+      if (rowIndex && rowIndex % 1000 === 0) await new Promise(resolve=>setTimeout(resolve,0));
     }
 
     const BATCH = 500;
@@ -12499,7 +12831,7 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
   } else {
     // Manual "Import Database" — unchanged behavior: refresh everything synchronously so
     // the person sees the result reflected everywhere immediately after the modal closes.
-    await Promise.all([loadDatabases(), loadRecords()]);
+    await Promise.all([loadDatabases(), loadRecords(), loadUpdates()]);
     renderDashboard(); renderAllDataFilters(); refreshAllDataView(); renderCalendar(); renderAnalyticsFilters(); renderAnalyticsPage(); renderSettings();
   }
 
@@ -14626,34 +14958,54 @@ function dbbDataQualityFlags(d){
    r._dup flag from flagDuplicates() so "Has Duplicates" here always agrees with the
    "Duplicates only" filter already used inside a database's Records table. ========================================================================== */
 let _dhRecIdx = null;
+let _dhRecIdxSource = null;
+let _dhRecIdxLength = -1;
+let _dhQualityCache = new Map();
 function dbbBuildRecordIndex(){
+  const source = S.records || [];
   const idx = new Map();
-  (S.records||[]).forEach(r=>{
-    const key = r.database_id != null ? String(r.database_id) : r.database_name;
-    if (!key) return;
-    let arr = idx.get(key); if (!arr){ arr = []; idx.set(key, arr); }
-    arr.push(r);
-  });
+  // One linear pass for the entire workspace; cards then use O(1) database lookups
+  // instead of each card independently filtering all 50k+ cached records.
+  for (const r of source){
+    const idKey = r.database_id != null ? String(r.database_id) : '';
+    const nameKey = String(r.database_name || '');
+    for (const key of (idKey && nameKey && idKey !== nameKey ? [idKey, nameKey] : [idKey || nameKey])){
+      if (!key) continue;
+      let arr = idx.get(key); if (!arr){ arr = []; idx.set(key, arr); }
+      // A record with both associations should only be indexed once per key.
+      if (!arr.length || String(arr[arr.length-1]?.id) !== String(r.id)) arr.push(r);
+    }
+  }
   _dhRecIdx = idx;
+  _dhRecIdxSource = source;
+  _dhRecIdxLength = source.length;
+  _dhQualityCache = new Map();
   return idx;
 }
+function dbbEnsureRecordIndex(){
+  const source = S.records || [];
+  if (!_dhRecIdx || _dhRecIdxSource !== source || _dhRecIdxLength !== source.length) dbbBuildRecordIndex();
+  return _dhRecIdx;
+}
 function dbbRecordsForDb(d){
-  if (_dhRecIdx){
-    const byId = _dhRecIdx.get(String(d.id)) || [];
-    const byName = _dhRecIdx.get(d.name) || [];
-    if (!byId.length) return byName;
-    if (!byName.length) return byId;
-    const seen = new Set(byId.map(r=>String(r.id)));
-    return byId.concat(byName.filter(r=>!seen.has(String(r.id))));
-  }
-  return (S.records||[]).filter(r=>dhRecordBelongsToDatabase(r,d));
+  const idx = dbbEnsureRecordIndex();
+  const byId = idx.get(String(d.id)) || [];
+  const byName = idx.get(String(d.name || '')) || [];
+  if (!byId.length) return byName;
+  if (!byName.length || byId === byName) return byId;
+  const seen = new Set(byId.map(r=>String(r.id)));
+  return byId.concat(byName.filter(r=>!seen.has(String(r.id))));
 }
 
 function dbbDuplicateCount(d){
   const rows = dbbRecordsForDb(d);
   if (!rows || !rows.length) return 0;
+  const cacheKey = String(d.id ?? d.name ?? '');
+  const cached = _dhQualityCache.get(cacheKey);
+  if (cached && cached.rows === rows && cached.customerCount === d.customer_count && cached.duplicateCount != null) return cached.duplicateCount;
   let n = 0;
   for (const r of rows) if (r._dup) n++;
+  _dhQualityCache.set(cacheKey, { ...(cached||{}), rows, customerCount:d.customer_count, duplicateCount:n });
   return n;
 }
 // Field-completeness breakdown → composite Data Quality score (0-100). Returns null when
@@ -14670,6 +15022,9 @@ const DQ_GROUP_LABELS = { company:'Company completeness', email:'Email completen
 function dbbQualityBreakdown(d){
   const rows = dbbRecordsForDb(d);
   if (!rows || !rows.length) return null;
+  const cacheKey = String(d.id ?? d.name ?? '');
+  const cached = _dhQualityCache.get(cacheKey);
+  if (cached && cached.rows === rows && cached.customerCount === d.customer_count && cached.quality) return cached.quality;
   const pct = {};
   Object.entries(DQ_GROUPS).forEach(([k, test])=>{
     let n = 0;
@@ -14678,7 +15033,9 @@ function dbbQualityBreakdown(d){
   });
   const score = Math.round(Object.values(pct).reduce((a,b)=>a+b,0) / Object.keys(pct).length);
   const isPartial = typeof d.customer_count === 'number' && d.customer_count > rows.length;
-  return { score, breakdown:pct, recordCount:rows.length, isPartial };
+  const quality = { score, breakdown:pct, recordCount:rows.length, isPartial };
+  _dhQualityCache.set(cacheKey, { ...(cached||{}), rows, customerCount:d.customer_count, quality });
+  return quality;
 }
 function dbbQualityScore(d){ const qb = dbbQualityBreakdown(d); return qb ? qb.score : null; }
 function dbbQualityLabel(score){
@@ -14790,7 +15147,7 @@ function dbbCardHtml(d){
       <div class="dbb-card-identity">
         <div class="dbb-card-icon">${ICON_DB_CIRCLE}</div>
         <div class="dbb-card-name-wrap">
-          <div class="dbb-card-name" title="${esc(d.name)}">${esc(d.name)} ${(d.import_source==='joc' || String(d.original_filename||'').startsWith('[JOC]')) ? '<span style="display:inline-block; margin-left:6px; padding:2px 7px; border-radius:999px; background:#E8F0FF; color:#1D4ED8; font-size:10px; font-weight:800; vertical-align:middle;">JOC</span>' : ''}</div>
+          <div class="dbb-card-name">${esc(d.name)} ${(d.import_source==='joc' || String(d.original_filename||'').startsWith('[JOC]')) ? '<span style="display:inline-block; margin-left:6px; padding:2px 7px; border-radius:999px; background:#E8F0FF; color:#1D4ED8; font-size:10px; font-weight:800; vertical-align:middle;">JOC</span>' : ''}</div>
         </div>
       </div>
       <div class="dbb-card-status">${statusPill}</div>
@@ -14866,6 +15223,9 @@ function dbbCardHtml(d){
       <button class="btn btn-sm" style="flex:1;" data-act="details" data-id="${esc(d.id)}" onclick="dbbCardActionShim(event)">View Error</button>
       ${S.isAdmin ? `<button class="btn btn-sm btn-danger" style="flex:1;" data-act="delete" data-id="${esc(d.id)}" onclick="dbbCardActionShim(event)">Remove</button>` : ''}
     </div>` : ''}
+    <div class="dbb-view-name-row">
+      <button type="button" class="dbb-view-name-btn" data-view-db-name="${esc(d.id)}" aria-label="View complete database name">View</button>
+    </div>
   </div>`;
 }
 // Lets the inline Retry/View Error/Remove buttons on an error card (spec #10) reuse the exact
@@ -16058,6 +16418,9 @@ function renderDatabaseList(){
   if (!chipRow) return; // page not yet in DOM on very first paint
   dhUpdateConnPill();
   const all = dataHubBrowseDatabases();
+  // Index cached records once per dataset version. Card quality/duplicate badges use this
+  // index and cached per-database aggregates instead of rescanning the workspace per card.
+  dbbEnsureRecordIndex();
 
   if (!S._dhLoadedOnce){
     $('#dbb-grid').innerHTML = dhSkeletonCardsHtml(6);
@@ -16153,6 +16516,12 @@ function renderDatabaseList(){
     const db = all.find(d=> String(d.id)===String(card.dataset.id));
     if (db) openDatabaseView(db);
   }));
+  $all('.dbb-view-name-btn', grid).forEach(btn=>btn.addEventListener('click', e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    const db = all.find(d=>String(d.id)===String(btn.dataset.viewDbName));
+    if(db) dbbShowFullDatabaseName(db);
+  }));
   // Three-dot card menu (spec #6) — toggle open/closed, one at a time.
   $all('.dbb-card-menu-btn', grid).forEach(btn=> btn.addEventListener('click', ()=>{
     const menu = grid.querySelector(`.dbb-card-menu[data-menu="${CSS.escape(btn.dataset.menuFor)}"]`);
@@ -16183,6 +16552,35 @@ function renderDatabaseList(){
   S._dhLoadedOnce = true;
 }
 
+
+// Small, accessible popup for the complete database name. Uses current database state;
+// does not add a title tooltip or change any Supabase behavior.
+function dbbShowFullDatabaseName(db){
+  if(!db) return;
+  let modal = document.getElementById('dbb-full-name-modal');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'dbb-full-name-modal';
+    modal.className = 'dbb-name-modal-backdrop hidden';
+    modal.innerHTML = `<section class="dbb-name-modal" role="dialog" aria-modal="true" aria-labelledby="dbb-full-name-title">
+      <div class="dbb-name-modal-head"><h2 class="dbb-name-modal-title" id="dbb-full-name-title">Complete database name</h2>
+      <button type="button" class="dbb-name-modal-close" aria-label="Close popup">&times;</button></div>
+      <div class="dbb-name-modal-value" id="dbb-full-name-value"></div>
+    </section>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e=>{ if(e.target===modal || e.target.closest('.dbb-name-modal-close')) dbbCloseFullDatabaseName(); });
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') dbbCloseFullDatabaseName(); });
+  }
+  const value = modal.querySelector('#dbb-full-name-value');
+  value.textContent = String(db.name || '(Unnamed database)');
+  modal.classList.remove('hidden');
+  modal.querySelector('.dbb-name-modal-close').focus();
+}
+function dbbCloseFullDatabaseName(){
+  const modal=document.getElementById('dbb-full-name-modal');
+  if(modal) modal.classList.add('hidden');
+}
+
 function showListView(){
   $('#alldata-db-browser').classList.remove('hidden');
   $('#alldata-table-view').classList.add('hidden');
@@ -16211,7 +16609,7 @@ async function dhLoadDatabaseProgressively(db, loadSeq){
   const cached=S.dbHub.recordCache.get(dbId);
   const meta=S.dbHub.recordCacheMeta.get(dbId);
   if(cached && Array.isArray(cached) && meta?.complete){
-    S.dbHub.openDbRecords=cached.slice();
+    S.dbHub.openDbRecords=cached;
     mergeRecordsIntoState(cached);
     applyGridFilters();
     dhSetRecordLoading(false);
@@ -16222,10 +16620,14 @@ async function dhLoadDatabaseProgressively(db, loadSeq){
   const seen=new Set(rows.map(r=>String(r.id)));
   let from=rows.length;
   let first=true;
+  let useNameFallback=false;
 
   while(true){
     if(loadSeq!==S.dbHub.openDbLoadSeq || S.dbHub.openDbId!==db.id)return;
-    const {data,error}=await dhFetchDatabasePage(db,from,PAGE);
+    const pageResult = useNameFallback
+      ? await supa.from('records').select('*').eq('database_name',String(db.name||'').trim()).order('id',{ascending:true}).range(from,from+PAGE-1)
+      : await dhFetchDatabasePage(db,from,PAGE);
+    const {data,error}=pageResult;
     if(error){
       // Legacy rows may only carry database_name. Only fall back to the name path
       // when the primary database_id path has produced no rows.
@@ -16234,15 +16636,25 @@ async function dhLoadDatabaseProgressively(db, loadSeq){
         const fallback=await supa.from('records').select('*').eq('database_name',name)
           .order('id',{ascending:true}).range(0,PAGE-1);
         if(!fallback.error){
+          useNameFallback=true;
           (fallback.data||[]).forEach(r=>{if(!seen.has(String(r.id))){seen.add(String(r.id));rows.push(r);}});
           from=rows.length;
           first=false;
-          S.dbHub.openDbRecords=rows.slice();
-          S.dbHub.recordCache.set(dbId,rows.slice());
+          // Keep one growing array while paging. Copying the entire accumulated dataset
+          // after every 500-row page caused quadratic allocation on large databases.
+          S.dbHub.openDbRecords=rows;
+          S.dbHub.recordCache.set(dbId,rows);
           S.dbHub.recordCacheMeta.set(dbId,{complete:(fallback.data||[]).length<PAGE,lastFetched:Date.now()});
-          mergeRecordsIntoState(rows);
-          applyGridFilters();
-          if((fallback.data||[]).length<PAGE){dhSetRecordLoading(false);return;}
+          dhSetRecordLoading(true, `Loading records… ${rows.length.toLocaleString()} loaded`);
+          if((fallback.data||[]).length<PAGE){
+            mergeRecordsIntoState(rows, {skipDerived:true});
+            dhSetRecordLoading(true, 'Finalizing duplicate and contact indexes…');
+            await dhFlagDuplicatesYielding();
+            syncFeedbackLabels();
+            if(loadSeq===S.dbHub.openDbLoadSeq && S.dbHub.openDbId===db.id) applyGridFilters();
+            dhSetRecordLoading(false);
+            return;
+          }
           continue;
         }
       }
@@ -16253,17 +16665,30 @@ async function dhLoadDatabaseProgressively(db, loadSeq){
     first=false;
     const batch=data||[];
     batch.forEach(r=>{if(!seen.has(String(r.id))){seen.add(String(r.id));rows.push(r);}});
-    S.dbHub.openDbRecords=rows.slice();
-    S.dbHub.recordCache.set(dbId,rows.slice());
+    // Share the progressive-load array; it is appended in-place until paging completes.
+    // Snapshot copies per page made loading 100k+ records unnecessarily expensive.
+    S.dbHub.openDbRecords=rows;
+    S.dbHub.recordCache.set(dbId,rows);
     const complete=batch.length<PAGE;
     S.dbHub.recordCacheMeta.set(dbId,{complete,lastFetched:Date.now()});
-    mergeRecordsIntoState(batch);
-
     if(loadSeq===S.dbHub.openDbLoadSeq && S.dbHub.openDbId===db.id){
-      applyGridFilters();
+      // Do not filter/sort/render the entire accumulated dataset after every page.
+      // That repeated O(n) work (plus sorting) made a 100k-row load quadratic-ish.
+      // Keep the UI responsive with a cheap progress label, then render the complete
+      // filtered view once the final page arrives.
       dhSetRecordLoading(!complete, complete ? '' : `Loading records… ${rows.length.toLocaleString()} loaded`);
     }
-    if(complete){dhSetRecordLoading(false);return;}
+    if(complete){
+      if(loadSeq===S.dbHub.openDbLoadSeq && S.dbHub.openDbId===db.id){
+        mergeRecordsIntoState(rows, {skipDerived:true});
+        dhSetRecordLoading(true, 'Finalizing duplicate and contact indexes…');
+        await dhFlagDuplicatesYielding();
+        syncFeedbackLabels();
+        if(loadSeq===S.dbHub.openDbLoadSeq && S.dbHub.openDbId===db.id) applyGridFilters();
+        dhSetRecordLoading(false);
+      }
+      return;
+    }
     from+=PAGE;
     // Yield to the browser between pages so sidebar/topbar/table interactions remain responsive.
     await new Promise(resolve=>setTimeout(resolve,0));
@@ -16292,7 +16717,7 @@ function openDatabaseView(db){
   const cached=S.dbHub.recordCache.get(String(db.id));
   const meta=S.dbHub.recordCacheMeta.get(String(db.id));
   if(cached?.length){
-    S.dbHub.openDbRecords=cached.slice();
+    S.dbHub.openDbRecords=cached;
     mergeRecordsIntoState(cached);
     applyGridFilters();
     dhSetRecordLoading(meta?.complete ? false : true, meta?.complete ? '' : `Loading more records… ${cached.length.toLocaleString()} loaded`);
@@ -16456,7 +16881,7 @@ gridSearchInput.addEventListener('input', debounce(async ()=>{
         (data || []).forEach(r=>{
           const resolution = dhResolveRecordDatabase(r, db, databaseMap);
           if (resolution.included) byId.set(String(r.id), r);
-          else console.debug('[DATA HUB LIVE SEARCH EXCLUDED]', { ...resolution.diagnostic, fetchPath:pathLabel });
+          else if (window.SWIFT_DEBUG_PERF) console.debug('[DATA HUB LIVE SEARCH EXCLUDED]', { ...resolution.diagnostic, fetchPath:pathLabel });
         });
         if (!data || data.length < PAGE) break;
         from += PAGE;
@@ -16497,7 +16922,7 @@ function applyGridFilters(){
   // because that cache is intentionally limited to 50,000 rows.
   if (S.grid.dbIdFilter) {
     rows = Array.isArray(S.dbHub.openDbRecords)
-      ? [...S.dbHub.openDbRecords]
+      ? S.dbHub.openDbRecords
       : [];
   } else {
     // Normal Data Hub view
@@ -19149,6 +19574,8 @@ function renderAnalyticsFilters(){
   const curUser = S.analytics.userFilter, curStatus = S.analytics.statusFilter;
 
   $('#an-filter-user').innerHTML = `<option value="">All users</option>` + users.map(u=>`<option value="${esc(u)}">${esc(u)}</option>`).join('');
+  $('#an-filter-database').innerHTML = `<option value="">All databases</option>` + summaries.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<option value="${esc(String(r.db?.id||r.name))}">${esc(r.name)}</option>`).join('');
+  $('#an-filter-database').value = S.analytics.dbFilter || '';
   $('#an-filter-status').innerHTML = `<option value="">All statuses</option>` + Object.entries(ANALYTICS_STATUS_LABELS).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join('');
 
   $('#an-filter-user').value = curUser || '';
@@ -19162,6 +19589,7 @@ function analyticsFilteredSummaries(){
   const a = S.analytics;
   let rows = analyticsBuildDbSummaries();
   if (a.userFilter) rows = rows.filter(r=> r.assignedTo === a.userFilter);
+  if (a.dbFilter) rows = rows.filter(r=> String(r.db?.id||r.name) === a.dbFilter);
   if (a.statusFilter) rows = rows.filter(r=> r.status === a.statusFilter);
   if (a.dateFrom) rows = rows.filter(r=> r.assignedDate && new Date(r.assignedDate) >= new Date(a.dateFrom));
   if (a.dateTo) rows = rows.filter(r=> r.assignedDate && new Date(r.assignedDate) <= new Date(a.dateTo+'T23:59:59'));
@@ -19368,22 +19796,110 @@ function renderAnalyticsSidebar(summaries){
   `;
 }
 
+/* Analytics-only CRM Intelligence Center. All figures are derived from the existing
+   authorized in-memory Supabase datasets; no synthetic/demo values are generated. */
+function anEsc(v){return esc(String(v??''));}
+function anNum(v){const n=Number(v);return Number.isFinite(n)?n:0;}
+function anDate(v){if(!v)return null;const d=new Date(v);return Number.isNaN(d.getTime())?null:d;}
+function anFilteredRecords(summaries){
+  const ids=new Set(summaries.map(x=>String(x.db?.id||''))), names=new Set(summaries.map(x=>String(x.name||'')));
+  let rows=(S.isAdmin?S.records:myAssignedRecords())||[];
+  rows=rows.filter(r=>ids.has(String(r.database_id||''))||names.has(String(r.database_name||'')));
+  if(S.analytics.dateFrom) rows=rows.filter(r=>{const d=anDate(r.import_date||r.created_at||r.updated_at);return d&&d>=new Date(S.analytics.dateFrom);});
+  if(S.analytics.dateTo) rows=rows.filter(r=>{const d=anDate(r.import_date||r.created_at||r.updated_at);return d&&d<=new Date(S.analytics.dateTo+'T23:59:59');});
+  if(S.analytics.recordStatusFilter) rows=rows.filter(r=>anRecordStatus(r)===S.analytics.recordStatusFilter);
+  return rows;
+}
+function anField(r,keys){for(const k of keys){if(r?.[k]!==undefined&&r?.[k]!==null&&String(r[k]).trim()!=='')return r[k];}return '';}
+function anHasValue(v){return v!==null&&v!==undefined&&String(v).trim()!=='';}
+function anPhone(r){return ['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','numbers_from_company_website_1','numbers_from_company_website_2','Mobile Phone 1','Mobile Phone 2','Work Phone 1','Work Phone 2','Numbers From Company Website 1','Numbers From Company Website 2'].some(k=>anHasValue(r?.[k]));}
+function anEmail(r){return ['personal_email_1','personal_email_2','business_email_1','business_email_2','email','email_address','Personal Email 1','Personal Email 2','Business Email 1','Business Email 2'].some(k=>anHasValue(r?.[k]));}
+function anRecordStatus(r){return String(anField(r,['feedback','status','work_status','customer_status','lead_status'])||'Unspecified').trim()||'Unspecified';}
+function anPanel(title,subtitle,body,span='an-span-6'){return `<section class="an-panel ${span}"><div class="an-panel-head"><div><h3>${title}</h3><div class="an-panel-sub">${subtitle}</div></div></div>${body}</section>`;}
+function anBarList(items,format=(v)=>v.toLocaleString(),empty='No matching data in the current scope.'){if(!items.length)return `<div class="an-empty">${empty}</div>`;const max=Math.max(1,...items.map(x=>x.value));return `<div class="an-bars">${items.map(x=>`<div class="an-bar-row"><div class="an-bar-label" title="${anEsc(x.label)}">${anEsc(x.label)}</div><div class="an-bar-track"><div class="an-bar-fill" style="width:${Math.max(0,Math.min(100,x.value/max*100))}%"></div></div><div class="an-bar-value">${format(x.value)}</div></div>`).join('')}</div>`;}
+function anTrend(updates){
+  const now=new Date();now.setHours(0,0,0,0);
+  let start=S.analytics.dateFrom?new Date(S.analytics.dateFrom+'T00:00:00'):new Date(now);
+  let end=S.analytics.dateTo?new Date(S.analytics.dateTo+'T00:00:00'):new Date(now);
+  if(!S.analytics.dateFrom&&!S.analytics.dateTo) start.setDate(start.getDate()-13);
+  else if(!S.analytics.dateFrom) start.setDate(end.getDate()-13);
+  else if(!S.analytics.dateTo) end=new Date(now);
+  if(Number.isNaN(start.getTime())) start=new Date(now.getTime()-13*86400000);
+  if(Number.isNaN(end.getTime())) end=new Date(now);
+  if(start>end){const swap=start;start=end;end=swap;}
+  // Keep the chart legible on long custom ranges while respecting the selected window.
+  if(Math.round((end-start)/86400000)>30) start=new Date(end.getTime()-30*86400000);
+  const days=[];for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1))days.push(new Date(d));
+  const vals=days.map(d=>{const key=d.toDateString();return updates.filter(u=>{const dt=anDate(u.assigned_date||u.created_at||u.updated_at);return dt&&dt.toDateString()===key;}).reduce((n,u)=>n+anNum(u.customers_contacted),0);});
+  if(!updates.length)return `<div class="an-empty">No update activity is available for the selected scope.</div>`;
+  const max=Math.max(1,...vals),w=600,h=170,p=14,step=(w-p*2)/Math.max(1,vals.length-1);
+  const pts=vals.map((v,i)=>`${(p+i*step).toFixed(1)},${(h-p-(v/max)*(h-p*2)).toFixed(1)}`).join(' ');
+  const area=`${p},${h-p} ${pts} ${w-p},${h-p}`;
+  return `<svg class="an-trend" viewBox="0 0 ${w} ${h}" role="img" aria-label="Daily contacted customers for the selected date range"><defs><linearGradient id="anTrendFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#4169E1" stop-opacity=".22"/><stop offset="100%" stop-color="#4169E1" stop-opacity="0"/></linearGradient></defs>${[.25,.5,.75].map(t=>`<line x1="${p}" y1="${h-p-t*(h-2*p)}" x2="${w-p}" y2="${h-p-t*(h-2*p)}" stroke="#E9EDF6" stroke-dasharray="3 4"/>`).join('')}<polygon points="${area}" fill="url(#anTrendFill)"/><polyline points="${pts}" fill="none" stroke="#3158D8" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${vals.map((v,i)=>`<circle cx="${(p+i*step).toFixed(1)}" cy="${(h-p-(v/max)*(h-p*2)).toFixed(1)}" r="2.8" fill="#3158D8"><title>${days[i].toLocaleDateString()} · ${v.toLocaleString()} contacts</title></circle>`).join('')}<text x="${p}" y="${h-1}" font-size="10" fill="#7A8499">${days[0].toLocaleDateString(undefined,{month:'short',day:'numeric'})}</text><text x="${w-p}" y="${h-1}" text-anchor="end" font-size="10" fill="#7A8499">${days[days.length-1].toLocaleDateString(undefined,{month:'short',day:'numeric'})}</text></svg><div class="an-chart-legend"><span><i class="an-legend-dot" style="background:#3158D8"></i>Customers contacted (logged updates)</span></div>`;
+}
+function renderAnalyticsIntelligence(summaries){
+ const root=$('#an-intelligence-center'); if(!root)return;
+ const a=S.analytics||{};
+ const dbById=new Map((S.databases||[]).map(d=>[String(d.id),d]));
+ const scopedUpdates=(S.updates||[]).filter(u=>{
+   const db=(u.assignment_id&&dbById.get(String(u.assignment_id))) || (u.database_id&&dbById.get(String(u.database_id))) || (S.databases||[]).find(d=>String(d.name||'')===String(u.database_name||''));
+   if(!db)return false;
+   if(a.userFilter && String(db.assigned_user_id||'')!==String(a.userFilter) && analyticsUserName(u.owner_id)!==a.userFilter)return false;
+   if(a.dbFilter && String(db.id)!==String(a.dbFilter) && String(db.name)!==String(a.dbFilter))return false;
+   const dt=anDate(u.entry_date||u.assigned_date||u.created_at||u.updated_at);
+   if(a.dateFrom && (!dt||dt<new Date(a.dateFrom+'T00:00:00')))return false;
+   if(a.dateTo && (!dt||dt>new Date(a.dateTo+'T23:59:59')))return false;
+   return true;
+ });
+ const filteredDbs=(S.databases||[]).filter(d=>(!a.userFilter||String(d.assigned_user_id||'')===String(a.userFilter)||String(d.assigned_user_name||'')===String(a.userFilter)||analyticsUserName(d.assigned_user_id)===a.userFilter)&&(!a.dbFilter||String(d.id)===String(a.dbFilter)||String(d.name)===String(a.dbFilter))&&(!a.search||String(d.name||'').toLowerCase().includes(String(a.search).toLowerCase())));
+ const updateDb=u=>(u.assignment_id&&dbById.get(String(u.assignment_id)))||(u.database_id&&dbById.get(String(u.database_id)))||(S.databases||[]).find(d=>String(d.name||'')===String(u.database_name||''));
+ const byDb=new Map();
+ filteredDbs.forEach(db=>{
+   const us=scopedUpdates.filter(u=>updateDb(u)?.id===db.id);
+   // Update rows contain cumulative contact counters. Use the latest snapshot per assignment to avoid summing repeated daily snapshots.
+   const latest=[...us].sort((x,y)=>new Date(y.updated_at||y.created_at||y.assigned_date||0)-new Date(x.updated_at||x.created_at||x.assigned_date||0))[0];
+   const total=Math.max(0,Number(db.customer_count)||0);
+   const contacted=Math.min(total,Math.max(0,Number(latest?.customers_contacted)||0));
+   const appointments=us.reduce((n,u)=>n+Math.max(0,Number(u.appointments)||0),0);
+   byDb.set(String(db.id),{db,name:db.name||'Unnamed database',total,contacted,pending:Math.max(0,total-contacted),appointments,rate:total?contacted/total*100:0,us});
+ });
+ const rows=[...byDb.values()].sort((x,y)=>y.total-x.total);
+ const totalDb=rows.length,totalCust=rows.reduce((n,r)=>n+r.total,0),contacted=rows.reduce((n,r)=>n+r.contacted,0),pending=Math.max(0,totalCust-contacted),appointments=rows.reduce((n,r)=>n+r.appointments,0),rate=totalCust?contacted/totalCust*100:0;
+ const userName=a.userFilter ? (S.profiles||[]).find(p=>String(p.id)===String(a.userFilter))?.full_name||a.userFilter : 'All Salespersons';
+ $('#an-kpi-grid').innerHTML=[['Total Databases',totalDb,'#3730A3','▤'],['Total Customers',totalCust,'#16A36A','♟'],['Customers Contacted',contacted,'#1677F2','☎'],['Appointments Booked',appointments,'#EA8A13','▣'],['Pending Customers',pending,'#E73561','◷']].map(([label,value,color,icon])=>`<div class="kpi-card no-logo an-ref-kpi"><div class="an-ref-icon" style="color:${color};background:${color}16">${icon}</div><div class="an-ref-kpi-label">${label}</div><div class="an-ref-kpi-value">${Number(value).toLocaleString()}</div>${label==='Customers Contacted'?`<div class="an-ref-kpi-meta">${rate.toFixed(1)}% contact rate</div>`:''}</div>`).join('');
+ const statusData=[{label:'Contacted Customers',value:contacted,color:'#1677F2'},{label:'Appointment Booked',value:Math.min(pending,appointments),color:'#F59E0B'},{label:'Not Contacted',value:pending,color:'#F02D5D'}];
+ const months=[];const now=new Date();for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push({date:d,label:d.toLocaleDateString(undefined,{month:'short',year:'numeric'}),contacts:0,appointments:0});}
+ scopedUpdates.forEach(u=>{const dt=anDate(u.entry_date||u.assigned_date||u.created_at||u.updated_at);if(!dt)return;const m=months.find(x=>x.date.getFullYear()===dt.getFullYear()&&x.date.getMonth()===dt.getMonth());if(m){m.contacts+=Math.max(0,Number(u.customers_contacted)||0);m.appointments+=Math.max(0,Number(u.appointments)||0);}});
+ root.innerHTML=`<div class="an-ref-grid"><section class="an-ref-panel an-ref-donut"><div class="an-ref-panel-head"><div><h3>Customer Status – ${anEsc(userName)}</h3><p>Total customers: ${totalCust.toLocaleString()}</p></div></div><div class="an-ref-donut-body"><div class="an-ref-chart"><canvas id="an-ref-donut-chart" aria-label="Customer status donut chart"></canvas></div><div class="an-ref-legend">${statusData.map(d=>`<div class="an-ref-legend-row"><i style="background:${d.color}"></i><span>${d.label}</span><strong>${d.value.toLocaleString()}</strong><small>${totalCust?(d.value/totalCust*100).toFixed(1):'0.0'}%</small></div>`).join('')}</div></div></section><section class="an-ref-panel an-ref-monthly"><div class="an-ref-panel-head"><div><h3>Monthly Trend – ${anEsc(userName)}</h3><p>Customers contacted vs appointments recorded</p></div></div><div class="an-ref-month-chart"><canvas id="an-ref-month-chart" aria-label="Monthly contacts and appointments bar chart"></canvas></div></section></div><section class="an-ref-panel an-ref-table-panel"><div class="an-ref-table-head"><div><h3>Database-wise Performance – ${anEsc(userName)}</h3><p>Assigned databases and contact coverage</p></div><div class="an-ref-table-actions"><input id="an-ref-table-search" type="search" placeholder="Search database…"><button class="btn btn-sm btn-primary" id="an-ref-export">↓ Export Excel</button></div></div><div class="an-ref-table-wrap"><table class="an-ref-table"><thead><tr><th>#</th><th>Database Name</th><th>Total Customers</th><th>Customers Contacted</th><th>Pending Customers</th><th>Appointments Booked</th><th>Contact Rate</th><th>Actions</th></tr></thead><tbody id="an-ref-table-body"></tbody><tfoot><tr><th colspan="2">Total</th><th>${totalCust.toLocaleString()}</th><th>${contacted.toLocaleString()}</th><th>${pending.toLocaleString()}</th><th>${appointments.toLocaleString()}</th><th>${rate.toFixed(1)}%</th><th>—</th></tr></tfoot></table></div><div class="an-ref-source-note">Contacted totals use the latest saved cumulative update snapshot per assigned database to avoid double-counting. Appointment totals sum saved update appointment counts within the selected date range. Customer totals come from each database’s authoritative customer_count.</div></section>`;
+ if(window.Chart){
+   if(window._anRefDonut)window._anRefDonut.destroy(); if(window._anRefMonthly)window._anRefMonthly.destroy();
+   window._anRefDonut=new Chart($('#an-ref-donut-chart'),{type:'doughnut',data:{labels:statusData.map(x=>x.label),datasets:[{data:statusData.map(x=>x.value),backgroundColor:statusData.map(x=>x.color),borderWidth:0,hoverOffset:7}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${Number(c.raw).toLocaleString()} (${totalCust?(c.raw/totalCust*100).toFixed(1):0}%)`}}},onClick:(e,els)=>{if(els.length){const i=els[0].index;S.analytics.statusFilter=i===2?'pending':'';if($('#an-filter-status'))$('#an-filter-status').value=S.analytics.statusFilter;}}}});
+   window._anRefMonthly=new Chart($('#an-ref-month-chart'),{type:'bar',data:{labels:months.map(m=>m.label),datasets:[{label:'Customers Contacted',data:months.map(m=>m.contacts),backgroundColor:'#1677F2',borderRadius:5},{label:'Appointments Booked',data:months.map(m=>m.appointments),backgroundColor:'#F28B22',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'start',labels:{usePointStyle:true,pointStyle:'rectRounded',boxWidth:9}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0},grid:{color:'#E9EDF6'}}}}});
+ }
+ const tbody=$('#an-ref-table-body');
+ const paintTable=(q='')=>{const shown=rows.filter(r=>r.name.toLowerCase().includes(q.toLowerCase()));tbody.innerHTML=shown.length?shown.map((r,i)=>`<tr><td>${i+1}</td><td class="an-ref-db-name">${anEsc(r.name)}</td><td>${r.total.toLocaleString()}</td><td>${r.contacted.toLocaleString()}</td><td>${r.pending.toLocaleString()}</td><td>${r.appointments.toLocaleString()}</td><td><span class="an-ref-rate">${r.rate.toFixed(1)}%</span><span class="an-ref-progress"><i style="width:${Math.min(100,r.rate)}%"></i></span></td><td><button class="btn btn-sm an-ref-view" data-an-ref-view="${anEsc(String(r.db.id))}">View</button></td></tr>`).join(''):`<tr><td colspan="8" class="an-ref-empty">${rows.length?'No databases match your search.':'No databases found for this filter.'}</td></tr>`;};paintTable();
+ $('#an-ref-table-search')?.addEventListener('input',e=>paintTable(e.target.value));
+ $all('[data-an-ref-view]',root).forEach(btn=>btn.addEventListener('click',()=>{const db=(S.databases||[]).find(d=>String(d.id)===btn.dataset.anRefView);if(db){goPage('alldata');openDatabaseView(db);}}));
+ $('#an-ref-export')?.addEventListener('click',()=>{if(!window.XLSX){toast('Excel export is unavailable.','error');return;}const data=rows.map(r=>({'Database Name':r.name,'Total Customers':r.total,'Customers Contacted':r.contacted,'Pending Customers':r.pending,'Appointments Booked':r.appointments,'Contact Rate (%)':Number(r.rate.toFixed(2)),'Assigned Salesperson':r.db.assigned_user_name||analyticsUserName(r.db.assigned_user_id)}));const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Database Performance');XLSX.writeFile(wb,`SWIFT_CARGO_Analytics_${new Date().toISOString().slice(0,10)}.xlsx`);});
+}
 function renderAnalyticsPage(){
   if (!S.isAdmin) return; // Analytics is Admin-only — never render for normal users, no matter which code path calls this
   const summaries = analyticsFilteredSummaries();
   renderAnalyticsKpis(summaries);
+  renderAnalyticsIntelligence(summaries);
   renderAnalyticsCardList(summaries);
   renderAnalyticsSidebar(summaries);
   S.analytics._currentRows = summaries;
 }
 
 $('#an-filter-user').addEventListener('change', e=>{ S.analytics.userFilter = e.target.value; renderAnalyticsPage(); });
+$('#an-filter-database').addEventListener('change', e=>{ S.analytics.dbFilter = e.target.value; renderAnalyticsPage(); });
 $('#an-filter-status').addEventListener('change', e=>{ S.analytics.statusFilter = e.target.value; renderAnalyticsPage(); });
 $('#an-filter-from').addEventListener('change', e=>{ S.analytics.dateFrom = e.target.value; renderAnalyticsPage(); });
 $('#an-filter-to').addEventListener('change', e=>{ S.analytics.dateTo = e.target.value; renderAnalyticsPage(); });
 $('#an-search').addEventListener('input', debounce(e=>{ S.analytics.search = e.target.value.trim(); renderAnalyticsPage(); }, 250));
 $('#an-clear-filters').addEventListener('click', ()=>{
-  S.analytics.userFilter=''; S.analytics.statusFilter=''; S.analytics.dateFrom=''; S.analytics.dateTo=''; S.analytics.search='';
+  S.analytics.userFilter=''; S.analytics.dbFilter=''; S.analytics.statusFilter=''; S.analytics.recordStatusFilter=''; S.analytics.dateFrom=''; S.analytics.dateTo=''; S.analytics.search='';
   renderAnalyticsFilters(); renderAnalyticsPage();
 });
 $('#an-refresh-btn').addEventListener('click', async ()=>{
@@ -19422,9 +19938,27 @@ $all('#an-export-menu button').forEach(btn=> btn.addEventListener('click', ()=>{
   if (!rows.length){ toast('No data to export for the current filters.', 'error'); return; }
   const fmt = btn.dataset.fmt;
   if (fmt==='xlsx'){
-    const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Analytics');
+    const addSheet=(name,data)=>{const ws=XLSX.utils.json_to_sheet(data.length?data:[{Note:'No data available for this sheet in the current filter scope.'}]);XLSX.utils.book_append_sheet(wb,ws,name);};
+    addSheet('Databases',rows);
+    const summaries=S.analytics._currentRows||[];
+    const updates=analyticsScopedUpdates().filter(u=>!S.analytics.userFilter||analyticsUserName(u.owner_id)===S.analytics.userFilter)
+      .filter(u=>!S.analytics.dbFilter||String(u.assignment_id||u.database_id||u.database_name)===S.analytics.dbFilter||summaries.some(x=>String(x.db?.id||x.name)===S.analytics.dbFilter&&x.name===u.database_name))
+      .filter(u=>{const d=anDate(u.assigned_date||u.created_at||u.updated_at);return (!S.analytics.dateFrom||d&&d>=new Date(S.analytics.dateFrom))&&(!S.analytics.dateTo||d&&d<=new Date(S.analytics.dateTo+'T23:59:59'));});
+    addSheet('Update Activity',updates.map(u=>({'Date':u.assigned_date||u.created_at||u.updated_at||'', 'User':analyticsUserName(u.owner_id), 'Database':u.database_name||'', 'Customers Contacted':anNum(u.customers_contacted), 'Appointments':anNum(u.appointments), 'Remarks':u.remarks||u.remark||''})));
+    const records=anFilteredRecords(summaries);
+    addSheet('Contact Quality',[{
+      'Loaded Records':records.length,
+      'Records With Phone':records.filter(anPhone).length,
+      'Records With Email':records.filter(anEmail).length,
+      'Records With Phone And Email':records.filter(r=>anPhone(r)&&anEmail(r)).length,
+      'Missing Phone':records.filter(r=>!anPhone(r)).length,
+      'Missing Email':records.filter(r=>!anEmail(r)).length,
+      'Dataset Scope':'Currently loaded, authorized records only',
+      'Limit Note':'Record cache may be capped at 50,000 rows; figures may not represent the complete database.'
+    }]);
+    const byUser={};updates.forEach(u=>{const name=analyticsUserName(u.owner_id);if(!byUser[name])byUser[name]={User:name,'Customers Contacted':0,Appointments:0,'Update Entries':0};byUser[name]['Customers Contacted']+=anNum(u.customers_contacted);byUser[name].Appointments+=anNum(u.appointments);byUser[name]['Update Entries']++;});
+    addSheet('Team Performance',Object.values(byUser).sort((a,b)=>b['Customers Contacted']-a['Customers Contacted']));
     XLSX.writeFile(wb, analyticsExportFilename('xlsx'));
   } else if (fmt==='csv'){
     download(analyticsExportFilename('csv'), toCSV(rows), 'text/csv');
@@ -26470,5 +27004,138 @@ async function updRefreshAppointmentCalendarCache(){
 
 boot();
 </script>
+
+<style id="datahub-premium-multicolor-accents">
+/* Data Hub card accents: restrained multicolor tints; layout and behavior unchanged. */
+#page-alldata .dbb-grid > .dbb-card{
+  --dbb-accent:#2348D8; --dbb-tint:rgba(35,72,216,.055); --dbb-soft:#EEF4FF; --dbb-line:rgba(35,72,216,.22);
+  background:linear-gradient(180deg,var(--dbb-tint) 0,rgba(255,255,255,0) 34%),#fff;
+  border:1px solid #E8ECF4; border-top:3px solid var(--dbb-accent);
+  box-shadow:0 4px 14px rgba(20,25,40,.045);
+}
+#page-alldata .dbb-grid > .dbb-card:nth-child(6n+1){--dbb-accent:#2348D8;--dbb-tint:rgba(35,72,216,.065);--dbb-soft:#EEF4FF;--dbb-line:rgba(35,72,216,.24)}
+#page-alldata .dbb-grid > .dbb-card:nth-child(6n+2){--dbb-accent:#7651D6;--dbb-tint:rgba(118,81,214,.065);--dbb-soft:#F3EEFF;--dbb-line:rgba(118,81,214,.25)}
+#page-alldata .dbb-grid > .dbb-card:nth-child(6n+3){--dbb-accent:#159A68;--dbb-tint:rgba(21,154,104,.06);--dbb-soft:#EAFBF3;--dbb-line:rgba(21,154,104,.24)}
+#page-alldata .dbb-grid > .dbb-card:nth-child(6n+4){--dbb-accent:#C58A16;--dbb-tint:rgba(197,138,22,.07);--dbb-soft:#FFF7E5;--dbb-line:rgba(197,138,22,.28)}
+#page-alldata .dbb-grid > .dbb-card:nth-child(6n+5){--dbb-accent:#0D9488;--dbb-tint:rgba(13,148,136,.065);--dbb-soft:#E8FAF8;--dbb-line:rgba(13,148,136,.25)}
+#page-alldata .dbb-grid > .dbb-card:nth-child(6n){--dbb-accent:#C43D58;--dbb-tint:rgba(196,61,88,.06);--dbb-soft:#FFF0F3;--dbb-line:rgba(196,61,88,.24)}
+#page-alldata .dbb-grid > .dbb-card:hover{border-color:var(--dbb-line);border-top-color:var(--dbb-accent);box-shadow:0 10px 24px rgba(20,25,40,.075);}
+#page-alldata .dbb-card-icon{color:var(--dbb-accent);background:linear-gradient(135deg,#fff,var(--dbb-soft));border-color:var(--dbb-line);}
+#page-alldata .dbb-view-name-btn{color:var(--dbb-accent);background:linear-gradient(135deg,#fff,var(--dbb-soft));border-color:var(--dbb-line);}
+#page-alldata .dbb-view-name-btn:hover{background:var(--dbb-soft);border-color:var(--dbb-accent);}
+#page-alldata .dbb-card-hero-count{color:#111827;}
+/* Keep status colors tied to real status classes, not the decorative card palette. */
+#page-alldata .dbb-card-foot-status.st-imported{color:#15803D}
+#page-alldata .dbb-card-foot-status.st-updated{color:#B7791F}
+#page-alldata .dbb-card-foot-status.st-error{color:#DC2626}
+@media(prefers-reduced-motion:reduce){#page-alldata .dbb-grid > .dbb-card{transition:none}}
+
+<style id="datahub-premium-card-depth">
+/* Premium full-card accent treatment; CSS only, with existing card markup and behavior retained. */
+#page-alldata .dbb-grid > .dbb-card{
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--dbb-accent) 8%, #fff) 0%,
+    #fff 42%,
+    color-mix(in srgb, var(--dbb-accent) 3.5%, #fff) 100%);
+  border:1px solid color-mix(in srgb, var(--dbb-accent) 27%, #e8ecf4);
+  border-top:3px solid var(--dbb-accent);
+  border-radius:20px;
+  box-shadow:0 5px 16px rgba(23,34,66,.055), 0 1px 3px rgba(23,34,66,.035);
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+#page-alldata .dbb-grid > .dbb-card:hover{
+  transform:translateY(-3px);
+  border-color:color-mix(in srgb, var(--dbb-accent) 42%, #e8ecf4);
+  border-top-color:var(--dbb-accent);
+  box-shadow:0 12px 26px rgba(23,34,66,.09), 0 3px 8px color-mix(in srgb, var(--dbb-accent) 9%, transparent);
+}
+#page-alldata .dbb-card-icon{
+  color:var(--dbb-accent);
+  background:linear-gradient(145deg,#fff 8%,var(--dbb-soft) 100%);
+  border:1px solid color-mix(in srgb, var(--dbb-accent) 24%, #fff);
+  box-shadow:0 3px 8px color-mix(in srgb, var(--dbb-accent) 10%, transparent);
+}
+#page-alldata .dbb-view-name-btn{
+  color:var(--dbb-accent);
+  background:linear-gradient(135deg,#fff 0%,var(--dbb-soft) 100%);
+  border:1px solid color-mix(in srgb, var(--dbb-accent) 28%, #fff);
+  box-shadow:0 2px 5px color-mix(in srgb, var(--dbb-accent) 7%, transparent);
+  transition:background .16s ease, box-shadow .16s ease, transform .16s ease, border-color .16s ease;
+}
+#page-alldata .dbb-view-name-btn:hover{
+  background:linear-gradient(135deg,var(--dbb-soft) 0%, color-mix(in srgb, var(--dbb-accent) 10%, #fff) 100%);
+  border-color:color-mix(in srgb, var(--dbb-accent) 48%, #fff);
+  box-shadow:0 4px 10px color-mix(in srgb, var(--dbb-accent) 12%, transparent);
+  transform:translateY(-1px);
+}
+#page-alldata .dbb-view-name-btn:focus-visible{
+  outline:2px solid var(--dbb-accent); outline-offset:2px;
+}
+@media(hover:none){#page-alldata .dbb-grid > .dbb-card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){
+  #page-alldata .dbb-grid > .dbb-card,
+  #page-alldata .dbb-view-name-btn{transition:none}
+  #page-alldata .dbb-grid > .dbb-card:hover,
+  #page-alldata .dbb-view-name-btn:hover{transform:none}
+}
+</style>
+</style>
+
+<style id="datahub-ultra-premium-card-overrides">
+/* Refined enterprise card finish: CSS-only, preserving existing markup and behavior. */
+#page-alldata .dbb-grid > .dbb-card{
+  background:linear-gradient(180deg,
+    color-mix(in srgb,var(--dbb-accent) 8%,#fff) 0%,
+    color-mix(in srgb,var(--dbb-accent) 2%,#fff) 24%,
+    #fff 48%,
+    color-mix(in srgb,var(--dbb-accent) 3.8%,#fff) 100%) !important;
+  border:1px solid color-mix(in srgb,var(--dbb-accent) 30%,#e7eaf2) !important;
+  border-top:3px solid var(--dbb-accent) !important;
+  border-radius:19px !important;
+  box-shadow:0 5px 17px rgba(20,32,64,.055),inset 0 1px 0 rgba(255,255,255,.92) !important;
+  overflow:hidden;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease !important;
+}
+#page-alldata .dbb-grid > .dbb-card:hover{
+  transform:translateY(-3px);
+  border-color:color-mix(in srgb,var(--dbb-accent) 45%,#e7eaf2) !important;
+  border-top-color:var(--dbb-accent) !important;
+  box-shadow:0 13px 28px rgba(20,32,64,.095),0 3px 9px color-mix(in srgb,var(--dbb-accent) 8%,transparent),inset 0 1px 0 rgba(255,255,255,.96) !important;
+}
+#page-alldata .dbb-card-icon{
+  color:var(--dbb-accent) !important;
+  background:linear-gradient(145deg,#fff 0%,color-mix(in srgb,var(--dbb-accent) 8%,#fff) 100%) !important;
+  border:1px solid color-mix(in srgb,var(--dbb-accent) 26%,#fff) !important;
+  box-shadow:0 3px 9px color-mix(in srgb,var(--dbb-accent) 9%,transparent),inset 0 1px 0 rgba(255,255,255,.95) !important;
+}
+#page-alldata .dbb-card-foot,
+#page-alldata .dbb-view-name-row{
+  background:linear-gradient(180deg,rgba(255,255,255,.22),color-mix(in srgb,var(--dbb-accent) 3.2%,#fff));
+  border-color:color-mix(in srgb,var(--dbb-accent) 13%,#edf0f6);
+}
+#page-alldata .dbb-view-name-row{
+  padding-top:11px !important;
+  margin-top:10px !important;
+  border-top:1px solid color-mix(in srgb,var(--dbb-accent) 14%,#edf0f6);
+}
+#page-alldata .dbb-view-name-btn{
+  min-width:76px;
+  color:color-mix(in srgb,var(--dbb-accent) 92%,#172554) !important;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--dbb-accent) 7%,#fff),color-mix(in srgb,var(--dbb-accent) 13%,#fff)) !important;
+  border:1px solid color-mix(in srgb,var(--dbb-accent) 30%,#fff) !important;
+  border-radius:9px !important;
+  box-shadow:0 2px 5px rgba(24,39,75,.045),inset 0 1px 0 rgba(255,255,255,.9) !important;
+  transition:background .18s ease,box-shadow .18s ease,transform .18s ease,border-color .18s ease !important;
+}
+#page-alldata .dbb-view-name-btn:hover{
+  background:linear-gradient(135deg,color-mix(in srgb,var(--dbb-accent) 12%,#fff),color-mix(in srgb,var(--dbb-accent) 19%,#fff)) !important;
+  border-color:color-mix(in srgb,var(--dbb-accent) 48%,#fff) !important;
+  box-shadow:0 4px 10px color-mix(in srgb,var(--dbb-accent) 12%,transparent),inset 0 1px 0 rgba(255,255,255,.92) !important;
+  transform:translateY(-1px);
+}
+#page-alldata .dbb-view-name-btn:focus-visible{outline:2px solid var(--dbb-accent);outline-offset:3px}
+@media(hover:none){#page-alldata .dbb-grid > .dbb-card:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){#page-alldata .dbb-grid > .dbb-card,#page-alldata .dbb-view-name-btn{transition:none !important}#page-alldata .dbb-grid > .dbb-card:hover,#page-alldata .dbb-view-name-btn:hover{transform:none}}
+</style>
 </body>
 </html>
