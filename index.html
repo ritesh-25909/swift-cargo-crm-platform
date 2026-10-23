@@ -11258,6 +11258,9 @@ async function loadRecords(){
   if (error) logSupaError('select', 'records', error);
   S.records = error ? [] : data;
   await dhAutoSetNoNumbers(S.records);
+  // Repair only the incorrect system label; preserve every phone, note, assignment,
+  // custom field, and every feedback value other than the erroneous "No numbers".
+  await dhReconcileIncorrectNoNumbers(S.records);
   flagDuplicates();
   syncFeedbackLabels();
 }
@@ -13400,6 +13403,86 @@ async function dhAutoSetNoNumbers(rows){
     }
   }
   return candidates.length;
+}
+
+/* Repair legacy false-positive "No numbers" labels without touching any other data.
+   The old auto-labeler only handled blank feedback, so records that were mislabeled
+   by an earlier version stayed wrong forever. This scan is RLS-scoped, paginated,
+   and changes ONLY records whose feedback is exactly the No numbers option and which
+   contain a value in any of the six phone fields. Comma-separated phone cells count
+   as populated and are preserved byte-for-byte. */
+async function dhReconcileIncorrectNoNumbers(seedRows=[]){
+  if(!supa || S._noNumbersRepairRunning || S._noNumbersRepairCompleted) return {scanned:0,corrected:0,skipped:true};
+  S._noNumbersRepairRunning=true;
+  let scanned=0, corrected=0;
+  const repairedIds=new Set();
+  const patchFeedback=row=>{
+    if(!row || !repairedIds.has(String(row.id))) return;
+    // Feedback alone is corrected. Do not alter feedback_custom, phone fields, notes,
+    // assignments, record ownership, or any other stored field.
+    row.feedback='';
+    row.feedback_label='';
+  };
+  try{
+    const candidateValues=['no_numbers','No numbers','No Numbers','no numbers'];
+    const byId=new Map();
+    // First use already-loaded records so the visible UI is repaired immediately.
+    for(const row of (Array.isArray(seedRows)?seedRows:[])){
+      if(row?.id!=null && candidateValues.includes(String(row.feedback||'').trim()) && dhHasAnyPhone(row)) byId.set(String(row.id),row);
+    }
+    // Then find legacy rows across every database visible under the current user's RLS.
+    // Each value is queried separately to support installations with older stored labels.
+    const PAGE=500;
+    for(const feedbackValue of candidateValues){
+      let from=0;
+      while(true){
+        const {data,error}=await supa.from('records')
+          .select(DH_METRIC_COLUMNS)
+          .eq('feedback',feedbackValue)
+          .order('id',{ascending:true})
+          .range(from,from+PAGE-1);
+        if(error){ console.warn('[NO NUMBERS RECONCILIATION QUERY FAILED]',feedbackValue,error); break; }
+        const batch=Array.isArray(data)?data:[];
+        for(const row of batch){
+          scanned++;
+          if(row?.id!=null && dhHasAnyPhone(row)) byId.set(String(row.id),row);
+        }
+        if(batch.length<PAGE) break;
+        from+=batch.length;
+      }
+    }
+    for(const row of byId.values()){
+      if(!row?.id || !dhHasAnyPhone(row)) continue;
+      // Conditional update protects feedback changed by a user after the query.
+      const {data,error}=await supa.from('records')
+        .update({feedback:''})
+        .eq('id',row.id)
+        .eq('feedback',row.feedback)
+        .select('id,feedback,database_id')
+        .maybeSingle();
+      if(error){ console.warn('[NO NUMBERS RECONCILIATION UPDATE FAILED]',row.id,error); continue; }
+      if(!data) continue;
+      repairedIds.add(String(row.id));
+      corrected++;
+      S._feedbackContactedCache?.delete(String(data.database_id||row.database_id||''));
+      dhPatchRecordInCaches(row.id,{feedback:'',feedback_label:''});
+    }
+    // Keep references that were passed in (including drawer/open-db arrays) aligned.
+    (Array.isArray(seedRows)?seedRows:[]).forEach(patchFeedback);
+    (S.records||[]).forEach(patchFeedback);
+    (S.filteredRecords||[]).forEach(patchFeedback);
+    (S.dbHub?.openDbRecords||[]).forEach(patchFeedback);
+    if(S.dbHub?.recordCache instanceof Map) for(const rows of S.dbHub.recordCache.values()) if(Array.isArray(rows)) rows.forEach(patchFeedback);
+    if(corrected){
+      console.info(`[NO NUMBERS REPAIR] Corrected ${corrected} record(s) with existing phone data; no other fields changed.`);
+      if(typeof dhRerenderMetricViews==='function') dhRerenderMetricViews();
+    }
+    S._noNumbersRepairCompleted=true;
+    return {scanned,corrected};
+  }catch(error){
+    console.warn('[NO NUMBERS RECONCILIATION FAILED]',error);
+    return {scanned,corrected,error};
+  }finally{ S._noNumbersRepairRunning=false; }
 }
 
 /* Contacted/Pending/Rate calculation now lives in the DH-METRICS block above (single source of truth). */
