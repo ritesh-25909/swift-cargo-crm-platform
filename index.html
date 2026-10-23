@@ -1,4 +1,4 @@
-<!-- BUILD MARKER: contacted-counter-continue-fix v2 + phone-based-customer-count + reviews + one-sheet-xlsx + JOC-library-intelligence + silent-db-detection + smooth-background-scan + admin-only-joc + premium-filters + expandable-port-lists + robust-admin-nav -->
+<!-- BUILD MARKER: unified-contact-metrics v3 (supersedes contacted-counter-continue-fix v2) + phone-based-customer-count + reviews + one-sheet-xlsx + JOC-library-intelligence + silent-db-detection + smooth-background-scan + admin-only-joc + premium-filters + expandable-port-lists + robust-admin-nav -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -497,7 +497,7 @@ label{font-size:13px; font-weight:600; color:var(--text); display:block; margin-
 /* Hero customer-count block */
 .dbb-card-hero{ display:flex; flex-direction:column; gap:3px; }
 .dbb-card-hero-count{ font-size:28px; font-weight:800; letter-spacing:-.02em; color:var(--text); line-height:1.1; }
-.dbb-card-hero-sub{ display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--text-secondary); font-weight:600; }
+.dbb-card-hero-sub{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 7px; font-size:12.5px; color:var(--text-secondary); font-weight:600; }
 .dbb-card-hero-sub .dbb-dot{ width:3px; height:3px; border-radius:50%; background:#CBCBDA; flex-shrink:0; }
 .dbb-card-source{ display:inline-flex; align-items:center; gap:5px; }
 .dbb-card-source .dbb-source-dot{ width:5px; height:5px; border-radius:50%; background:var(--accent-soft); flex-shrink:0; }
@@ -11090,23 +11090,59 @@ async function loadWorkspace(){
   dhUpdateConnPill();
   showCenterLoading();
 
-  // Hydrate everything else without blocking the already-visible workspace.
+  // Hydrate independent data sources independently. Dashboard KPIs depend mainly on
+  // the databases table (customer_count is already stored there), so never make them
+  // wait for the much heavier records, reminders, or updates queries.
+  const safeLoad = (label, task) => Promise.resolve().then(task).catch(error => {
+    console.error(`[WORKSPACE LOAD FAILED] ${label}`, error);
+    return null;
+  });
+
+  const refreshDashboard = () => {
+    try { renderDashboard(); } catch (error) { console.error('[DASHBOARD RENDER FAILED]', error); }
+  };
+
   const hydrate = async ()=>{
-    try{
-      await Promise.all([
-        loadAssignedNames(),
-        loadDatabases(),
-        loadRecords(),
-        loadUpdates(),
-        loadReminders(),
-        loadRatings(),
-        loadProfiles(),
-        loadFeedbackOptions().catch(e=>{ console.warn('[FEEDBACK OPTIONS STARTUP FALLBACK]',e); FEEDBACK_OPTIONS=DEFAULT_FEEDBACK_OPTIONS.map(o=>({...o})); })
-      ]);
+    // Start the critical Dashboard sources immediately and in parallel. Once these
+    // resolve, paint real KPI values without waiting for any secondary feature.
+    const critical = Promise.all([
+      safeLoad('databases', loadDatabases),
+      safeLoad('profiles', loadProfiles)
+    ]).then(()=>{
+      refreshDashboard();
+      renderAllDataFilters();
+      renderSettings();
+    });
 
-      await updRefreshAppointmentCalendarCache().catch(e=>console.warn('[APPOINTMENT CALENDAR LOAD FAILED]',e));
+    // Load large/secondary sources independently so one slow or failed request cannot
+    // hold the dashboard in a loading state or prevent the remaining sections updating.
+    const secondaryTasks = [
+      safeLoad('assigned names', loadAssignedNames),
+      safeLoad('records', loadRecords).then(()=>{
+        // Customer counts are sourced from databases.customer_count; records are not
+        // required for the initial dashboard KPI paint. Refresh dependent views later.
+        renderAllDataFilters();
+        refreshAllDataView();
+      }),
+      safeLoad('updates', loadUpdates).then(()=>{ renderUpdatesPage(); refreshDashboard(); }),
+      safeLoad('reminders', loadReminders).then(()=>{ renderCalendar(); refreshDashboard(); }),
+      safeLoad('ratings', loadRatings),
+      safeLoad('feedback options', loadFeedbackOptions).then(result=>{
+        if (result === null) FEEDBACK_OPTIONS=DEFAULT_FEEDBACK_OPTIONS.map(o=>({...o}));
+      })
+    ];
 
-      // Refresh only after real data arrives; no full page reload and no schema changes.
+    await critical;
+    // Complete the initial visible workspace render as soon as the critical metrics
+    // arrive; do not await records or optional panels first.
+    renderCalendar();
+    renderAnalyticsFilters();
+    renderAnalyticsPage();
+    initFeedbackOptionsSettings();
+    renderNotifBadge();
+
+    Promise.allSettled(secondaryTasks).then(async ()=>{
+      await safeLoad('appointment calendar cache', updRefreshAppointmentCalendarCache);
       renderDashboard();
       renderAllDataFilters();
       refreshAllDataView();
@@ -11122,8 +11158,8 @@ async function loadWorkspace(){
 
       if (S.isAdmin){
         bindJOCPage();
-        loadJOCLibrary();
-        loadAuditLogs();
+        safeLoad('JOC library', loadJOCLibrary);
+        safeLoad('audit logs', loadAuditLogs);
       }
       if (!S._realtimeStarted){
         S._realtimeStarted = true;
@@ -11134,14 +11170,12 @@ async function loadWorkspace(){
         S._dataHubFolderInited = true;
         DataHubFolder.init();
       }
-    }catch(e){
-      console.error('[WORKSPACE BACKGROUND HYDRATION FAILED]',e);
-    }
+    }).catch(error=>console.error('[WORKSPACE SECONDARY HYDRATION FAILED]', error));
   };
 
-  // Let the browser paint the shell before starting the heavy Supabase work.
-  if ('requestIdleCallback' in window) requestIdleCallback(()=>hydrate(), {timeout:120});
-  else setTimeout(hydrate, 0);
+  // Start promptly after the browser paints the existing shell. Avoid idle scheduling
+  // here: on a busy browser it can postpone the first real dashboard values.
+  setTimeout(()=>hydrate().catch(error=>console.error('[WORKSPACE HYDRATION FAILED]', error)), 0);
 }
 
 function showCenterLoading(){
@@ -11217,11 +11251,13 @@ async function loadDatabases(){
   const { data, error } = await supa.from('databases').select('*').order('upload_date', { ascending:false });
   if (error) logSupaError('select', 'databases', error);
   S.databases = error ? [] : data;
+  dhStashServerSnapshots(); dhReconcileAfterLoad();
 }
 async function loadRecords(){
   const { data, error } = await supa.from('records').select('*').order('import_date', { ascending:false }).limit(50000);
   if (error) logSupaError('select', 'records', error);
   S.records = error ? [] : data;
+  await dhAutoSetNoNumbers(S.records);
   flagDuplicates();
   syncFeedbackLabels();
 }
@@ -11358,6 +11394,7 @@ async function fetchAllRecordsForDatabase(databaseOrId){
   if (dbName) await fetchPath('database_name', ()=>supa.from('records').select('*').eq('database_name', dbName));
 
   const rows = Array.from(byId.values());
+  await dhAutoSetNoNumbers(rows);
   console.log('DATABASE RECORD QUERY:', {
     selectedDatabaseId:db?.id ?? null,
     selectedDatabaseName:db?.name ?? '',
@@ -11541,57 +11578,103 @@ async function loadAuditLogs(){
 // ============================================================================
 
 async function loadUpdates(){
-  const { data, error } = await supa.from('updates').select('*').order('assigned_date',{ascending:false});
-  if(error){
-    console.error('[UPDATES LOAD FAILED]',error);
-    S.updatesLoadError=error; S.updates=[]; return;
-  }
-  S.updatesLoadError=null;
-  let updates=data||[];
-  // Repair missing cards from existing assignments using the existing updates table.
-  const visibleDbs=(S.databases||[]).filter(db=>db.assigned_user_id &&
-    (S.isAdmin || String(db.assigned_user_id)===String(S.session?.user?.id)));
-  for(const db of visibleDbs){
-    let row=updates.find(u=>String(u.assignment_id||'')===String(db.id));
-    if(!row){
-      const payload={assignment_id:db.id,owner_id:db.assigned_user_id,database_name:db.name,
-        total_customers:Number(db.customer_count||0),customers_contacted:0,appointments:0,remarks:null,
-        assigned_date:db.assigned_at||new Date().toISOString(),updated_at:new Date().toISOString()};
-      const ins=await supa.from('updates').insert(payload).select('*').maybeSingle();
-      if(!ins.error&&ins.data){row=ins.data;updates.push(row);}
-      else console.warn('[UPDATES CARD REPAIR BLOCKED BY RLS/PERMISSIONS]',ins.error);
-    }else{
-      const patch={};
-      if(String(row.owner_id||'')!==String(db.assigned_user_id))patch.owner_id=db.assigned_user_id;
-      if(String(row.database_name||'')!==String(db.name||''))patch.database_name=db.name;
-      if(Number(row.total_customers||0)!==Number(db.customer_count||0))patch.total_customers=Number(db.customer_count||0);
-      if(Object.keys(patch).length&&S.isAdmin){
-        const upd=await supa.from('updates').update({...patch,updated_at:new Date().toISOString()}).eq('id',row.id).select('*').maybeSingle();
-        if(!upd.error&&upd.data)Object.assign(row,upd.data);
-        else console.warn('[UPDATES ASSIGNMENT RECONCILIATION FAILED]',upd.error);
-      }else Object.assign(row,patch);
+
+    const { data, error } = await supa
+        .from('updates')
+        .select('*')
+        .order('assigned_date', { ascending:false });
+
+    let updates = error ? [] : (data || []);
+
+    // ===========================================
+    // REPLACE ONLY THIS ENTIRE BLOCK
+    // ===========================================
+
+    if (updates.length) {
+
+       const userIds = [
+    ...new Set(
+        updates
+            .map(u => u.owner_id)
+            .filter(Boolean)
+    )
+];
+        let profilesById = {};
+
+        if (userIds.length) {
+
+            const { data: profs, error: profErr } = await supa
+                .from("profiles")
+                .select("id,full_name,email,role,avatar_url")
+                .in("id", userIds);
+
+            if (profErr) {
+                console.error(profErr);
+            }
+
+            (profs || []).forEach(profile=>{
+                profilesById[profile.id]=profile;
+            });
+        }
+
+        updates = updates.map(update=>{
+
+            const userId = update.owner_id;
+
+            let profile =
+                profilesById[userId] ||
+                S.profiles.find(p=>p.id===userId);
+
+            if(!profile){
+
+                profile={
+
+                    id:userId,
+
+                    full_name:
+                        update.assigned_user_name ||
+                        "Unknown User",
+
+                    username:
+                        update.assigned_user_name ||
+                        "",
+
+                    email:
+                        update.assigned_user_email ||
+                        "",
+
+                    role:"user",
+
+                    avatar_url:null
+                };
+
+            }
+
+            return{
+
+                ...update,
+
+                _profile:profile,
+
+                assigned_user_name:
+                    profile.full_name,
+
+                assigned_user_email:
+                    profile.email,
+
+                assigned_user_role:
+                    profile.role
+
+            };
+
+        });
+
     }
-  }
-  const userIds=[...new Set([...updates.map(u=>u.owner_id),...visibleDbs.map(d=>d.assigned_user_id)].filter(Boolean))];
-  const profilesById={};
-  if(userIds.length){
-    const {data:profs,error:profErr}=await supa.from('profiles').select('id,full_name,username,email,role,avatar_url').in('id',userIds);
-    if(profErr)console.warn('[UPDATES PROFILES LOAD FAILED]',profErr);
-    (profs||[]).forEach(p=>profilesById[String(p.id)]=p);
-  }
-  updates=updates.map(u=>{
-    const db=(S.databases||[]).find(d=>String(d.id)===String(u.assignment_id));
-    const ownerId=db?.assigned_user_id||u.owner_id;
-    const profile=profilesById[String(ownerId)]||S.profiles.find(p=>String(p.id)===String(ownerId))||{
-      id:ownerId,full_name:db?.assigned_user_name||u.assigned_user_name||'Assigned User',
-      username:'',email:db?.assigned_user_email||u.assigned_user_email||'',role:'user',avatar_url:null};
-    return {...u,owner_id:ownerId,database_name:db?.name||u.database_name,
-      total_customers:Number(db?.customer_count??u.total_customers??0),_profile:profile,
-      assigned_user_name:profile.full_name||profile.username||'Assigned User',
-      assigned_user_email:profile.email||'',assigned_user_role:profile.role||'user'};
-  });
-  S.updates=updates;
-}
+
+    S.updates = updates;
+    dhStashServerSnapshots(); dhReconcileAfterLoad();
+
+} // ← THIS closing brace MUST exist
 
 /* ---------- Reminders ---------- */
 
@@ -12085,7 +12168,7 @@ function animateKpiNumbers(container){
 function renderUpdatesStatsPanel(){
   const grid = $('#upd-stats-grid');
   if (!grid) return;
-  const rows = S.isAdmin ? S.updates : S.updates.filter(u=>{ const db=(S.databases||[]).find(d=>String(d.id)===String(u.assignment_id)); return String(db?.assigned_user_id||u.owner_id||'')===String(S.session?.user?.id||''); });
+  const rows = S.isAdmin ? S.updates : S.updates.filter(u=>u.owner_id===S.session.user.id);
   const totalUpdates = rows.length;
   const totalAssigned = rows.reduce((s,u)=> s + Number(u.total_customers||0), 0);
   // Each update row stores the overall total for that assignment. Use one
@@ -12932,6 +13015,7 @@ let FEEDBACK_OPTIONS = [
   { value:'other',          label:'Other...',                  dot:'🔘', color:'#52525E', bg:'#F2F2F8' },
   { value:'nominations',    label:'Nominations',               dot:'🔷', color:'#4338CA', bg:'#EEF2FF' },
   { value:'invalid_wrong_number', label:'Invalid / Wrong number', dot:'⚫', color:'#B91C1C', bg:'#FEF2F2' },
+  { value:'no_numbers', label:'No numbers', dot:'⚪', color:'#64748B', bg:'#F8FAFC' },
 ];
 const DEFAULT_FEEDBACK_OPTIONS = FEEDBACK_OPTIONS.map(o=>({...o}));
 
@@ -12974,6 +13058,7 @@ async function loadFeedbackOptions(){
       else if(seedError) logSupaError('insert','feedback_options',seedError);
     }
     FEEDBACK_OPTIONS=rows.length?rows:defaults;
+    if(!FEEDBACK_OPTIONS.some(o=>String(o.value||'').toLowerCase()==='no_numbers' || String(o.label||'').trim().toLowerCase()==='no numbers')) FEEDBACK_OPTIONS.push(defaults.find(o=>o.value==='no_numbers') || {value:'no_numbers',label:'No numbers',dot:'⚪',color:'#64748B',bg:'#F8FAFC'});
     return {ok:true};
   }catch(error){
     console.error('[FEEDBACK OPTIONS LOAD FAILED]',error);
@@ -13081,54 +13166,243 @@ function feedbackDisplayLabel(r){
 }
 function syncFeedbackLabels(){ S.records.forEach(r=> { r.feedback_label = feedbackDisplayLabel(r); }); }
 
-/* Feedback is the authoritative contacted signal for Updates. The count is scoped to
-   one database and cached only for the current browser session; Supabase remains truth. */
-async function calculateDatabaseFeedbackContacted(databaseId, force=false){
-  const id=String(databaseId||'').trim(); if(!id)return 0;
-  const phoneFields=['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','company_website_number_1','company_website_number_2'];
-  const cachedRows=S.dbHub?.recordCache?.get(id), cacheMeta=S.dbHub?.recordCacheMeta?.get(id);
-  const hasPhone=r=>phoneFields.some(k=>String(r?.[k]??'').trim()!=='');
-  if(!force&&cacheMeta?.complete&&Array.isArray(cachedRows))
-    return new Set(cachedRows.filter(r=>String(r.feedback||'').trim()!==''&&hasPhone(r)).map(r=>String(r.id))).size;
-  if(!force&&S._feedbackContactedCache?.has(id))return S._feedbackContactedCache.get(id);
-  let offset=0;const pageSize=1000;const contactedIds=new Set();
-  while(true){
-    const {data,error}=await supa.from('records')
-      .select('id,feedback,mobile_phone_1,mobile_phone_2,work_phone_1,work_phone_2,company_website_number_1,company_website_number_2')
-      .eq('database_id',databaseId).range(offset,offset+pageSize-1);
-    if(error){
-      console.warn('[FEEDBACK CONTACTED COUNT FAILED]',error);
-      // Do not silently show a stale/zero count as if it were authoritative.
-      throw error;
-    }
-    const rows=data||[];
-    for(const r of rows){
-      if(String(r.feedback||'').trim()!==''&&hasPhone(r)&&r.id!=null)contactedIds.add(String(r.id));
-    }
-    if(rows.length<pageSize)break;
-    offset+=pageSize;
+/* === DH-METRICS-BEGIN ===
+   UNIFIED DATABASE CONTACT METRICS — the single calculation source for Total Eligible
+   Customers, Contacted, Pending and Contact Rate. Every UI surface (Data Hub cards/list,
+   Updates cards, Dashboard, Analytics, Contact progress) reads these numbers through
+   dhGetDatabaseMetrics() / dhApplyMetricsOverlay(); nothing else derives them.
+
+   Eligible customer : at least one of the six REAL phone columns is non-empty after trimming.
+   Contacted         : eligible record whose saved `feedback` is non-empty after trimming.
+   Pending           : eligible - contacted.      Rate : contacted / eligible * 100 (null when 0).
+   Stored counters (databases.customer_count, updates.total_customers / customers_contacted)
+   are only snapshots; they are corrected from record-level data and never trusted over it. */
+const DH_ELIGIBILITY_PHONE_FIELDS = ['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','company_website_number_1','company_website_number_2'];
+/* Real column names first; legacy workbook headers kept as harmless aliases. NOTE: the old list used
+   `numbers_from_company_website_*`, which is NOT a column — website-only numbers were invisible. */
+const DH_PHONE_FIELDS = [...DH_ELIGIBILITY_PHONE_FIELDS,'numbers_from_company_website_1','numbers_from_company_website_2','Mobile Phone 1','Mobile Phone 2','Work Phone 1','Work Phone 2','Numbers From Company Website 1','Numbers From Company Website 2'];
+const DH_METRIC_COLUMNS = ['id','database_id','feedback',...DH_ELIGIBILITY_PHONE_FIELDS].join(',');
+function dhCleanText(v){ return String(v ?? '').replace(/[\u0000-\u001F\u007F\u00A0\u200B-\u200D\uFEFF]/g,'').trim(); }
+function dhHasAnyPhone(record){ return DH_PHONE_FIELDS.some(k=>dhCleanText(record?.[k])!==''); }
+function dhIsEligibleCustomer(record){ return dhHasAnyPhone(record); }
+function dhFeedbackIsFilled(record){ return dhCleanText(record?.feedback)!==''; }
+/* Any saved Feedback on an eligible record = contacted (previously only Valid/Agree counted). */
+function dhFeedbackCountsAsContacted(record){ return dhIsEligibleCustomer(record) && dhFeedbackIsFilled(record); }
+
+function dhBuildMetrics(total,contacted,rowCount){
+  const pending=total-contacted;
+  const rate=total>0 ? (contacted/total)*100 : null;
+  return {total,contacted,pending,rate,rateLabel:rate==null?'N/A':rate.toFixed(1)+'%',rowCount:rowCount??total,computedAt:Date.now()};
+}
+function dhMetricsFromRows(rows){
+  const seen=new Set(); let total=0, contacted=0, rowCount=0;
+  for(const r of (Array.isArray(rows)?rows:[])){
+    if(!r) continue;
+    if(r.id!=null){ const k=String(r.id); if(seen.has(k)) continue; seen.add(k); }   // each record once
+    rowCount++;
+    if(!dhIsEligibleCustomer(r)) continue;                                           // ineligible rows are kept, just not counted
+    total++;
+    if(dhFeedbackIsFilled(r)) contacted++;
   }
-  const count=contactedIds.size;
-  S._feedbackContactedCache ||= new Map();S._feedbackContactedCache.set(id,count);return count;
+  return dhBuildMetrics(total,contacted,rowCount);
+}
+
+function dhMetricsStore(){ return (S._dbMetrics ||= new Map()); }
+function dhGetDatabaseMetrics(dbId){ const k=String(dbId ?? '').trim(); return k ? (dhMetricsStore().get(k)||null) : null; }
+function dhFindDatabase(id){ return (S.databases||[]).find(d=>String(d.id)===String(id)) || null; }
+
+/* Full, paginated read of one database's records (light columns). Pages by what the server really
+   returned (PostgREST may cap below the requested page) and checks against the exact row count. */
+async function dhFetchDatabaseRowsForMetrics(db){
+  const PAGE=1000, byId=new Map();
+  async function scan(col,val){
+    let from=0, expected=null;
+    while(true){
+      const {data,error,count}=await supa.from('records').select(DH_METRIC_COLUMNS, from===0?{count:'exact'}:{}).eq(col,val).order('id',{ascending:true}).range(from,from+PAGE-1);
+      if(error) return {ok:false,error};
+      const batch=data||[];
+      if(from===0 && typeof count==='number') expected=count;
+      batch.forEach(r=>{ if(r && r.id!=null) byId.set(String(r.id),r); });
+      from+=batch.length;
+      if(!batch.length) break;
+      if(expected!=null ? from>=expected : batch.length<PAGE) break;
+    }
+    return {ok:true};
+  }
+  const first=await scan('database_id',db.id);
+  if(!first.ok) return first;
+  // Legacy rows that only carry database_name — same fallback the Data Hub loader uses.
+  if(!byId.size && dhCleanText(db.name)!==''){ const second=await scan('database_name',dhCleanText(db.name)); if(!second.ok) return second; }
+  return {ok:true,rows:[...byId.values()]};
+}
+
+async function dhRunMetricsRefresh(id,{force}){
+  const db=dhFindDatabase(id);
+  let rows, source='network';
+  const cached=S.dbHub?.recordCache?.get(id), meta=S.dbHub?.recordCacheMeta?.get(id);
+  if(!force && meta?.complete && Array.isArray(cached)){ rows=cached; source='cache'; }   // cache is patched on every confirmed save
+  else{
+    let r; try{ r=await dhFetchDatabaseRowsForMetrics(db||{id}); }catch(e){ r={ok:false,error:e}; }
+    if(!r.ok){ console.warn('[DB METRICS REFRESH FAILED]',id,r.error); return {ok:false,error:r.error,metrics:dhGetDatabaseMetrics(id)}; }  // keep last good values
+    rows=r.rows;
+  }
+  const metrics=dhMetricsFromRows(rows);
+  // An empty result for a database that is known to have customers is almost certainly an RLS/association gap, not "0 customers".
+  if(metrics.rowCount===0 && !S.isAdmin && Number(db?.customer_count)>0){
+    console.warn('[DB METRICS UNVERIFIED] empty result for non-empty database',id);
+    return {ok:false,unverified:true,metrics:dhGetDatabaseMetrics(id)};
+  }
+  dhMetricsStore().set(id,metrics);
+  dhApplyMetricsOverlay();
+  dhPersistMetrics(id,metrics);          // best-effort, not awaited — the UI never waits on it
+  return {ok:true,metrics,source};
+}
+/* Serialises per database: concurrent saves can never apply an older result over a newer one. */
+function dhRefreshDatabaseMetrics(dbId, opts={}){
+  const id=String(dbId ?? '').trim();
+  if(!id) return Promise.resolve({ok:false,reason:'no-database'});
+  const inflight=(S._dbMetricsInflight ||= new Map());
+  const running=inflight.get(id);
+  if(running){ running.dirty=true; if(opts.force) running.force=true; return running.promise; }
+  const entry={dirty:false,force:!!opts.force,promise:null};
+  entry.promise=(async()=>{
+    try{
+      let res;
+      do{ entry.dirty=false; const force=entry.force; entry.force=false; res=await dhRunMetricsRefresh(id,{force}); }while(entry.dirty);
+      return res;
+    }finally{ inflight.delete(id); }
+  })();
+  inflight.set(id,entry);
+  return entry.promise;
+}
+
+/* Push the authoritative numbers into every in-memory structure the existing UI already reads. */
+function dhApplyMetricsOverlay(){
+  const store=dhMetricsStore(); if(!store.size) return;
+  for(const d of (S.databases||[])){ const m=store.get(String(d.id)); if(m) d.customer_count=m.total; }
+  for(const u of (S.updates||[])){ const m=u.assignment_id!=null ? store.get(String(u.assignment_id)) : null; if(m){ u.total_customers=m.total; u.customers_contacted=m.contacted; } }
+}
+/* Correct the stored snapshot columns (existing columns only) when they disagree. Failures are logged, never shown as data. */
+async function dhPersistMetrics(id,m){
+  try{
+    const db=dhFindDatabase(id);
+    if(S.isAdmin && db && !db._persistFailed && Number(db._srv_customer_count)!==m.total){
+      const {error}=await supa.from('databases').update({customer_count:m.total}).eq('id',id);
+      if(error){ db._persistFailed=true; console.warn('[DB COUNT PERSIST FAILED]',error); } else db._srv_customer_count=m.total;
+    }
+    for(const u of (S.updates||[]).filter(x=>String(x.assignment_id)===String(id))){
+      if(u._persistFailed) continue;
+      if(Number(u._srv_total)===m.total && Number(u._srv_contacted)===m.contacted) continue;
+      const {error}=await supa.from('updates').update({total_customers:m.total,customers_contacted:m.contacted,updated_at:new Date().toISOString()}).eq('id',u.id);
+      if(error){ u._persistFailed=true; console.warn('[UPDATE METRICS PERSIST FAILED]',error); continue; }
+      u._srv_total=m.total; u._srv_contacted=m.contacted;
+    }
+  }catch(e){ console.warn('[METRICS PERSIST FAILED]',e); }
+}
+/* Called right after loadDatabases()/loadUpdates() replace state with (possibly stale) stored snapshots. */
+function dhStashServerSnapshots(){
+  (S.databases||[]).forEach(d=>{ d._srv_customer_count=d.customer_count; });
+  (S.updates||[]).forEach(u=>{ u._srv_total=u.total_customers; u._srv_contacted=u.customers_contacted; });
+}
+function dhReconcileAfterLoad(){
+  try{
+    dhApplyMetricsOverlay();
+    for(const [id,m] of dhMetricsStore()) dhPersistMetrics(id,m);
+    dhScheduleMetricsLoad();
+  }catch(e){ console.warn('[METRICS RECONCILE FAILED]',e); }
+}
+function dhScheduleMetricsLoad(){
+  clearTimeout(S._dbMetricsTimer);
+  S._dbMetricsTimer=setTimeout(()=>{ dhLoadMissingMetrics().catch(e=>console.warn(e)); },80);
+}
+/* Lazily computes metrics once per session for each assigned database that has none yet. */
+async function dhLoadMissingMetrics(){
+  if(S._dbMetricsLoading){ S._dbMetricsAgain=true; return; }
+  S._dbMetricsLoading=true;
+  try{
+    const failed=(S._dbMetricsFailedAt ||= new Map());
+    const ids=[...new Set((S.updates||[]).map(u=>u.assignment_id).filter(v=>v!=null).map(String))];
+    for(const id of ids){
+      if(dhMetricsStore().has(id) || !dhFindDatabase(id)) continue;
+      if(Date.now()-(failed.get(id)||0)<60000) continue;
+      const res=await dhRefreshDatabaseMetrics(id);
+      if(res.ok) dhRerenderMetricViews(); else failed.set(id,Date.now());
+    }
+  }finally{ S._dbMetricsLoading=false; if(S._dbMetricsAgain){ S._dbMetricsAgain=false; dhScheduleMetricsLoad(); } }
+}
+/* Re-render whichever metric view is on screen — no page reload, no extra requests. */
+function dhRerenderMetricViews(){
+  clearTimeout(S._dbMetricsRenderTimer);
+  S._dbMetricsRenderTimer=setTimeout(()=>{
+    try{
+      dhApplyMetricsOverlay();
+      const ae=(typeof document!=='undefined') ? document.activeElement : null;
+      const typing=!!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.closest && ae.closest('#page-updates'));
+      if(S.page==='updates'){ if(!typing && typeof renderUpdatesPage==='function') renderUpdatesPage(); }
+      else if(S.page==='dashboard'){ if(typeof renderDashboard==='function') renderDashboard(); }
+      else if(S.page==='analytics'){ if(typeof renderAnalyticsPage==='function') renderAnalyticsPage(); }
+      else if(S.page==='alldata'){ if(typeof refreshDataHubCardsOnly==='function') refreshDataHubCardsOnly(); }
+    }catch(e){ console.warn('[METRIC VIEW REFRESH FAILED]',e); }
+  },120);
+}
+
+/* Keep every cached copy of a record in step with a confirmed change. */
+function dhPatchRecordInCaches(recordId,patch){
+  const id=String(recordId);
+  const apply=row=>{ if(row && String(row.id)===id) Object.assign(row,patch); };
+  (S.records||[]).forEach(apply); (S.filteredRecords||[]).forEach(apply); (S.dbHub?.openDbRecords||[]).forEach(apply);
+  if(S.dbHub?.recordCache instanceof Map) for(const rows of S.dbHub.recordCache.values()) if(Array.isArray(rows)) rows.forEach(apply);
+}
+/* Deleted records must leave the caches too, otherwise cached metrics would still count them. */
+function dhOnRecordsRemoved(ids){
+  const idSet=new Set((ids||[]).map(String)); if(!idSet.size) return;
+  const affected=new Set();
+  (S.records||[]).forEach(r=>{ if(idSet.has(String(r.id)) && r.database_id!=null) affected.add(String(r.database_id)); });
+  if(S.dbHub?.recordCache instanceof Map){
+    for(const [k,rows] of S.dbHub.recordCache.entries()){
+      if(!Array.isArray(rows)) continue;
+      for(let i=rows.length-1;i>=0;i--) if(idSet.has(String(rows[i]?.id))){ rows.splice(i,1); affected.add(String(k)); }
+    }
+  }
+  const targets = affected.size ? [...affected] : [...dhMetricsStore().keys()];   // unknown owner -> re-verify everything we hold
+  targets.forEach(id=>dhRefreshDatabaseMetrics(id,{force:true}).then(()=>dhRerenderMetricViews()));
+}
+
+/* Back-compat entry points used by existing call sites. */
+async function calculateDatabaseFeedbackContacted(databaseId, force=false){
+  const res=await dhRefreshDatabaseMetrics(databaseId,{force:!!force});
+  return res.ok ? res.metrics.contacted : null;     // null = unknown (never a fake 0)
 }
 async function syncDatabaseContactedToUpdate(databaseId, opts={}){
-  const dbId=String(databaseId||'').trim();
-  if(!dbId)return {ok:false};
-  const db=(S.databases||[]).find(d=>String(d.id)===dbId);
-  const contacted=await calculateDatabaseFeedbackContacted(dbId,!!opts.force);
-  const {data:updates,error:loadError}=await supa.from('updates').select('id,total_customers,owner_id,assignment_id').eq('assignment_id',databaseId);
-  if(loadError){console.warn('[FEEDBACK UPDATE LOOKUP FAILED]',loadError);return {ok:false,error:loadError};}
-  for(const u of (updates||[])){
-    const {data,error}=await supa.from('updates').update({
-      customers_contacted:contacted,
-      updated_at:new Date().toISOString()
-    }).eq('id',u.id).select('*').single();
-    if(error){console.warn('[FEEDBACK UPDATE SYNC FAILED]',error);continue;}
-    const idx=S.updates.findIndex(x=>String(x.id)===String(u.id));
-    if(idx>=0)S.updates[idx]={...S.updates[idx],...data};
-  }
-  return {ok:true,contacted,updates:updates||[]};
+  const res=await dhRefreshDatabaseMetrics(databaseId,{force:!!opts.force});
+  if(!res.ok) return {ok:false,error:res.error,reason:res.reason};
+  return {ok:true,contacted:res.metrics.contacted,metrics:res.metrics};
 }
+/* === DH-METRICS-END === */
+
+async function dhAutoSetNoNumbers(rows){
+  const candidates=(Array.isArray(rows)?rows:[]).filter(r=>r?.id!=null && !dhFeedbackIsFilled(r) && !dhHasAnyPhone(r));
+  for(const r of candidates){
+    let updateQuery=supa.from('records').update({feedback:'no_numbers',feedback_custom:''}).eq('id',r.id);
+    // Match the exact previously-read blank value (including whitespace), so concurrent feedback is never overwritten.
+    updateQuery = (r.feedback == null) ? updateQuery.is('feedback',null) : updateQuery.eq('feedback',r.feedback);
+    const {data,error}=await updateQuery.select('*').maybeSingle();
+    if(error){ console.warn('[AUTO NO NUMBERS FEEDBACK FAILED]',r.id,error); continue; }
+    // Only patch rows if Supabase confirmed the conditional update; protects concurrent user feedback.
+    if(data){
+      r.feedback=data.feedback; r.feedback_custom=data.feedback_custom||''; r.feedback_label=feedbackDisplayLabel(r);
+      S._feedbackContactedCache?.delete(String(r.database_id||''));
+      const patch=target=>{if(target && String(target.id)===String(r.id)){target.feedback=r.feedback;target.feedback_custom=r.feedback_custom;target.feedback_label=r.feedback_label;}};
+      patch(S.records.find(x=>String(x.id)===String(r.id)));
+      patch(S.filteredRecords.find(x=>String(x.id)===String(r.id)));
+      patch(S.dbHub?.openDbRecords?.find(x=>String(x.id)===String(r.id)));
+      if(S.dbHub?.recordCache instanceof Map) for(const cached of S.dbHub.recordCache.values()) if(Array.isArray(cached)) patch(cached.find(x=>String(x.id)===String(r.id)));
+    }
+  }
+  return candidates.length;
+}
+
+/* Contacted/Pending/Rate calculation now lives in the DH-METRICS block above (single source of truth). */
 function renderCompanyNameCell(r, val){
   const arrow = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>`;
   if (!val) return `<span class="cell-muted">No company name</span>`;
@@ -13155,16 +13429,19 @@ function renderFeedbackCell(r){
 }
 async function saveFeedback(rec, value, customText){
   const prevFeedback = rec.feedback, prevCustom = rec.feedback_custom;
+  if(!(String(value||'').trim()) && !dhFeedbackIsFilled(rec) && !dhHasAnyPhone(rec)) value='no_numbers';
   rec.feedback = value || '';
   rec.feedback_custom = value==='other' ? String(customText ?? '').trim() : '';
   rec.feedback_label = feedbackDisplayLabel(rec);
-  const { error } = await supa.from('records').update({ feedback: rec.feedback, feedback_custom: rec.feedback_custom }).eq('id', rec.id);
+  const { data:savedFeedbackRow, error } = await supa.from('records').update({ feedback: rec.feedback, feedback_custom: rec.feedback_custom }).eq('id', rec.id).select('*').single();
   if (error){
     rec.feedback = prevFeedback; rec.feedback_custom = prevCustom; rec.feedback_label = feedbackDisplayLabel(rec);
     toast('Could not save feedback — ' + error.message, 'error');
     renderVirtualGrid();
     return;
   }
+
+  if(savedFeedbackRow){ rec.feedback=savedFeedbackRow.feedback||''; rec.feedback_custom=savedFeedbackRow.feedback_custom||''; rec.feedback_label=feedbackDisplayLabel(rec); }
 
   // Keep every existing in-memory view/cache pointing at the saved row so the
   // company highlight and custom label appear immediately, without changing
@@ -13184,9 +13461,7 @@ async function saveFeedback(rec, value, customText){
     }
   }
 
-  if(value || prevFeedback){
-    S._feedbackContactedCache?.delete(String(rec.database_id||''));
-    await syncDatabaseContactedToUpdate(rec.database_id,{force:true});
+  {
     const dbId=String(rec.database_id||'');
     if(S.dbHub.openDbId && String(S.dbHub.openDbId)===dbId){
       const cached=S.dbHub.recordCache.get(dbId);
@@ -13196,7 +13471,11 @@ async function saveFeedback(rec, value, customText){
       }
     }
     if(S.dbHub.view==='table') applyGridFilters();
-    if(S.page==='updates' || $('#page-updates')?.classList.contains('active')) renderUpdatesPage();
+    // Confirmed saved value is now in every cache: recompute from record-level data (no page reload).
+    dhRefreshDatabaseMetrics(dbId).then(res=>{
+      if(res.ok) dhRerenderMetricViews();
+      else console.warn('[FEEDBACK METRICS REFRESH FAILED] previous metrics kept',res.error||res.reason);
+    });
   }
   toast('Feedback saved', 'success');
   renderVirtualGrid();
@@ -15097,7 +15376,6 @@ function dbbCardHtml(d){
         </div>
       </div>`;
 
-  const dupCount = dbbDuplicateCount(d);
   const isSelected = S.dbHub.selected.has(String(d.id));
 
   return `<div class="dbb-card ${S.dbHub.selectMode?'select-mode':''} ${isSelected?'is-selected':''}" data-id="${esc(d.id)}">
@@ -15163,7 +15441,6 @@ function dbbCardHtml(d){
       <div class="dbb-card-hero-count">${(d.customer_count||0).toLocaleString()} <span style="font-size:14px; font-weight:700; color:var(--text-secondary);">Customers</span></div>
       <div class="dbb-card-hero-sub">
         <span class="dbb-card-source ${sourceIsFolder||sourceIsJoc?'':'is-manual'}"><span class="dbb-source-dot"></span>${sourceIsJoc ? 'JOC · Contact numbers required' : (sourceIsFolder ? 'Auto detected' : 'Manual import')}</span>
-        ${dupCount>0 ? `<span class="dbb-dup-badge" title="${dupCount} duplicate record${dupCount===1?'':'s'} detected"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h12"/></svg>${dupCount} duplicate${dupCount===1?'':'s'}</span>` : ''}
         ${dbbHasDuplicateCompany(d) ? (()=>{ const ds=dbbDuplicateCompanySummary(d); const tip=ds.otherDbNames.length ? `Click to see ${ds.companyCount} overlapping compan${ds.companyCount===1?'y':'ies'} and the exact source database${ds.otherDbNames.length===1?'':'s'}: ${ds.otherDbNames.join(', ')}` : 'Click to see the overlapping companies and source databases'; return `<button type="button" class="dbb-dup-badge dbb-dup-company-btn" data-dup-db-id="${esc(d.id)}" title="${esc(tip)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h12"/></svg>${ds.companyCount} compan${ds.companyCount===1?'y':'ies'} · ${ds.otherDbCount} other DB${ds.otherDbCount===1?'':'s'}</button>`; })() : ''}
       </div>
     </div>
@@ -16031,6 +16308,7 @@ async function dhRemoveDuplicates(){
         if(error){ toast(error.message,'error'); return; }
       }
       saveRemovedDuplicatesReport(report);
+      dhOnRecordsRemoved(ids);
       await loadRecords(); flagDuplicates(); refreshAllDataView(); renderDatabaseList(); renderDashboard();
       toast(`${duplicates.length.toLocaleString()} duplicate record(s) removed.`,'success');
       logAudit('remove_duplicate_company_records',{count:duplicates.length,groups:duplicateGroups.length});
@@ -16916,14 +17194,11 @@ function applyGridFilters(){
 
   // Feedback status
   // Filled includes every selected feedback option, including custom Other… records.
-  // Not Filled means neither records.feedback nor a custom feedback value is present.
+  // Feedback field is authoritative. Whitespace-only values are treated as blank.
   if (S.grid.feedbackFilter === 'filled') {
-    rows = rows.filter(r => String(r.feedback || '').trim() !== '');
+    rows = rows.filter(dhFeedbackIsFilled);
   } else if (S.grid.feedbackFilter === 'not_filled') {
-    rows = rows.filter(r =>
-      String(r.feedback || '').trim() === '' &&
-      String(r.feedback_custom || '').trim() === ''
-    );
+    rows = rows.filter(r => !dhFeedbackIsFilled(r));
   }
 
   // Duplicates
@@ -17435,6 +17710,7 @@ $('#bulk-delete-btn').addEventListener('click', ()=>{
     const { error } = await supa.from('records').delete().in('id', ids);
     if (error){ toast(error.message, 'error'); return; }
     S.grid.selected.clear();
+    dhOnRecordsRemoved(ids);
     await loadRecords();
     refreshAllDataView(); renderDashboard();
     toast('Records deleted', 'success');
@@ -17802,55 +18078,22 @@ function filteredUpdateRows(){
   const f = S_updFilters;
   if (f.from) rows = rows.filter(u=> new Date(u.assigned_date) >= new Date(f.from));
   if (f.to) rows = rows.filter(u=> new Date(u.assigned_date) <= new Date(f.to+'T23:59:59'));
-  if (f.user) rows = rows.filter(u=>{
-    const db=(S.databases||[]).find(d=>String(d.id)===String(u.assignment_id));
-    const profile=u._profile||S.profiles.find(pr=>String(pr.id)===String(db?.assigned_user_id||u.owner_id))||{};
-    const candidates=[
-      db?.assigned_user_name, db?.assigned_to, db?.assigned_user_id,
-      u.assigned_user_name, u.assigned_to, u.owner_id,
-      profile.full_name, profile.username, profile.email
-    ].filter(Boolean).map(v=>String(v).trim().toLowerCase());
-    return candidates.includes(String(f.user).trim().toLowerCase());
-  });
+  if (f.user) rows = rows.filter(u=> (S.records.find(r=>r.database_name===u.database_name)?.assigned_to || '') === f.user || u.assigned_to===f.user);
   if (f.quarter) rows = rows.filter(u=> updQuarterOf(u.assigned_date)===f.quarter);
   if (f.status) rows = rows.filter(u=> updProgressStatus(updContactRate(u)).key===f.status);
-  if (f.db) rows = rows.filter(u=> String(u.database_name||'')===String(f.db));
+  if (f.db) rows = rows.filter(u=> u.database_name===f.db);
   return rows;
 }
 function populateUpdateFilterOptions(){
   const rows = myUpdates();
   const dbSel = $('#upd-filter-db'), userSel = $('#upd-filter-user');
   if (dbSel){
-    const previous=S_updFilters.db;
     const dbs = [...new Set(rows.map(u=>u.database_name).filter(Boolean))].sort();
-    dbSel.innerHTML = `<option value="">All Databases</option>` + dbs.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
-    dbSel.value=dbs.includes(previous)?previous:'';
-    if(!dbs.includes(previous)) S_updFilters.db='';
+    dbSel.innerHTML = `<option value="">All Databases</option>` + dbs.map(d=>`<option value="${esc(d)}" ${S_updFilters.db===d?'selected':''}>${esc(d)}</option>`).join('');
   }
   if (userSel){
-    // Build choices from the actual update-card owners first, then include assigned
-    // databases. Never retain a stale/default name (e.g. Ananya) when Admin logs in.
-    const choices=new Map();
-    rows.forEach(u=>{
-      const db=(S.databases||[]).find(d=>String(d.id)===String(u.assignment_id));
-      const p=u._profile||S.profiles.find(pr=>String(pr.id)===String(db?.assigned_user_id||u.owner_id))||{};
-      const name=String(p.full_name||db?.assigned_user_name||u.assigned_user_name||p.username||db?.assigned_to||'').trim();
-      const id=String(db?.assigned_user_id||u.owner_id||'').trim();
-      if(name) choices.set(name,{name,id});
-    });
-    (S.databases||[]).forEach(d=>{
-      const name=String(d.assigned_user_name||d.assigned_to||'').trim();
-      const id=String(d.assigned_user_id||'').trim();
-      if(name) choices.set(name,{name,id});
-    });
-    const options=[...choices.values()].sort((a,b)=>a.name.localeCompare(b.name));
-    const previous=S_updFilters.user;
-    userSel.innerHTML = `<option value="">All assigned users</option>` + options.map(x=>`<option value="${esc(x.name)}">${esc(x.name)}</option>`).join('');
-    // On Admin's first render or when an old filter no longer exists, default to All.
-    if(!options.some(x=>x.name===previous)){
-      S_updFilters.user='';
-      userSel.value='';
-    }else userSel.value=previous;
+    const users = [...new Set(S.databases.map(d=>d.assigned_user_name || d.assigned_to).filter(Boolean))].sort();
+    userSel.innerHTML = `<option value="">All assigned users</option>` + users.map(u=>`<option value="${esc(u)}" ${S_updFilters.user===u?'selected':''}>${esc(u)}</option>`).join('');
   }
 }
 function renderUpdatesKPISummary(){
@@ -18292,6 +18535,8 @@ function dailyUpdateStatus(rate){
    snapshot can show an old/wrong total after the Data Hub database changes.
 */
 function updAuthoritativeTotalCustomers(u){
+  const _m = dhGetDatabaseMetrics(u?.assignment_id);
+  if (_m) return _m.total;
   const db = (S.databases || []).find(d => String(d.id) === String(u?.assignment_id));
   if (db && db.customer_count != null && Number.isFinite(Number(db.customer_count))) {
     return Math.max(0, Number(db.customer_count));
@@ -18317,7 +18562,8 @@ function dailyUpdateCardHtml(u){
   const isAssignedUser = !!assignedDb && String(assignedDb.assigned_user_id) === String(S.session.user.id);
   const isOwner = String(u.owner_id) === String(S.session.user.id);
   const total = updAuthoritativeTotalCustomers(u);
-  const contacted = Math.max(0, Number(u.customers_contacted || 0));
+  const _dm = dhGetDatabaseMetrics(u.assignment_id);
+  const contacted = _dm ? _dm.contacted : Math.max(0, Number(u.customers_contacted || 0));
   const pct = total > 0 ? Math.min(100, Math.round((contacted / total) * 100)) : 0;
   const status = dailyUpdateStatus(pct);
   const priority = String(u.priority || 'Medium').replace(/_/g,' ');
@@ -18932,7 +19178,8 @@ function updRenderEntryPanel(card, rows, selectedDate, editId=null){
       // Re-read after the write and derive all counters from permanent history.
       const freshRows=await updLoadDailyRows(live.id);
       const allSaved=updAllSavedAppointmentDetails(freshRows);
-      const overallCustomers=await calculateDatabaseFeedbackContacted(live.assignment_id,{force:true});
+      const overallCustomers=updOverallContacted(freshRows,0);
+      if(overallCustomers>total) throw new Error(`Overall Contacted (${overallCustomers}) cannot exceed Total Customers (${total}). Check the daily entries.`);
       const overallAppointments=allSaved.length;
       const latestByTime=[...freshRows].sort((a,b)=>{
         const ak=`${a.entry_date||''} ${a.entry_time||''} ${a.updated_at||a.created_at||''}`;
@@ -18976,7 +19223,8 @@ function updRefreshCardSummary(card,rec,rows){
   const total=updAuthoritativeTotalCustomers(rec);
   /* Contacted is authoritative from Data Hub feedback. Daily entries remain historical
      work logs and are rendered below without changing this counter. */
-  const contacted=Math.max(0,Number(rec.customers_contacted||0));
+  const _dm=dhGetDatabaseMetrics(rec.assignment_id);
+  const contacted=_dm ? _dm.contacted : Math.max(0,Number(rec.customers_contacted||0));
   const pct=total>0?Math.min(100,(contacted/total)*100):0;
   const count=rows.length;
   const ce=$('[data-role="contacted-total"]',card), pp=$('[data-role="progress-pct"]',card), pf=$('[data-role="progress-fill"]',card), ec=$('[data-role="entry-count"]',card), ss=$('[data-role="save-state"]',card), hist=$('[data-role="history"]',card);
@@ -19016,21 +19264,12 @@ async function wireDailyUpdateCard(card){
      history for appointments/remarks and are never deleted or used to increment contacts. */
   let effectiveRec=rec;
   try{
-    const feedbackContacted=await calculateDatabaseFeedbackContacted(rec.assignment_id||assignedDb?.id,{force:true});
-    const latest=rows.length ? [...rows].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')))[0] : null;
-    const latestParsed=latest ? updParseDailyRow(latest) : {appointments:0,remarks:''};
-    if(Number(rec.customers_contacted||0)!==feedbackContacted){
-      const {data:reconciled,error:reconcileError}=await supa.from('updates').update({
-        customers_contacted:feedbackContacted,
-        appointments:Math.max(0,Number(latestParsed.appointments)||0),
-        remarks:String(latestParsed.remarks||'').trim()||null
-      }).eq('id',id).select('*').single();
-      if(!reconcileError && reconciled){
-        effectiveRec=reconciled;
-        const idx=S.updates.findIndex(u=>String(u.id)===String(id));
-        if(idx>=0)S.updates[idx]={...S.updates[idx],...reconciled};
-      }else if(reconcileError)console.warn('[FEEDBACK UPDATE RECONCILIATION FAILED]',reconcileError);
-    }else effectiveRec={...rec,customers_contacted:feedbackContacted};
+    // Cache-first (patched on every confirmed save); network only if the database was never measured.
+    const res=await dhRefreshDatabaseMetrics(rec.assignment_id||assignedDb?.id);
+    const m=res.ok ? res.metrics : dhGetDatabaseMetrics(rec.assignment_id||assignedDb?.id);
+    const live=S.updates.find(u=>String(u.id)===String(id)) || rec;
+    if(m) effectiveRec={...live,total_customers:m.total,customers_contacted:m.contacted};
+    else console.warn('[FEEDBACK METRICS UNAVAILABLE] showing stored values');
   }catch(e){console.warn('[FEEDBACK CONTACTED RECONCILIATION FAILED]',e);}
   updRefreshCardSummary(card,effectiveRec,rows);
 
@@ -19805,7 +20044,7 @@ function anFilteredRecords(summaries){
 }
 function anField(r,keys){for(const k of keys){if(r?.[k]!==undefined&&r?.[k]!==null&&String(r[k]).trim()!=='')return r[k];}return '';}
 function anHasValue(v){return v!==null&&v!==undefined&&String(v).trim()!=='';}
-function anPhone(r){return ['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','numbers_from_company_website_1','numbers_from_company_website_2','Mobile Phone 1','Mobile Phone 2','Work Phone 1','Work Phone 2','Numbers From Company Website 1','Numbers From Company Website 2'].some(k=>anHasValue(r?.[k]));}
+function anPhone(r){return ['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','company_website_number_1','company_website_number_2','numbers_from_company_website_1','numbers_from_company_website_2','Mobile Phone 1','Mobile Phone 2','Work Phone 1','Work Phone 2','Numbers From Company Website 1','Numbers From Company Website 2'].some(k=>anHasValue(r?.[k]));}
 function anEmail(r){return ['personal_email_1','personal_email_2','business_email_1','business_email_2','email','email_address','Personal Email 1','Personal Email 2','Business Email 1','Business Email 2'].some(k=>anHasValue(r?.[k]));}
 function anRecordStatus(r){return String(anField(r,['feedback','status','work_status','customer_status','lead_status'])||'Unspecified').trim()||'Unspecified';}
 function anPanel(title,subtitle,body,span='an-span-6'){return `<section class="an-panel ${span}"><div class="an-panel-head"><div><h3>${title}</h3><div class="an-panel-sub">${subtitle}</div></div></div>${body}</section>`;}
@@ -20222,6 +20461,10 @@ async function doSaveRecordField(rec, field, value){
       .eq('id', rec.id);
     if (error) throw error;
     rec.updated_at = nowIso; rec.updated_by = S.session.user.id;
+    if (DH_ELIGIBILITY_PHONE_FIELDS.includes(field) || field==='feedback'){
+      dhPatchRecordInCaches(rec.id,{[field]:value});
+      if (rec.database_id!=null) dhRefreshDatabaseMetrics(rec.database_id).then(res=>{ if(res.ok) dhRerenderMetricViews(); });
+    }
     if (pill){ pill.className = 'ws-savepill saved'; pill.textContent = 'Saved ✓'; setTimeout(()=> pill.classList.add('hidden'), 1800); }
     // Best-effort audit trail — failures here never block the field save itself
     supa.from('record_history').insert({
@@ -20682,16 +20925,7 @@ function populateTwuExportUserSelect(){
     const p = S.profiles.find(pr=>pr.id===id);
     return { id, name: p?.full_name || p?.username || 'Unknown user' };
   }).sort((a,b)=> a.name.localeCompare(b.name));
-  const currentId=String(S.session?.user?.id||'');
-  const currentProfile=S.profile||S.profiles.find(p=>String(p.id)===currentId)||{};
-  const currentName=String(currentProfile.full_name||currentProfile.username||S.session?.user?.email||'').trim();
-  // Keep the Admin's export selector aligned with the authenticated session.
-  // Options still include other users so Admin can deliberately export their data.
-  const optionMap=new Map(options.map(o=>[String(o.id),o]));
-  if(currentId&&!optionMap.has(currentId)&&currentName)optionMap.set(currentId,{id:currentId,name:currentName});
-  const finalOptions=[...optionMap.values()].sort((a,b)=>a.name.localeCompare(b.name));
-  sel.innerHTML = finalOptions.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
-  if(currentId&&finalOptions.some(o=>String(o.id)===currentId))sel.value=currentId;
+  sel.innerHTML = options.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
 }
 $('#twu-export-btn').addEventListener('click', ()=>{
   const ownerId = S.isAdmin ? $('#twu-export-user-select').value : S.session.user.id;
@@ -26066,6 +26300,7 @@ const CompanyExactRemovalToolkit = (() => {
         if (removed.has(id)) m.status = 'Removed';
         else { notRemoved++; m.status = failed.has(id) ? `Not Removed – ${failed.get(id)}` : 'Not Removed – blocked by permissions'; }
       });
+      dhOnRecordsRemoved([...removed]);
       setStep('remove', 'done');
 
       // Refresh the app's existing views exactly as the Data Hub's own delete flows do.
