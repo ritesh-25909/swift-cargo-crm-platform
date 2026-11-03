@@ -19927,6 +19927,44 @@ $('#rating-submit-btn').addEventListener('click', async ()=>{
   }
 });
 
+// Resolve the display label from the existing profile without changing any stored assignment.
+// This prevents legacy values such as "fabin" from appearing beside "Fabin Gladstone".
+// Display-only formatter: never writes names back to Supabase or changes user IDs.
+function analyticsFormatUserDisplayName(value){
+  const raw = String(value || '').trim();
+  if (!raw) return 'Unassigned';
+  const withoutEmailDomain = raw.includes('@') ? raw.split('@')[0] : raw;
+  return withoutEmailDomain
+    .replace(/[._-]+/g, ' ')
+    .replace(/\\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(part => part.charAt(0).toLocaleUpperCase() + part.slice(1).toLocaleLowerCase())
+    .join(' ');
+}
+
+function analyticsAssignedUserDisplay(db){
+  const profiles = S.profiles || [];
+  const assignedId = String(db?.assigned_user_id || '').trim();
+  if (assignedId) {
+    const byId = profiles.find(p=>String(p.id) === assignedId);
+    if (byId) return analyticsFormatUserDisplayName(byId.full_name || byId.email || 'Unassigned');
+  }
+
+  const raw = String(db?.assigned_user_name || db?.assigned_to || '').trim();
+  if (!raw) return 'Unassigned';
+  const key = raw.toLowerCase();
+  const match = profiles.find(p=>{
+    const fullName = String(p.full_name || '').trim().toLowerCase();
+    const email = String(p.email || '').trim().toLowerCase();
+    const emailLocal = email.includes('@') ? email.split('@')[0] : email;
+    return (fullName && fullName === key) || (email && email === key) ||
+      (emailLocal && emailLocal === key);
+  });
+  return analyticsFormatUserDisplayName(match ? (match.full_name || match.email || raw) : raw);
+}
+
 function analyticsBuildDbSummaries(){
   const dbs = analyticsScopedDbs();
   const updates = analyticsScopedUpdates();
@@ -19952,7 +19990,7 @@ function analyticsBuildDbSummaries(){
     return {
       db, latest, ups,
       name: db.name,
-      assignedTo: db.assigned_user_name || db.assigned_to || 'Unassigned',
+      assignedTo: analyticsAssignedUserDisplay(db),
       assignedDate: db.upload_date,
       totalCustomers,
       contactedToday,
@@ -20114,8 +20152,8 @@ function renderAnalyticsCardList(summaries){
 /* ---- Right-hand analytics sidebar: assignment overview, activity, alerts ---- */
 function analyticsUserName(ownerId){
   if (!S.isAdmin) return 'You';
-  const p = S.profiles.find(p=>p.id===ownerId);
-  return p?.full_name || p?.email || 'Unknown user';
+  const p = (S.profiles || []).find(p=>String(p.id)===String(ownerId));
+  return p ? analyticsFormatUserDisplayName(p.full_name || p.email || 'Unknown user') : 'Unknown User';
 }
 
 function analyticsRecentActivity(){
@@ -20244,14 +20282,14 @@ function renderAnalyticsIntelligence(summaries){
  const scopedUpdates=(S.updates||[]).filter(u=>{
    const db=(u.assignment_id&&dbById.get(String(u.assignment_id))) || (u.database_id&&dbById.get(String(u.database_id))) || (S.databases||[]).find(d=>String(d.name||'')===String(u.database_name||''));
    if(!db)return false;
-   if(a.userFilter && String(db.assigned_user_id||'')!==String(a.userFilter) && analyticsUserName(u.owner_id)!==a.userFilter)return false;
+   if(a.userFilter && analyticsAssignedUserDisplay(db)!==a.userFilter && analyticsUserName(u.owner_id)!==a.userFilter)return false;
    if(a.dbFilter && String(db.id)!==String(a.dbFilter) && String(db.name)!==String(a.dbFilter))return false;
    const dt=anDate(u.entry_date||u.assigned_date||u.created_at||u.updated_at);
    if(a.dateFrom && (!dt||dt<new Date(a.dateFrom+'T00:00:00')))return false;
    if(a.dateTo && (!dt||dt>new Date(a.dateTo+'T23:59:59')))return false;
    return true;
  });
- const filteredDbs=(S.databases||[]).filter(d=>(!a.userFilter||String(d.assigned_user_id||'')===String(a.userFilter)||String(d.assigned_user_name||'')===String(a.userFilter)||analyticsUserName(d.assigned_user_id)===a.userFilter)&&(!a.dbFilter||String(d.id)===String(a.dbFilter)||String(d.name)===String(a.dbFilter))&&(!a.search||String(d.name||'').toLowerCase().includes(String(a.search).toLowerCase())));
+ const filteredDbs=(S.databases||[]).filter(d=>(!a.userFilter||analyticsAssignedUserDisplay(d)===a.userFilter||analyticsUserName(d.assigned_user_id)===a.userFilter)&&(!a.dbFilter||String(d.id)===String(a.dbFilter)||String(d.name)===String(a.dbFilter))&&(!a.search||String(d.name||'').toLowerCase().includes(String(a.search).toLowerCase())));
  const updateDb=u=>(u.assignment_id&&dbById.get(String(u.assignment_id)))||(u.database_id&&dbById.get(String(u.database_id)))||(S.databases||[]).find(d=>String(d.name||'')===String(u.database_name||''));
  const byDb=new Map();
  filteredDbs.forEach(db=>{
