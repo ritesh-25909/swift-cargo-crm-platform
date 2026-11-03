@@ -13184,11 +13184,11 @@ const DH_ELIGIBILITY_PHONE_FIELDS = ['mobile_phone_1','mobile_phone_2','work_pho
 /* Real column names first; legacy workbook headers kept as harmless aliases. NOTE: the old list used
    `numbers_from_company_website_*`, which is NOT a column — website-only numbers were invisible. */
 const DH_PHONE_FIELDS = [...DH_ELIGIBILITY_PHONE_FIELDS,'numbers_from_company_website_1','numbers_from_company_website_2','Mobile Phone 1','Mobile Phone 2','Work Phone 1','Work Phone 2','Numbers From Company Website 1','Numbers From Company Website 2'];
-const DH_METRIC_COLUMNS = ['id','database_id','feedback',...DH_ELIGIBILITY_PHONE_FIELDS].join(',');
+const DH_METRIC_COLUMNS = ['id','database_id','feedback','feedback_custom',...DH_ELIGIBILITY_PHONE_FIELDS].join(',');
 function dhCleanText(v){ return String(v ?? '').replace(/[\u0000-\u001F\u007F\u00A0\u200B-\u200D\uFEFF]/g,'').trim(); }
 function dhHasAnyPhone(record){ return DH_PHONE_FIELDS.some(k=>dhCleanText(record?.[k])!==''); }
 function dhIsEligibleCustomer(record){ return dhHasAnyPhone(record); }
-function dhFeedbackIsFilled(record){ return dhCleanText(record?.feedback)!==''; }
+function dhFeedbackIsFilled(record){ return dhCleanText(record?.feedback)!=='' || dhCleanText(record?.feedback_custom)!==''; }
 /* Any saved Feedback on an eligible record = contacted (previously only Valid/Agree counted). */
 function dhFeedbackCountsAsContacted(record){ return dhIsEligibleCustomer(record) && dhFeedbackIsFilled(record); }
 
@@ -13325,6 +13325,8 @@ async function dhLoadMissingMetrics(){
   try{
     const failed=(S._dbMetricsFailedAt ||= new Map());
     const ids=[...new Set((S.updates||[]).map(u=>u.assignment_id).filter(v=>v!=null).map(String))];
+    // Analytics (Admin) reports every database, not only those that already have an Updates card.
+    if(S.isAdmin && S._dbMetricsIncludeAll) (S.databases||[]).forEach(d=>{ const k=String(d.id); if(!ids.includes(k)) ids.push(k); });
     for(const id of ids){
       if(dhMetricsStore().has(id) || !dhFindDatabase(id)) continue;
       if(Date.now()-(failed.get(id)||0)<60000) continue;
@@ -13334,6 +13336,12 @@ async function dhLoadMissingMetrics(){
   }finally{ S._dbMetricsLoading=false; if(S._dbMetricsAgain){ S._dbMetricsAgain=false; dhScheduleMetricsLoad(); } }
 }
 /* Re-render whichever metric view is on screen — no page reload, no extra requests. */
+function dhEnsureAnalyticsMetrics(){
+  if(!S.isAdmin) return;
+  if(!(S.page==='analytics' || $('#page-analytics')?.classList.contains('active'))) return;
+  S._dbMetricsIncludeAll=true;
+  dhScheduleMetricsLoad();
+}
 function dhRerenderMetricViews(){
   clearTimeout(S._dbMetricsRenderTimer);
   S._dbMetricsRenderTimer=setTimeout(()=>{
@@ -15509,6 +15517,10 @@ function dbbCardHtml(d){
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
             Export CSV
           </button>
+          <button data-act="export_xlsx" data-id="${esc(d.id)}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            Export Excel
+          </button>
           <button data-act="duplicate" data-id="${esc(d.id)}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M4 16V4a2 2 0 0 1 2-2h12"/></svg>
             Duplicate
@@ -15685,6 +15697,7 @@ function dbbDispatchCardAction(act, db){
   if (act === 'open' || act === 'view') openDatabaseView(db);
   else if (act === 'details') dbbShowDetails(db);
   else if (act === 'export' && S.isAdmin) dbbExportDatabaseCsv(db);
+  else if (act === 'export_xlsx' && S.isAdmin) dhExportDatabaseXlsx(db);
   else if (act === 'reassign' && S.isAdmin) openAssignDbModal(db.id);
   else if (act === 'rename' && S.isAdmin) dbbOpenRenameModal(db);
   else if (act === 'refresh') dbbRefreshDatabase(db);
@@ -17772,10 +17785,80 @@ function download(filename, content, mime){
   URL.revokeObjectURL(a.href);
 }
 $('#export-csv-btn').addEventListener('click', ()=> { download('datavault-export.csv', toCSV(S.filteredRecords), 'text/csv'); logAudit('export_csv', {count:S.filteredRecords.length}); });
-$('#export-xlsx-btn').addEventListener('click', ()=>{
-  const ws = XLSX.utils.json_to_sheet(S.filteredRecords.map(r=>{
-    const o = {}; GRID_COLUMNS.forEach(c=> o[c.label] = c.fmt ? c.fmt(r[c.key]) : (r[c.key]||'')); return o;
-  }));
+/* ---------- Full-database Excel export ----------
+   Reads EVERY record of the database straight from Supabase (paged past the server row cap and the
+   Data Hub pagination), keeps every existing export column, writes the saved Remarks and the
+   custom feedback text, and names the file after the real database name. */
+function dhSanitizeFileName(name){
+  let n=String(name ?? '').replace(/[\u0000-\u001F\u007F]/g,'').replace(/[\\\/:*?"<>|]/g,'_').replace(/\s+/g,' ').trim().replace(/[. ]+$/,'');
+  if(n.length>180) n=n.slice(0,180).trim();
+  return n || 'database-export';
+}
+async function dhFetchAllRecordsForExport(db){
+  const PAGE=1000, byId=new Map();
+  async function scan(col,val){
+    let from=0, expected=null;
+    while(true){
+      const {data,error,count}=await supa.from('records').select('*', from===0?{count:'exact'}:{}).eq(col,val).order('id',{ascending:true}).range(from,from+PAGE-1);
+      if(error) throw error;
+      const batch=data||[];
+      if(from===0 && typeof count==='number') expected=count;
+      batch.forEach(r=>{ if(r && r.id!=null) byId.set(String(r.id),r); });
+      from+=batch.length;
+      if(!batch.length) break;
+      if(expected!=null ? from>=expected : batch.length<PAGE) break;
+    }
+  }
+  await scan('database_id',db.id);
+  if(!byId.size && String(db.name||'').trim()) await scan('database_name',String(db.name).trim());   // legacy rows
+  return [...byId.values()];
+}
+function dhExportCell(r,c){
+  let v;
+  if(c.key==='feedback_label') v=feedbackDisplayLabel(r);                       // selection label or custom text
+  else if(c.key==='remark') v=r.remark ?? r.remarks ?? r.notes ?? '';           // the saved Remarks/Notes
+  else v=c.fmt ? c.fmt(r[c.key]) : (r[c.key] ?? '');
+  v=String(v ?? '');
+  return v.length>32767 ? v.slice(0,32767) : v;                                 // Excel cell limit
+}
+function dhBuildExportRows(rows){
+  return rows.map(r=>{
+    const o={};
+    GRID_COLUMNS.forEach(c=>{ o[c.key==='remark'?'Remarks':c.label]=dhExportCell(r,c); });
+    return o;
+  });
+}
+function dhCurrentExportDatabase(){
+  const dbs=S.databases||[];
+  const id=S.grid.dbIdFilter || (S.dbHub?.openDbId!=null ? S.dbHub.openDbId : '');
+  let db=id!=='' && id!=null ? dbs.find(d=>String(d.id)===String(id)) : null;
+  if(!db && S.grid.dbFilter) db=dbs.find(d=>String(d.name)===String(S.grid.dbFilter));
+  return db||null;
+}
+async function dhExportDatabaseXlsx(db, btn){
+  if(!window.XLSX){ toast('Excel export is unavailable.','error'); return; }
+  if(btn){ btn.disabled=true; btn.dataset.label=btn.textContent; btn.textContent='Exporting…'; }
+  try{
+    const rows=await dhFetchAllRecordsForExport(db);
+    if(!rows.length){ toast('No records to export for this database.','error'); return; }
+    const ws=XLSX.utils.json_to_sheet(dhBuildExportRows(rows));
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Records');
+    XLSX.writeFile(wb, dhSanitizeFileName(db.name)+'.xlsx');
+    logAudit('export_xlsx', { database_id:db.id, database_name:db.name, count:rows.length });
+    toast(`Exported ${rows.length.toLocaleString()} records`,'success');
+  }catch(e){
+    console.error('[DATABASE XLSX EXPORT FAILED]',e);
+    toast('Export failed — '+(e?.message||'could not read records'),'error');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=btn.dataset.label||'Export Excel'; }
+  }
+}
+$('#export-xlsx-btn').addEventListener('click', (e)=>{
+  const db=dhCurrentExportDatabase();
+  if(db){ dhExportDatabaseXlsx(db, e.currentTarget); return; }
+  // No single database selected: keep the existing behaviour for the current filtered view.
+  if(!window.XLSX){ toast('Excel export is unavailable.','error'); return; }
+  const ws = XLSX.utils.json_to_sheet(dhBuildExportRows(S.filteredRecords));
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Data');
   XLSX.writeFile(wb, 'datavault-export.xlsx');
   logAudit('export_xlsx', {count:S.filteredRecords.length});
@@ -19680,14 +19763,14 @@ const iconAlertTriangle = `<svg viewBox="0 0 24 24" fill="none" stroke="currentC
    column with how its updates have been trending. Keeps everything computed
    client-side since the schema doesn't (yet) have a dedicated status enum
    for this level of nuance. */
-function analyticsDeriveStatus(db, updatesForDb){
+function analyticsDeriveStatus(db, updatesForDb, fm){
   if (db.status === 'completed') return 'completed';
   const latest = updatesForDb[0];
   if (!latest) return 'pending';
   const daysSince = (Date.now() - new Date(latest.assigned_date)) / 86400000;
   if (daysSince > 5) return 'overdue';
-  const total = latest.total_customers || 0;
-  const contacted = latest.customers_contacted || 0;
+  const total = fm ? fm.total : (latest.total_customers || 0);
+  const contacted = fm ? fm.contacted : (latest.customers_contacted || 0);
   const rate = total ? contacted/total : 0;
   if (daysSince > 2 && rate < 0.3) return 'attention';
   if (rate >= 0.75) return 'excellent';
@@ -19858,10 +19941,12 @@ function analyticsBuildDbSummaries(){
     const contactedToday = ups.filter(u=> new Date(u.assigned_date).toDateString()===todayStr)
       .reduce((s,u)=> s+(u.customers_contacted||0), 0);
     const appointmentsTotal = ups.reduce((s,u)=> s+(u.appointments||0), 0);
-    const contactedTotal = latest ? (latest.customers_contacted||0) : 0;
-    const totalCustomers = db.customer_count || 0;
+    // Record-level feedback metrics (same source as Data Hub) win over stored update/database snapshots.
+    const fm = dhGetDatabaseMetrics(db.id);
+    const contactedTotal = fm ? fm.contacted : (latest ? (latest.customers_contacted||0) : 0);
+    const totalCustomers = fm ? fm.total : (db.customer_count || 0);
     const contactPct = totalCustomers ? Math.round((contactedTotal/totalCustomers)*100) : 0;
-    const status = analyticsDeriveStatus(db, ups);
+    const status = analyticsDeriveStatus(db, ups, fm);
     const lastUpdated = latest ? (latest.updated_at || latest.created_at || latest.assigned_date) : db.upload_date;
     const updatedByName = latest ? analyticsUserName(latest.owner_id) : analyticsUserName(db.owner_id);
     return {
@@ -20173,8 +20258,9 @@ function renderAnalyticsIntelligence(summaries){
    const us=scopedUpdates.filter(u=>updateDb(u)?.id===db.id);
    // Update rows contain cumulative contact counters. Use the latest snapshot per assignment to avoid summing repeated daily snapshots.
    const latest=[...us].sort((x,y)=>new Date(y.updated_at||y.created_at||y.assigned_date||0)-new Date(x.updated_at||x.created_at||x.assigned_date||0))[0];
-   const total=Math.max(0,Number(db.customer_count)||0);
-   const contacted=Math.min(total,Math.max(0,Number(latest?.customers_contacted)||0));
+   const fm=dhGetDatabaseMetrics(db.id);
+   const total=Math.max(0,Number(fm?fm.total:db.customer_count)||0);
+   const contacted=Math.min(total,Math.max(0,Number(fm?fm.contacted:latest?.customers_contacted)||0));
    const appointments=us.reduce((n,u)=>n+Math.max(0,Number(u.appointments)||0),0);
    byDb.set(String(db.id),{db,name:db.name||'Unnamed database',total,contacted,pending:Math.max(0,total-contacted),appointments,rate:total?contacted/total*100:0,us});
  });
@@ -20199,6 +20285,7 @@ function renderAnalyticsIntelligence(summaries){
 }
 function renderAnalyticsPage(){
   if (!S.isAdmin) return; // Analytics is Admin-only — never render for normal users, no matter which code path calls this
+  dhEnsureAnalyticsMetrics();
   const summaries = analyticsFilteredSummaries();
   renderAnalyticsKpis(summaries);
   renderAnalyticsIntelligence(summaries);
