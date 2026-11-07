@@ -2334,6 +2334,17 @@ body.cal-resizing,body.cal-resizing *{ cursor:ns-resize!important; user-select:n
 .toast{ background:#0B0B14; color:#fff; padding:12px 18px; border-radius:12px; font-size:13.5px; font-weight:600; box-shadow:var(--shadow-lg); display:flex; align-items:center; gap:10px; animation:toast-in .3s var(--ease); max-width:340px;}
 .toast.success{ background:#15803D; }
 .toast.error{ background:#B91C1C; }
+#toast-stack{max-width:min(340px,calc(100vw - 32px));pointer-events:none;}
+.toast.live-activity-toast{
+  pointer-events:auto;position:relative;display:flex;align-items:flex-start;gap:8px;
+  width:min(320px,calc(100vw - 32px));max-width:320px;padding:9px 10px 9px 12px;
+  border:1px solid rgba(255,255,255,.14);border-radius:11px;font-size:11.5px;
+  line-height:1.35;font-weight:600;box-shadow:0 8px 22px rgba(15,23,42,.16);
+}
+.live-activity-copy{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-width:0;flex:1;overflow-wrap:anywhere;}
+.live-activity-dismiss{flex:0 0 20px;width:20px;height:20px;margin:-2px -2px 0 0;border:0;border-radius:6px;background:rgba(255,255,255,.13);color:#fff;font-size:17px;line-height:18px;cursor:pointer;}
+.live-activity-dismiss:hover{background:rgba(255,255,255,.25);}
+
 @keyframes toast-in{ from{ opacity:0; transform:translateY(8px) scale(.96);} to{opacity:1; transform:none;} }
 .spinner{ width:16px; height:16px; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
 .spinner.dark{ border:2px solid #E7E7F0; border-top-color:var(--accent); }
@@ -10548,6 +10559,53 @@ function toast(msg, type=''){
   $('#toast-stack').appendChild(el);
   setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(6px)'; el.style.transition='.25s'; setTimeout(()=>el.remove(),260); }, 3400);
 }
+
+/* Live activity notifications: bounded end-to-end. At most ten are visible and
+   at most ten wait; oldest queued items are discarded during a burst rather than
+   building an unbounded backlog. The event de-duplication cache is also bounded. */
+const LIVE_ACTIVITY_MAX_VISIBLE = 10;
+const LIVE_ACTIVITY_MAX_QUEUED = 10;
+const LIVE_ACTIVITY_VISIBLE_MS = 5200;
+const liveActivityQueue = [];
+const liveActivitySeen = new Map();
+function enqueueLiveActivity(message, dedupeKey=''){
+  const now=Date.now();
+  if(dedupeKey){
+    const previous=liveActivitySeen.get(dedupeKey);
+    if(previous && now-previous<300000) return;
+    liveActivitySeen.set(dedupeKey,now);
+    if(liveActivitySeen.size>2000){
+      for(const [key,stamp] of liveActivitySeen){
+        if(now-stamp>300000 || liveActivitySeen.size>1500) liveActivitySeen.delete(key);
+        if(liveActivitySeen.size<=1500) break;
+      }
+    }
+  }
+  if(liveActivityQueue.length>=LIVE_ACTIVITY_MAX_QUEUED) liveActivityQueue.shift();
+  liveActivityQueue.push({message:String(message||''),createdAt:now});
+  drainLiveActivityQueue();
+}
+function drainLiveActivityQueue(){
+  const stack=$('#toast-stack');
+  if(!stack) return;
+  let visible=stack.querySelectorAll('.toast.live-activity-toast').length;
+  while(visible<LIVE_ACTIVITY_MAX_VISIBLE && liveActivityQueue.length){
+    const item=liveActivityQueue.shift();
+    const el=document.createElement('div');
+    el.className='toast info live-activity-toast';
+    el.setAttribute('role','status');
+    el.innerHTML=`<span class="live-activity-copy">${esc(item.message)}</span><button type="button" class="live-activity-dismiss" aria-label="Dismiss notification" title="Dismiss">×</button>`;
+    const dismiss=()=>{
+      if(el.dataset.dismissed==='1') return;
+      el.dataset.dismissed='1';
+      el.style.opacity='0'; el.style.transform='translateY(6px)'; el.style.transition='.2s';
+      setTimeout(()=>{el.remove();drainLiveActivityQueue();},210);
+    };
+    el.querySelector('.live-activity-dismiss').addEventListener('click',dismiss,{once:true});
+    stack.appendChild(el); visible++;
+    setTimeout(dismiss,LIVE_ACTIVITY_VISIBLE_MS);
+  }
+}
 function setLoading(btn, loading, label){
   if(!btn) return;
   if(loading){ btn.disabled = true; btn.dataset.orig = btn.innerHTML; btn.innerHTML = `<span class="spinner"></span>`; }
@@ -10642,22 +10700,34 @@ function dhNormalizeImportedRecordEmails(record){
 function isUsableCustomerPhone(v){
   const value = normalizePhoneValue(v);
   if (!value) return false;
-  // Do not count placeholders such as -, N/A, NA, null, none, or blank-like text.
+  // Validate individual candidates so a cell containing several numbers is
+  // handled correctly without treating arbitrary notes/identifiers as phones.
   const placeholder = value.toLowerCase().replace(/[._\-\/\\\s]+/g, '');
-  if (['na','n/a','nil','none','null','undefined','nan','notavailable','notapplicable'].includes(placeholder)) return false;
-  // A real phone/contact number must contain at least one digit. This prevents
-  // notes/placeholders in a phone column from turning an otherwise blank row
-  // into a customer.
-  return /\d/.test(value);
+  if (['na','n/a','nil','none','null','undefined','nan','notavailable','notapplicable','-'].includes(placeholder)) return false;
+  const candidates = value.split(/\s*(?:[,;\/|\\\\]|\r?\n)\s*/).map(x=>x.trim()).filter(Boolean);
+  return candidates.some(candidate=>{
+    if (!/^\+?[0-9\s().-]+$/.test(candidate)) return false;
+    const compact=candidate.replace(/[\s().-]/g,'');
+    const upper=compact.toUpperCase();
+    // Explicitly reject common Indian identity/tax formats and postal PINs.
+    if (/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(upper)) return false; // PAN
+    if (/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(upper)) return false; // GSTIN
+    if (/^\d{6}$/.test(compact)) return false; // Indian PIN code
+    const digits=compact.replace(/\D/g,'');
+    // User's rule: more than 8 digits; allow international numbers up to 15.
+    if (digits.length<9 || digits.length>15) return false;
+    // Reject obvious placeholders such as 0000000000 / 9999999999.
+    if (/^(\d)\1+$/.test(digits)) return false;
+    return true;
+  });
 }
 function isCountableCustomerRecord(row){
-  if (!row) return false;
-  const phoneFields = [
-    'mobile_phone_1','mobile_phone_2',
-    'work_phone_1','work_phone_2',
-    'company_website_number_1','company_website_number_2'
-  ];
-  return phoneFields.some(k => isUsableCustomerPhone(row[k]));
+  if(!row) return false;
+  // Use the same six canonical destinations as the Data Hub metrics engine.
+  // Company/contact/email/location fields never affect customer eligibility.
+  return ['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2',
+    'company_website_number_1','company_website_number_2']
+    .some(field=>isUsableCustomerPhone(row[field]));
 }
 function countCountableCustomers(rows){
   return (rows || []).reduce((count, row) => count + (isCountableCustomerRecord(row) ? 1 : 0), 0);
@@ -10687,7 +10757,7 @@ function normalizeHeaderCompact(h){ return normalizeHeader(h).replace(/\s+/g,'')
 const DATA_TYPE_TARGETS = [
   {key:'contact_person',label:'Contact Person',synonyms:['contact','contact name','contact person','contact person name','full name','person name','contactname','person in charge','pic','representative','contact individual']},
   {key:'position',label:'Position',synonyms:['position','designation','job title','title','role']},
-  {key:'company_name',label:'Company Name',synonyms:['company','company name','customer','customer name','client name','organization','organisation','organization name','organisation name','business name','exporter name','shipper name','company legal name']},
+  {key:'company_name',label:'Company Name',synonyms:['company','company name','customer','customer name','client name','organization','organisation','organization name','organisation name','business name','exporter name','shipper name','company legal name','firm name','corporate name','account name','account','legal entity name']},
   {key:'location',label:'Location',synonyms:['location','city','address','region','place','office address','registered address','registered office address','postal address','full address','business address','street address']},
   {key:'personal_email',label:'Personal Email',synonyms:['personal email','personal mail','personal email id','personal email address']},
   {key:'business_email',label:'Business Email',synonyms:['business email','business mail','work email','office email','corporate email','company email','email','email id','e mail address','email address','e-mail address','work email id']},
@@ -10770,7 +10840,7 @@ function dtHeaderSignal(field,header){
     location:/address|location|postaladdress|registeredoffice|officeaddress|citystate|fulladdress/i,
     personal_email:/personalemail|personalmail|privateemail/i,
     business_email:/businessemail|workemail|officeemail|corporateemail|companyemail|emailaddress|email|e mail/i,
-    mobile_phone:/mobile|cellphone|mobilenumber|mobileno|phonenumber|telephone|contactnumber|phone/i,
+    mobile_phone:/mobile|cellphone|mobilenumber|mobileno|cellnumber|cellphonenumber|phonenumber|contactnumber/i,
     work_phone:/workphone|officephone|landline|telephoneoffice/i,
     company_website_number:/websitenumber|companywebsitenumber|numberfromwebsite/i,
     linkedin:/linkedin/i, company_website:/website|companyurl|webaddress|url/i, remark:/remark|notes?|comments?/i
@@ -10848,11 +10918,11 @@ function inferDataTypeMapping(rawHeader, sampleValues, usedTargets){
   if(/^(?:businessemail|businessmail|workemail|officeemail|corporateemail|companyemail)[12]?$/.test(n)) candidates.find(x=>x.field==='business_email').score=Math.max(candidates.find(x=>x.field==='business_email').score,.995);
   if(/^(?:mobile|mobileno|mobilenumber|cell|cellphone|cellnumber|cellphonenumber|mobilephone|mobilephone[number]?|phonenumber|contactnumber)$/.test(n)) candidates.find(x=>x.field==='mobile_phone').score=Math.max(candidates.find(x=>x.field==='mobile_phone').score,.985);
   if(/^(?:telephone|telephonenumber|officephone|officephonenumber|landline|worknumber|workphone|workphonenumber|officetelephone)$/.test(n)) candidates.find(x=>x.field==='work_phone').score=Math.max(candidates.find(x=>x.field==='work_phone').score,.985);
-  if(/^(?:company|companyname|businessname|exportername|shippername|customername|clientname)$/.test(n)) candidates.find(x=>x.field==='company_name').score=Math.max(candidates.find(x=>x.field==='company_name').score,.985);
+  if(/^(?:company|companyname|businessname|exportername|shippername|customername|clientname|firmname|corporatename|accountname|legalentityname)$/.test(n)) candidates.find(x=>x.field==='company_name').score=Math.max(candidates.find(x=>x.field==='company_name').score,.985);
   if(/^(?:contactperson|contactname|personincharge|pic|representative|contactpersonname)$/.test(n)) candidates.find(x=>x.field==='contact_person').score=Math.max(candidates.find(x=>x.field==='contact_person').score,.985);
   if(/^(?:designation|jobtitle|position|professionaltitle)$/.test(n)) candidates.find(x=>x.field==='position').score=Math.max(candidates.find(x=>x.field==='position').score,.985);
   if(/^(?:address|officeaddress|registeredaddress|registeredofficeaddress|postaladdress|fulladdress|businessaddress|streetaddress)$/.test(n)) candidates.find(x=>x.field==='location').score=Math.max(candidates.find(x=>x.field==='location').score,.985);
-  if(/linkedin/.test(n))candidates.find(x=>x.field==='linkedin').score=Math.max(candidates.find(x=>x.field==='linkedin').score,.99);
+  if(/linkedin|linkedprofile|professionalnetworkprofile/.test(n))candidates.find(x=>x.field==='linkedin').score=Math.max(candidates.find(x=>x.field==='linkedin').score,.99);
   if(/company.*website|website.*company|company.*url/.test(n))candidates.find(x=>x.field==='company_website').score=Math.max(candidates.find(x=>x.field==='company_website').score,.99);
   if(/website.*number|number.*website/.test(n))candidates.find(x=>x.field==='company_website_number').score=Math.max(candidates.find(x=>x.field==='company_website_number').score,.99);
   if(/business|work|corporate|office/.test(n)&&/email|mail/.test(n))candidates.find(x=>x.field==='business_email').score=Math.max(candidates.find(x=>x.field==='business_email').score,.97);
@@ -10874,12 +10944,32 @@ function inferDataTypeMapping(rawHeader, sampleValues, usedTargets){
 }
 function detectColumns(headers,rows){
   const used=new Set(),counts={},mapping={},meta={};
-  (headers||[]).forEach((h,idx)=>{
-    const values=dtSampleValues(rows,idx),result=inferDataTypeMapping(h,values,new Set(used));
+  const sourceHeaders=headers||[];
+  const genericPhoneIndices=[];
+  // First map explicit/recognised fields. Generic headers such as "Unknown Phone2"
+  // are deliberately processed last so they cannot steal a slot from Mobile/Work/
+  // Website Phone columns that have a clearer meaning.
+  sourceHeaders.forEach((h,idx)=>{
+    const n=normalizeHeaderCompact(h);
+    const genericPhone=/(?:phone|telephone|telno|contactnumber|contactno)/.test(n)
+      && !/(?:mobile|cell|work|office|landline|website|web|fax)/.test(n);
+    const values=dtSampleValues(rows,idx);
+    if(genericPhone && dtPhoneValueScore(values)>0) genericPhoneIndices.push(idx);
+  });
+  const genericSet=new Set(genericPhoneIndices);
+  const order=sourceHeaders.map((_,i)=>i).filter(i=>!genericSet.has(i)).concat(genericPhoneIndices);
+  for(const idx of order){
+    const h=sourceHeaders[idx], values=dtSampleValues(rows,idx);
+    const result=inferDataTypeMapping(h,values,new Set(used));
     let field=result.field, target=null;
-    if(field&&NUMBERED_FIELDS.has(field)){
+    if(genericSet.has(idx)){
+      const phoneSlots=['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','company_website_number_1','company_website_number_2'];
+      target=phoneSlots.find(slot=>!used.has(slot))||null;
+      if(target){field=target.replace(/_[12]$/,'');used.add(target);result.confidence=Math.max(result.confidence,0.96);result.status='auto';result.reason='Generic phone column recognised from phone-like sample values and assigned to the next available phone field';}
+      else {field=null;result.status='review';result.reason='All six supported phone destinations are occupied; this additional phone column cannot be stored in the existing fixed fields';}
+    }else if(field&&NUMBERED_FIELDS.has(field)){
       const explicit=result.explicitNum;
-      // Honor explicit suffixes when free; otherwise choose the first free slot.
+      // Honour explicit suffixes when free; otherwise use the first free slot.
       const slots=explicit ? [Number(explicit), ...[1,2].filter(n=>n!==Number(explicit))] : [1,2];
       const slot=slots.find(n=>!used.has(`${field}_${n}`));
       if(slot){target=`${field}_${slot}`;used.add(target);counts[field]=(counts[field]||0)+1;}
@@ -10896,7 +10986,7 @@ function detectColumns(headers,rows){
     mapping[idx]=field?target:null;
     if(field && result.status==='review' && result.confidence>=0.80) result.status='auto';
     meta[idx]={header:String(h??''),field:mapping[idx]||null,confidence:result.confidence,status:result.status,reason:result.reason,values,candidates:result.candidates||[]};
-  });
+  }
   S.importMappingMeta=meta;
   return mapping;
 }
@@ -12819,6 +12909,29 @@ async function performImport({ dbName, originalFilename, assignedTo, assignUser,
     return { ok:false, error:'Import failed: ' + (err?.message || err), dbRow };
   }
 
+  // Read-after-write association verification: the importer and Data Hub must agree on
+  // the same records table and database identity. This is diagnostic/read-only; it never
+  // reimports, deletes, or rewrites existing records.
+  try{
+    const {count:byIdCount,error:verifyIdError}=await supa.from('records')
+      .select('id',{count:'exact',head:true}).eq('database_id',dbRow.id);
+    const {count:byNameCount,error:verifyNameError}=await supa.from('records')
+      .select('id',{count:'exact',head:true}).eq('database_name',dbName);
+    if(verifyIdError || verifyNameError){
+      console.warn('[IMPORT DATA HUB READ-BACK CHECK]',{databaseId:dbRow.id,databaseName:dbName,
+        insertedThisRun:records.length,byIdCount,byNameCount,verifyIdError,verifyNameError});
+    }else if(Number(byIdCount||0)===0 && Number(byNameCount||0)>0){
+      console.warn('[IMPORT DATA HUB ASSOCIATION MISMATCH]',{databaseId:dbRow.id,databaseName:dbName,
+        recordsFoundByDatabaseId:byIdCount,recordsFoundByDatabaseName:byNameCount,
+        message:'Rows exist in public.records by database_name but are not linked by this database_id. Data Hub now falls back to database_name when the id query returns zero.'});
+    }else{
+      console.info('[IMPORT DATA HUB READ-BACK CHECK]',{databaseId:dbRow.id,databaseName:dbName,
+        insertedThisRun:records.length,recordsFoundByDatabaseId:byIdCount,recordsFoundByDatabaseName:byNameCount});
+    }
+  }catch(verifyError){
+    console.warn('[IMPORT DATA HUB READ-BACK CHECK FAILED]',verifyError);
+  }
+
   // Records are persisted — the import itself is done. Recompute the FINAL customer_count /
   // row_count from the actual merged data (whatever already existed for this database, plus
   // the newly-inserted, deduplicated rows) rather than the pre-dedupe estimate used for the
@@ -13186,7 +13299,7 @@ const DH_ELIGIBILITY_PHONE_FIELDS = ['mobile_phone_1','mobile_phone_2','work_pho
 const DH_PHONE_FIELDS = [...DH_ELIGIBILITY_PHONE_FIELDS,'numbers_from_company_website_1','numbers_from_company_website_2','Mobile Phone 1','Mobile Phone 2','Work Phone 1','Work Phone 2','Numbers From Company Website 1','Numbers From Company Website 2'];
 const DH_METRIC_COLUMNS = ['id','database_id','feedback','feedback_custom',...DH_ELIGIBILITY_PHONE_FIELDS].join(',');
 function dhCleanText(v){ return String(v ?? '').replace(/[\u0000-\u001F\u007F\u00A0\u200B-\u200D\uFEFF]/g,'').trim(); }
-function dhHasAnyPhone(record){ return DH_PHONE_FIELDS.some(k=>dhCleanText(record?.[k])!==''); }
+function dhHasAnyPhone(record){ return DH_ELIGIBILITY_PHONE_FIELDS.some(k=>isUsableCustomerPhone(record?.[k])); }
 function dhIsEligibleCustomer(record){ return dhHasAnyPhone(record); }
 function dhFeedbackIsFilled(record){ return dhCleanText(record?.feedback)!=='' || dhCleanText(record?.feedback_custom)!==''; }
 /* Any saved Feedback on an eligible record = contacted (previously only Valid/Agree counted). */
@@ -13325,6 +13438,10 @@ async function dhLoadMissingMetrics(){
   try{
     const failed=(S._dbMetricsFailedAt ||= new Map());
     const ids=[...new Set((S.updates||[]).map(u=>u.assignment_id).filter(v=>v!=null).map(String))];
+    // A zero customer_count with a positive stored row_count is a suspect snapshot:
+    // verify it from actual records even when the database is unassigned and has no Updates card.
+    (S.databases||[]).filter(d=>Number(d.customer_count||0)===0 && Number(d.row_count||0)>0)
+      .forEach(d=>{const k=String(d.id);if(!ids.includes(k))ids.push(k);});
     // Analytics (Admin) reports every database, not only those that already have an Updates card.
     if(S.isAdmin && S._dbMetricsIncludeAll) (S.databases||[]).forEach(d=>{ const k=String(d.id); if(!ids.includes(k)) ids.push(k); });
     for(const id of ids){
@@ -16943,12 +17060,19 @@ async function dhLoadDatabaseProgressively(db, loadSeq){
   const PAGE=500;
   const cached=S.dbHub.recordCache.get(dbId);
   const meta=S.dbHub.recordCacheMeta.get(dbId);
-  if(cached && Array.isArray(cached) && meta?.complete){
+  if(cached && Array.isArray(cached) && meta?.complete && cached.length>0){
     S.dbHub.openDbRecords=cached;
     mergeRecordsIntoState(cached);
     applyGridFilters();
     dhSetRecordLoading(false);
     return;
+  }
+  // An empty "complete" cache can be the result of the old database_id-only
+  // lookup. Do not treat it as authoritative: retry Supabase so the database_name
+  // association fallback can discover Data Type Intelligence/legacy imported rows.
+  if(meta?.complete && Array.isArray(cached) && cached.length===0){
+    S.dbHub.recordCache.delete(dbId);
+    S.dbHub.recordCacheMeta.delete(dbId);
   }
 
   let rows = Array.isArray(cached) ? cached.slice() : [];
@@ -16964,41 +17088,28 @@ async function dhLoadDatabaseProgressively(db, loadSeq){
       : await dhFetchDatabasePage(db,from,PAGE);
     const {data,error}=pageResult;
     if(error){
-      // Legacy rows may only carry database_name. Only fall back to the name path
-      // when the primary database_id path has produced no rows.
-      if(first && !rows.length && String(db.name||'').trim()){
-        const name=String(db.name).trim();
-        const fallback=await supa.from('records').select('*').eq('database_name',name)
-          .order('id',{ascending:true}).range(0,PAGE-1);
-        if(!fallback.error){
-          useNameFallback=true;
-          (fallback.data||[]).forEach(r=>{if(!seen.has(String(r.id))){seen.add(String(r.id));rows.push(r);}});
-          from=rows.length;
-          first=false;
-          // Keep one growing array while paging. Copying the entire accumulated dataset
-          // after every 500-row page caused quadratic allocation on large databases.
-          S.dbHub.openDbRecords=rows;
-          S.dbHub.recordCache.set(dbId,rows);
-          S.dbHub.recordCacheMeta.set(dbId,{complete:(fallback.data||[]).length<PAGE,lastFetched:Date.now()});
-          dhSetRecordLoading(true, `Loading records… ${rows.length.toLocaleString()} loaded`);
-          if((fallback.data||[]).length<PAGE){
-            mergeRecordsIntoState(rows, {skipDerived:true});
-            dhSetRecordLoading(true, 'Finalizing duplicate and contact indexes…');
-            await dhFlagDuplicatesYielding();
-            syncFeedbackLabels();
-            if(loadSeq===S.dbHub.openDbLoadSeq && S.dbHub.openDbId===db.id) applyGridFilters();
-            dhSetRecordLoading(false);
-            return;
-          }
-          continue;
-        }
+      // Legacy/misaligned imports may have a valid database_name association but
+      // no matching database_id. Retry by name even when the primary query errors.
+      if(first && !rows.length && !useNameFallback && String(db.name||'').trim()){
+        useNameFallback=true;
+        from=0;
+        continue;
       }
-      console.warn('[DATA HUB DATABASE LOAD FAILED]',error);
+      console.warn('[DATA HUB DATABASE LOAD FAILED]',{databaseId:db.id,databaseName:db.name,path:useNameFallback?'database_name':'database_id',error});
       dhSetRecordLoading(false,'Could not load records.');
       return;
     }
-    first=false;
     const batch=data||[];
+    // ROOT-CAUSE FIX: a successful database_id query returning [] is NOT proof
+    // that the database has no records. Data Type Intelligence/legacy imports can
+    // be persisted with database_name as their association. Previously this
+    // fallback only ran on query errors, so a valid empty result hid those rows.
+    if(first && !rows.length && !useNameFallback && batch.length===0 && String(db.name||'').trim()){
+      useNameFallback=true;
+      from=0;
+      continue;
+    }
+    first=false;
     batch.forEach(r=>{if(!seen.has(String(r.id))){seen.add(String(r.id));rows.push(r);}});
     // Share the progressive-load array; it is appended in-place until paging completes.
     // Snapshot copies per page made loading 100k+ records unnecessarily expensive.
@@ -20250,7 +20361,7 @@ function anFilteredRecords(summaries){
 }
 function anField(r,keys){for(const k of keys){if(r?.[k]!==undefined&&r?.[k]!==null&&String(r[k]).trim()!=='')return r[k];}return '';}
 function anHasValue(v){return v!==null&&v!==undefined&&String(v).trim()!=='';}
-function anPhone(r){return ['mobile_phone_1','mobile_phone_2','work_phone_1','work_phone_2','company_website_number_1','company_website_number_2','numbers_from_company_website_1','numbers_from_company_website_2','Mobile Phone 1','Mobile Phone 2','Work Phone 1','Work Phone 2','Numbers From Company Website 1','Numbers From Company Website 2'].some(k=>anHasValue(r?.[k]));}
+function anPhone(r){return DH_ELIGIBILITY_PHONE_FIELDS.some(k=>isUsableCustomerPhone(r?.[k]));}
 function anEmail(r){return ['personal_email_1','personal_email_2','business_email_1','business_email_2','email','email_address','Personal Email 1','Personal Email 2','Business Email 1','Business Email 2'].some(k=>anHasValue(r?.[k]));}
 function anRecordStatus(r){return String(anField(r,['feedback','status','work_status','customer_status','lead_status'])||'Unspecified').trim()||'Unspecified';}
 function anPanel(title,subtitle,body,span='an-span-6'){return `<section class="an-panel ${span}"><div class="an-panel-head"><div><h3>${title}</h3><div class="an-panel-sub">${subtitle}</div></div></div>${body}</section>`;}
@@ -20427,14 +20538,24 @@ function analyticsExportPdf(rows){
   doc.save(analyticsExportFilename('pdf'));
 }
 
+/* Activity fingerprint excludes count-only persistence updates, which are internal
+   metric maintenance rather than a user-visible database action. */
+function analyticsDbActivityStamp(row){
+  return [row?.name||'',row?.status||'',row?.upload_date||'',row?.assigned_user_id||'',
+    row?.assigned_at||'',row?.original_filename||''].join('|');
+}
+function analyticsUpdateActivityStamp(row){
+  return [row?.owner_id||'',row?.database_name||'',row?.customers_contacted??'',
+    row?.appointments??'',row?.remarks||'',row?.assigned_date||''].join('|');
+}
 /* ---- Realtime sync: instantly reflect changes made by any user, no refresh required ---- */
 async function analyticsNotifyDbChange(row, isNew){
   if (!S.isAdmin || !row) return;
   let who = row.imported_by_name || analyticsUserName(row.owner_id);
   if (!who || who === 'Unknown user'){ await loadProfiles(); who = row.imported_by_name || analyticsUserName(row.owner_id); }
-  const when = fmtFullDateTime(new Date().toISOString());
+  const when = fmtFullDateTime(row.updated_at || row.created_at || row.upload_date || new Date().toISOString());
   const verb = isNew ? 'imported a new database' : 'updated a database';
-  toast(`${who} ${verb}: "${row.name}" — ${when}`, 'info');
+  enqueueLiveActivity(`${who} ${verb}: \"${row.name}\" — ${when}`, `database:${row.id}:${analyticsDbActivityStamp(row)}`);
 }
 
 async function analyticsNotifyUpdateChange(row, isNew){
@@ -20443,28 +20564,42 @@ async function analyticsNotifyUpdateChange(row, isNew){
   if (!who || who === 'Unknown user'){ await loadProfiles(); who = analyticsUserName(row.owner_id); }
   const when = fmtFullDateTime(row.updated_at || row.created_at || row.assigned_date || new Date().toISOString());
   const verb = isNew ? 'submitted a new update' : 'edited their update';
-  toast(`${who} ${verb} on "${row.database_name}" — ${when}`, 'info');
+  enqueueLiveActivity(`${who} ${verb} on \"${row.database_name}\" — ${when}`, `update:${row.id}:${row.updated_at||row.created_at||row.assigned_date||''}`);
 }
 
 async function analyticsHandleDbEvent(payload){
+  const row=payload.new||payload.old;
+  if(!row) return;
+  const stamp=analyticsDbActivityStamp(row), previous=S._analyticsSeenDbs?.get(row.id);
+  const materiallyChanged=payload.eventType==='INSERT'||payload.eventType==='DELETE'||previous===undefined||previous!==stamp;
+  if(!materiallyChanged) return; // ignore count-only/internal timestamp writes
+  S._analyticsSeenDbs.set(row.id,stamp);
   await loadDatabases();
-  if (S.page==='analytics') renderAnalyticsPage(); else renderAnalyticsFilters();
+  if(S.page==='analytics') renderAnalyticsPage(); else renderAnalyticsFilters();
   renderDashboard();
-  if (S.page==='alldata') renderDatabaseList(); // keep Data Hub cards/counts live without a manual refresh (spec #20)
-  const row = payload.new || payload.old;
-  if (!row || payload.eventType === 'DELETE') return;
-  S._analyticsSeenDbs.set(row.id, (row.status||'')+'|'+(row.upload_date||''));
-  analyticsNotifyDbChange(row, payload.eventType === 'INSERT');
+  if(S.page==='alldata') renderDatabaseList();
+  if(payload.eventType==='DELETE') return;
+  // A first-seen event after subscription can be a delayed/initial event. Only notify
+  // when it is a genuine INSERT or a previously-known row materially changed.
+  if(payload.eventType==='INSERT' || (previous!==undefined && previous!==stamp)){
+    analyticsNotifyDbChange(row,payload.eventType==='INSERT');
+  }
 }
 
 async function analyticsHandleUpdateEvent(payload){
+  const row=payload.new||payload.old;
+  if(!row) return;
+  const stamp=analyticsUpdateActivityStamp(row), previous=S._analyticsSeenUpdates?.get(row.id);
+  const materiallyChanged=payload.eventType==='INSERT'||payload.eventType==='DELETE'||previous===undefined||previous!==stamp;
+  if(!materiallyChanged) return; // ignore updates that only touch internal timestamps/count snapshots
+  S._analyticsSeenUpdates.set(row.id,stamp);
   await loadUpdates();
-  if (S.page==='analytics') renderAnalyticsPage();
+  if(S.page==='analytics') renderAnalyticsPage();
   renderDashboard();
-  const row = payload.new || payload.old;
-  if (!row || payload.eventType === 'DELETE') return;
-  S._analyticsSeenUpdates.set(row.id, row.updated_at||row.created_at||row.assigned_date||'');
-  analyticsNotifyUpdateChange(row, payload.eventType === 'INSERT');
+  if(payload.eventType==='DELETE') return;
+  if(payload.eventType==='INSERT' || (previous!==undefined && previous!==stamp)){
+    analyticsNotifyUpdateChange(row,payload.eventType==='INSERT');
+  }
 }
 
 /* ---- Polling safety net -----------------------------------------------
@@ -20475,78 +20610,105 @@ async function analyticsHandleUpdateEvent(payload){
    guarantees the admin still gets the "who / when" notification within a
    few seconds no matter what, so live sync always feels instant. */
 async function analyticsPollForChanges(){
-  if (document.hidden || !S.isAdmin) return;
+  if(document.hidden || !S.isAdmin || !S.session || S._analyticsPollInFlight) return;
+  S._analyticsPollInFlight=true;
   try{
-    const [{ data: dbRows }, { data: updRows }] = await Promise.all([
-      supa.from('databases').select('*').order('upload_date', { ascending:false }).limit(50),
-      supa.from('updates').select('*').order('assigned_date', { ascending:false }).limit(50),
+    const [{data:dbRows,error:dbError},{data:updRows,error:updError}]=await Promise.all([
+      supa.from('databases').select('*').order('upload_date',{ascending:false}).limit(100),
+      supa.from('updates').select('*').order('assigned_date',{ascending:false}).limit(100),
     ]);
-
-    let dbChanged = false, updChanged = false;
+    if(dbError) throw dbError;
+    if(updError) throw updError;
+    const baseline=Number(S._analyticsBaselineAt)||Date.now();
+    let dbChanged=false,updChanged=false;
     (dbRows||[]).forEach(row=>{
-      const stamp = (row.status||'')+'|'+(row.upload_date||'');
-      const seen = S._analyticsSeenDbs.get(row.id);
-      if (seen === undefined){ S._analyticsSeenDbs.set(row.id, stamp); if (S._analyticsPrimed) { dbChanged = true; analyticsNotifyDbChange(row, true); } }
-      else if (seen !== stamp){ S._analyticsSeenDbs.set(row.id, stamp); dbChanged = true; analyticsNotifyDbChange(row, false); }
+      const stamp=analyticsDbActivityStamp(row), seen=S._analyticsSeenDbs.get(row.id);
+      const rowTime=Date.parse(row.updated_at||row.created_at||row.upload_date||'')||0;
+      if(seen===undefined){
+        S._analyticsSeenDbs.set(row.id,stamp);
+        // Only notify a row not in the initial snapshot if its own activity timestamp
+        // is newer than the session baseline. Old records never replay on page refresh.
+        if(S._analyticsPollPrimed && rowTime>=baseline){
+          dbChanged=true; analyticsNotifyDbChange(row,true);
+        }
+      }else if(seen!==stamp){
+        S._analyticsSeenDbs.set(row.id,stamp);
+        dbChanged=true; analyticsNotifyDbChange(row,false);
+      }
     });
     (updRows||[]).forEach(row=>{
-      const stamp = row.updated_at||row.created_at||row.assigned_date||'';
-      const seen = S._analyticsSeenUpdates.get(row.id);
-      if (seen === undefined){ S._analyticsSeenUpdates.set(row.id, stamp); if (S._analyticsPrimed) { updChanged = true; analyticsNotifyUpdateChange(row, true); } }
-      else if (seen !== stamp){ S._analyticsSeenUpdates.set(row.id, stamp); updChanged = true; analyticsNotifyUpdateChange(row, false); }
+      const stamp=analyticsUpdateActivityStamp(row), seen=S._analyticsSeenUpdates.get(row.id);
+      const rowTime=Date.parse(row.updated_at||row.created_at||row.assigned_date||'')||0;
+      if(seen===undefined){
+        S._analyticsSeenUpdates.set(row.id,stamp);
+        if(S._analyticsPollPrimed && rowTime>=baseline){
+          updChanged=true; analyticsNotifyUpdateChange(row,true);
+        }
+      }else if(seen!==stamp){
+        S._analyticsSeenUpdates.set(row.id,stamp);
+        updChanged=true; analyticsNotifyUpdateChange(row,false);
+      }
     });
-    S._analyticsPrimed = true;
-
-    if (dbChanged){ await loadDatabases(); if (S.page==='analytics') renderAnalyticsPage(); else renderAnalyticsFilters(); renderDashboard(); if (S.page==='alldata') renderDatabaseList(); }
-    if (updChanged){ await loadUpdates(); if (S.page==='analytics') renderAnalyticsPage(); renderDashboard(); }
-  } catch(e){ console.error('Analytics poll failed:', e); }
+    S._analyticsPollPrimed=true;
+    S._analyticsPrimed=true;
+    if(dbChanged){
+      await loadDatabases();
+      if(S.page==='analytics') renderAnalyticsPage(); else renderAnalyticsFilters();
+      renderDashboard();
+      if(S.page==='alldata') renderDatabaseList();
+    }
+    if(updChanged){
+      await loadUpdates();
+      if(S.page==='analytics') renderAnalyticsPage();
+      renderDashboard();
+    }
+  }catch(e){console.error('Analytics poll failed:',e);}
+  finally{S._analyticsPollInFlight=false;}
 }
 
 function initAnalyticsRealtime(){
-  S._analyticsSeenDbs = new Map();
-  S._analyticsSeenUpdates = new Map();
-  S._analyticsPrimed = false;
-  S.databases.forEach(d=> S._analyticsSeenDbs.set(d.id, (d.status||'')+'|'+(d.upload_date||'')));
-  S.updates.forEach(u=> S._analyticsSeenUpdates.set(u.id, u.updated_at||u.created_at||u.assigned_date||''));
-  S._analyticsPrimed = true;
+  // Tear down any previous channel instances before registering a replacement.
+  (S._analyticsChannels||[]).forEach(ch=>{try{supa.removeChannel(ch);}catch(e){console.warn('[analytics realtime cleanup]',e);}});
+  S._analyticsChannels=[];
+  S._analyticsSeenDbs=new Map();
+  S._analyticsSeenUpdates=new Map();
+  S._analyticsPrimed=false;
+  S._analyticsPollPrimed=false;
+  S._analyticsPollInFlight=false;
+  S._analyticsBaselineAt=Date.now();
+  S.databases.forEach(d=>S._analyticsSeenDbs.set(d.id,analyticsDbActivityStamp(d)));
+  S.updates.forEach(u=>S._analyticsSeenUpdates.set(u.id,analyticsUpdateActivityStamp(u)));
+  S._analyticsPrimed=true;
 
-  supa.channel('public:databases-analytics')
-    .on('postgres_changes', { event:'*', schema:'public', table:'databases' }, analyticsHandleDbEvent)
-    .subscribe((status)=> console.log('[analytics realtime] databases channel:', status));
-  supa.channel('public:updates-analytics')
-    .on('postgres_changes', { event:'*', schema:'public', table:'updates' }, analyticsHandleUpdateEvent)
-    .subscribe((status)=> console.log('[analytics realtime] updates channel:', status));
+  const dbChannel=supa.channel('public:databases-analytics')
+    .on('postgres_changes',{event:'*',schema:'public',table:'databases'},analyticsHandleDbEvent)
+    .subscribe(status=>console.log('[analytics realtime] databases channel:',status));
+  const updatesChannel=supa.channel('public:updates-analytics')
+    .on('postgres_changes',{event:'*',schema:'public',table:'updates'},analyticsHandleUpdateEvent)
+    .subscribe(status=>console.log('[analytics realtime] updates channel:',status));
+  S._analyticsChannels.push(dbChannel,updatesChannel);
 
-  if (S._analyticsPollTimer) clearInterval(S._analyticsPollTimer);
-  S._analyticsPollTimer = setInterval(analyticsPollForChanges, 30000);
-
-  /* ---- Assignment live-sync safety net — runs for every signed-in user, not just Admins ----
-     The realtime channel above already pushes assignment changes instantly when Postgres
-     Realtime replication is enabled for `databases`. This is the guaranteed fallback for when
-     it isn't (or a websocket drops, or an UPDATE that revokes a non-admin's row visibility
-     never reaches their client because RLS now hides it): every few seconds it quietly
-     re-fetches databases via loadDatabases() (RLS-scoped — a regular user only ever gets
-     their own assigned rows back) and compares myAssignedDbSignature() before/after. Any
-     assign, reassign, or unassign changes that signature, which re-renders every dependent
-     view from the same myAssignedDatabases() single source of truth — no separate calculation,
-     no S.profile.full_name matching, and no logout/refresh required. */
-  if (S._assignmentSyncTimer) clearInterval(S._assignmentSyncTimer);
-  S._assignmentSyncTimer = setInterval(pollAssignmentSync, 6000);
+  if(S._analyticsPollTimer) clearInterval(S._analyticsPollTimer);
+  S._analyticsPollTimer=setInterval(analyticsPollForChanges,30000);
+  if(S._assignmentSyncTimer) clearInterval(S._assignmentSyncTimer);
+  S._assignmentSyncTimer=setInterval(pollAssignmentSync,6000);
 }
 async function pollAssignmentSync(){
-  if (document.hidden || !S.session) return;
+  if(document.hidden || !S.session || S._assignmentPollInFlight) return;
+  S._assignmentPollInFlight=true;
   try{
-    const before = myAssignedDbSignature();
+    const before=myAssignedDbSignature();
     await loadDatabases();
-    const after = myAssignedDbSignature();
-    if (before !== after){
+    const after=myAssignedDbSignature();
+    if(before!==after){
       renderDashboard();
-      if (S.page==='alldata') refreshAllDataView();
+      if(S.page==='alldata') refreshAllDataView();
       renderCalendar();
       renderAnalyticsFilters();
-      if (S.page==='analytics') renderAnalyticsPage();
+      if(S.page==='analytics') renderAnalyticsPage();
     }
-  } catch(e){ console.error('Assignment sync poll failed:', e); }
+  }catch(e){console.error('Assignment sync poll failed:',e);}
+  finally{S._assignmentPollInFlight=false;}
 }
 
 /* ==========================================================================
@@ -21029,7 +21191,8 @@ function handleRecordsRealtimeEvent(payload){
   scheduleTwuRerender();
 }
 async function recordsPollForChanges(){
-  if (document.hidden) return;
+  if (document.hidden || !S.session || S._recordsPollInFlight) return;
+  S._recordsPollInFlight=true;
   // Fallback safety net (same pattern as analyticsPollForChanges) in case the
   // `records` table hasn't been added to the supabase_realtime publication.
   try{
@@ -21059,8 +21222,12 @@ async function recordsPollForChanges(){
     });
     if (changed) scheduleTwuRerender();
   } catch(e){ console.error('Records poll failed:', e); }
+  finally{ S._recordsPollInFlight=false; }
 }
 function initRecordsWorkSync(){
+  (S._recordsChannel ? [S._recordsChannel] : []).forEach(ch=>{try{supa.removeChannel(ch);}catch(e){console.warn('[records realtime cleanup]',e);}});
+  S._recordsChannel=null;
+  S._recordsPollInFlight=false;
   S._recordsSeen = new Map();
   S.records.forEach(r=> S._recordsSeen.set(r.id, r.updated_at || r.import_date || ''));
 
@@ -21082,9 +21249,9 @@ function initRecordsWorkSync(){
     else channelConfig.filter = `database_id=in.(${dbIds.join(',')})`;
   }
   if (!skip){
-    supa.channel('public:records-work-sync')
-      .on('postgres_changes', channelConfig, handleRecordsRealtimeEvent)
-      .subscribe((status)=> console.log('[records realtime] work-sync channel:', status));
+    S._recordsChannel=supa.channel('public:records-work-sync')
+      .on('postgres_changes',channelConfig,handleRecordsRealtimeEvent)
+      .subscribe(status=>console.log('[records realtime] work-sync channel:',status));
   }
 
   if (S._recordsPollTimer) clearInterval(S._recordsPollTimer);
@@ -21517,74 +21684,128 @@ async function downloadAssignmentEmail(db,newUser){
   return true;
 }
 
-async function applyDbAssignment(dbId, newUserId){
-  if (!S.isAdmin){ toast('Only Admins can change database assignments.', 'error'); return false; }
-  const db = S.databases.find(d=>String(d.id)===String(dbId)); if (!db) return false;
-  const newUser = newUserId ? S.profiles.find(p=>p.id===newUserId) : null;
-  const previousUserId = db.assigned_user_id || null;
-  const previousUserName = db.assigned_user_name || null;
-  const nowIso = new Date().toISOString();
-  const payload = newUser ? {
-    assigned_user_id: newUser.id, assigned_user_name: newUser.full_name || newUser.email, assigned_user_email: newUser.email, assigned_to: newUser.full_name || newUser.email,
-    assigned_by: S.session.user.id, assigned_by_name: S.profile?.full_name || S.session.user.email, assigned_at: nowIso, updated_at: nowIso,
+async function applyDbAssignment(dbId,newUserId){
+  if(!S.isAdmin){toast('Only Admins can change database assignments.','error');return false;}
+  const id=String(dbId??'').trim();
+  if(!id){toast('Assignment failed: database ID is missing.','error');return false;}
+  const locks=(S._assignmentInFlight ||= new Set());
+  if(locks.has(id)){toast('This database assignment is already being updated.','info');return false;}
+  const db=S.databases.find(d=>String(d.id)===id);
+  if(!db){toast('Assignment failed: the selected database is no longer available. Refresh Data Hub and try again.','error');return false;}
+  const requestedUserId=newUserId==null||newUserId===''?null:String(newUserId);
+  const newUser=requestedUserId ? S.profiles.find(p=>String(p.id)===requestedUserId) : null;
+  if(requestedUserId && !newUser){toast('Assignment failed: the selected user ID was not found in the loaded team profiles.','error');return false;}
+  if(!S.session?.user?.id){toast('Assignment failed: your authenticated session is unavailable. Sign in again.','error');return false;}
+
+  locks.add(id);
+  const previousUserId=db.assigned_user_id||null;
+  const previousUserName=db.assigned_user_name||null;
+  const nowIso=new Date().toISOString();
+  const payload=newUser ? {
+    assigned_user_id:newUser.id,
+    assigned_user_name:newUser.full_name||newUser.email,
+    assigned_user_email:newUser.email,
+    assigned_to:newUser.full_name||newUser.email,
+    assigned_by:S.session.user.id,
+    assigned_by_name:S.profile?.full_name||S.session.user.email,
+    assigned_at:nowIso,
+    updated_at:nowIso
   } : {
-    assigned_user_id: null, assigned_user_name: null, assigned_user_email: null, assigned_to: null,
-    assigned_by: S.session.user.id, assigned_by_name: S.profile?.full_name || S.session.user.email, assigned_at: nowIso, updated_at: nowIso,
+    assigned_user_id:null,assigned_user_name:null,assigned_user_email:null,assigned_to:null,
+    assigned_by:S.session.user.id,assigned_by_name:S.profile?.full_name||S.session.user.email,
+    assigned_at:nowIso,updated_at:nowIso
   };
-  const { error } = await supa.from('databases').update(payload).eq('id', dbId);
-  if (error){ toast('Failed to update assignment: ' + error.message, 'error'); return false; }
+
   try{
-    const { data: updateRows, error: updateLoadError } = await supa.from('updates').select('id,assignment_id,owner_id,database_name,total_customers,assigned_date').eq('assignment_id', dbId);
-    if (updateLoadError) throw updateLoadError;
-    if (!newUser){
-      for (const u of (updateRows || [])){
-        const { error: entryDeleteError } = await supa.from('daily_entries').delete().eq('update_id', u.id);
-        if (entryDeleteError) throw entryDeleteError;
-        const { error: updateDeleteError } = await supa.from('updates').delete().eq('id', u.id);
-        if (updateDeleteError) throw updateDeleteError;
-      }
-      S.updates = (S.updates || []).filter(u => String(u.assignment_id) !== String(dbId));
-    }else{
-      for (const u of (updateRows || [])){
-        const updatePayload = {
-          owner_id: newUser.id,
-          database_name: db.name,
-          total_customers: Number(db.customer_count || 0),
-          assigned_date: nowIso,
-          updated_at: nowIso
-        };
-        const { error: updateError } = await supa.from('updates').update(updatePayload).eq('id', u.id);
-        if (updateError) throw updateError;
-        const { error: entryOwnerError } = await supa.from('daily_entries').update({ owner_id: newUser.id }).eq('update_id', u.id);
-        if (entryOwnerError) console.warn('[ASSIGNMENT HISTORY TRANSFER FAILED]', entryOwnerError);
+    // No local assignment state is changed until Supabase returns the updated row.
+    let savedRow=null,requestError=null;
+    try{
+      const result=await supa.from('databases').update(payload).eq('id',id)
+        .select('id,name,assigned_user_id,assigned_user_name,assigned_user_email,assigned_to,assigned_by,assigned_by_name,assigned_at,updated_at')
+        .single();
+      requestError=result.error||null;
+      savedRow=result.data||null;
+    }catch(fetchError){requestError=fetchError;}
+
+    if(requestError || !savedRow){
+      // A transport failure can happen after the server commits but before the browser
+      // receives the response. Read back the authoritative assignment before deciding.
+      let confirmed=null,readbackError=null;
+      try{
+        const check=await supa.from('databases').select('id,assigned_user_id,assigned_user_name,assigned_user_email,assigned_to,assigned_by,assigned_by_name,assigned_at,updated_at')
+          .eq('id',id).maybeSingle();
+        readbackError=check.error||null; confirmed=check.data||null;
+      }catch(e){readbackError=e;}
+      if(!readbackError && confirmed && String(confirmed.assigned_user_id||'')===String(requestedUserId||'')){
+        savedRow={...db,...confirmed};
+      }else{
+        const detail=requestError?.message||String(requestError||'No updated row was returned.');
+        const network=/failed to fetch|networkerror|load failed/i.test(detail)||requestError instanceof TypeError;
+        console.error('[ASSIGNMENT SERVER UPDATE FAILED]',{databaseId:id,requestedUserId,authenticatedUserId:S.session.user.id,error:requestError,readbackError});
+        toast(network
+          ? 'Assignment was not confirmed. The browser could not reach Supabase (Failed to fetch). Check the project URL, network/CORS and browser Network tab; no success was reported.'
+          : 'Failed to update assignment: '+detail+(readbackError?(' | Read-back failed: '+(readbackError.message||readbackError)):''),
+          'error');
+        return false;
       }
     }
-  }catch(syncErr){
-    console.error('[ASSIGNMENT UPDATE SYNC FAILED]', syncErr);
-    toast('Database assignment saved, but Update ownership sync needs attention: ' + (syncErr?.message || 'Unknown error'), 'error');
-  }
-  await logAudit('database_assigned', {
-    action: newUser ? (previousUserId ? 'Reassigned' : 'Assigned') : 'Unassigned',
-    database_id: dbId, database_name: db.name,
-    previous_user: previousUserId ? { id:previousUserId, name:previousUserName } : null,
-    new_user: newUser ? { id:newUser.id, name:newUser.full_name||newUser.email } : null,
-    assigned_by: S.session.user.id, assigned_by_name: S.profile?.full_name || S.session.user.email,
-  });
-  // Generate the Outlook-compatible email draft only after the assignment is
-  // successfully persisted. Email generation must never roll back an assignment.
-  if (newUser){
-    try{ await downloadAssignmentEmail(db,newUser); }
-    catch(mailErr){
-      console.error('[ASSIGNMENT EMAIL FAILED]',mailErr);
-      toast('Assignment saved, but the email draft could not be generated: ' + (mailErr?.message||'Unknown error'), 'error');
+
+    // Only update local state after the server confirms the selected user ID.
+    if(String(savedRow.assigned_user_id||'')!==String(requestedUserId||'')){
+      toast('Assignment was not saved: Supabase returned a different assigned user.','error');
+      return false;
     }
+    Object.assign(db,savedRow);
+
+    try{
+      const {data:updateRows,error:updateLoadError}=await supa.from('updates')
+        .select('id,assignment_id,owner_id,database_name,total_customers,assigned_date')
+        .eq('assignment_id',id);
+      if(updateLoadError) throw updateLoadError;
+      if(!newUser){
+        for(const u of (updateRows||[])){
+          const {error:entryDeleteError}=await supa.from('daily_entries').delete().eq('update_id',u.id);
+          if(entryDeleteError) throw entryDeleteError;
+          const {error:updateDeleteError}=await supa.from('updates').delete().eq('id',u.id);
+          if(updateDeleteError) throw updateDeleteError;
+        }
+        S.updates=(S.updates||[]).filter(u=>String(u.assignment_id)!==id);
+      }else{
+        for(const u of (updateRows||[])){
+          const updatePayload={owner_id:newUser.id,database_name:db.name,total_customers:Number(db.customer_count||0),assigned_date:nowIso,updated_at:nowIso};
+          const {error:updateError}=await supa.from('updates').update(updatePayload).eq('id',u.id);
+          if(updateError) throw updateError;
+          const {error:entryOwnerError}=await supa.from('daily_entries').update({owner_id:newUser.id}).eq('update_id',u.id);
+          if(entryOwnerError) console.warn('[ASSIGNMENT HISTORY TRANSFER FAILED]',entryOwnerError);
+        }
+      }
+    }catch(syncErr){
+      console.error('[ASSIGNMENT UPDATE SYNC FAILED]',syncErr);
+      toast('Database assignment saved, but Update ownership sync needs attention: '+(syncErr?.message||'Unknown error'),'error');
+    }
+
+    await logAudit('database_assigned',{
+      action:newUser?(previousUserId?'Reassigned':'Assigned'):'Unassigned',
+      database_id:id,database_name:db.name,
+      previous_user:previousUserId?{id:previousUserId,name:previousUserName}:null,
+      new_user:newUser?{id:newUser.id,name:newUser.full_name||newUser.email}:null,
+      assigned_by:S.session.user.id,assigned_by_name:S.profile?.full_name||S.session.user.email
+    });
+    if(newUser){
+      try{await downloadAssignmentEmail(db,newUser);}
+      catch(mailErr){console.error('[ASSIGNMENT EMAIL FAILED]',mailErr);toast('Assignment saved, but the email draft could not be generated: '+(mailErr?.message||'Unknown error'),'error');}
+    }
+    await Promise.all([loadDatabases(),loadRecords(),loadUpdates()]);
+    renderDatabaseAssignments();renderDashboard();renderAllDataFilters();refreshAllDataView();
+    renderCalendar();renderAnalyticsFilters();renderAnalyticsPage();
+    return true;
+  }catch(error){
+    console.error('[ASSIGNMENT UPDATE UNEXPECTED FAILURE]',{databaseId:id,requestedUserId,error});
+    toast('Assignment failed before confirmation: '+(error?.message||String(error)),'error');
+    return false;
+  }finally{
+    locks.delete(id);
   }
-  // Persisted in Supabase; reloading from the source of truth keeps every view (including
-  // Assigned/Unassigned counts) in sync and survives refresh/reload (spec #4/#5).
-  await Promise.all([loadDatabases(), loadRecords(), loadUpdates()]);
-  renderDatabaseAssignments(); renderDashboard(); renderAllDataFilters(); refreshAllDataView();
-  renderCalendar(); renderAnalyticsFilters(); renderAnalyticsPage();
-  return true;
 }
 async function saveDbAssignment(newUserId){
   return applyDbAssignment(S.assigningDbId, newUserId);
