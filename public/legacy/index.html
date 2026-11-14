@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<!-- BUILD MARKER: unified-contact-metrics v3 (supersedes contacted-counter-continue-fix v2) + phone-based-customer-count + reviews + one-sheet-xlsx + JOC-library-intelligence + silent-db-detection + smooth-background-scan + admin-only-joc + premium-filters + expandable-port-lists + robust-admin-nav -->
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1" name="viewport"/>
+<title>SWIFT CARGO — Enterprise Transport Workspace</title>
+<!-- ==========================================================================
+     DataVault — single-file Supabase-backed CRM / data-import platform.
+     Everything (auth, storage, RLS-protected data) lives in Supabase.
+     The single exception is the Toolkits → JOC Data Processor "Data
+     Location" setting (a SharePoint/OneDrive folder URL), which is saved
+     to localStorage only — no workbook data is ever stored there.
+
+     SETUP (read this before opening the file):
+       1. Create a Supabase project.
+       2. Run schema.sql (shipped alongside this file) once in the SQL editor.
+       3. Paste your Project URL + anon public key into CONFIG below.
+       4. Open index.html. The first account you register becomes Admin.
+     ========================================================================== -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Manrope:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<!-- ExcelJS — used only by the Toolkits → JOC Data Processor module for workbook generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+<!-- MSAL.js — optional, only loaded/used if a user configures an Azure AD Client ID in
+     Settings → Data Location. Powers real Microsoft sign-in so the JOC toolkit can
+     automatically read files from a private SharePoint/OneDrive folder. The app works
+     fully without this (via the local file fallback) if it's never configured. -->
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/legacy/styles/legacy.css" rel="stylesheet"/></head>
+<body>
+<!-- ============================== INTRO ANIMATION ============================== -->
+<div id="intro">
+<div class="bg-blob blob1"></div>
+<div class="bg-blob blob2"></div>
+<div class="bg-blob blob3"></div>
+<div id="particles"></div>
+<div class="content">
+<div class="logo-wrap">
+<svg fill="none" height="28" viewbox="0 0 24 24" width="28">
+<path d="M4 7C4 5.34 7.58 4 12 4s8 1.34 8 3-3.58 3-8 3-8-1.34-8-3Z" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path>
+<path d="M4 7v10c0 1.66 3.58 3 8 3s8-1.34 8-3V7" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path>
+<path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path>
+</svg>
+</div>
+<h1>SWIFT CARGO</h1>
+<p>PREPARING YOUR WORKSPACE</p>
+<div class="progress-track"><div class="progress-fill"></div></div>
+</div>
+</div>
+<!-- ============================== AUTH ============================== -->
+<div class="hidden" id="auth-screen">
+<!-- LOGIN -->
+<div class="auth-card" id="view-login">
+<div class="auth-logo"><div class="mark"><svg fill="none" viewbox="0 0 24 24"><path d="M4 7C4 5.34 7.58 4 12 4s8 1.34 8 3-3.58 3-8 3-8-1.34-8-3Z" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path><path d="M4 7v10c0 1.66 3.58 3 8 3s8-1.34 8-3V7" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path></svg></div><span>SWIFT CARGO</span></div>
+<h2>Welcome back</h2>
+<div class="sub">Sign in to access your workspace.</div>
+<div class="auth-alert" id="login-alert"></div>
+<form id="login-form">
+<div class="field"><label>Email</label><input autocomplete="username" id="login-email" placeholder="you@company.com" required="" type="email"/></div>
+<div class="field"><label>Password</label><input autocomplete="current-password" id="login-password" placeholder="••••••••" required="" type="password"/></div>
+<div class="auth-row">
+<label class="checkbox-row"><input checked="" id="login-remember" type="checkbox"/> Remember me</label>
+<button class="link-btn" data-goto="forgot" type="button">Forgot password?</button>
+</div>
+<button class="btn btn-primary" id="login-submit" style="width:100%; padding:12px;" type="submit">
+<span class="btn-label">Sign in</span>
+</button>
+</form>
+<div class="auth-switch">No account? <button class="link-btn" data-goto="register">Create one</button></div>
+</div>
+<!-- REGISTER -->
+<div class="auth-card hidden" id="view-register">
+<div class="auth-logo"><div class="mark"><svg fill="none" viewbox="0 0 24 24"><path d="M4 7C4 5.34 7.58 4 12 4s8 1.34 8 3-3.58 3-8 3-8-1.34-8-3Z" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path><path d="M4 7v10c0 1.66 3.58 3 8 3s8-1.34 8-3V7" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path></svg></div><span>SWIFT CARGO</span></div>
+<h2>Create your account</h2>
+<div class="sub">The first account created becomes the workspace Admin.</div>
+<div class="auth-alert" id="register-alert"></div>
+<form id="register-form">
+<div class="field"><label>Full name</label><input id="reg-name" placeholder="Jane Cooper" required="" type="text"/></div>
+<div class="field"><label>Email</label><input id="reg-email" placeholder="you@company.com" required="" type="email"/></div>
+<div class="field">
+<label>Password</label>
+<input id="reg-password" minlength="8" placeholder="Minimum 8 characters" required="" type="password"/>
+<div class="pw-strength"><div id="pw-bar"></div></div>
+</div>
+<button class="btn btn-primary" id="register-submit" style="width:100%; padding:12px;" type="submit"><span class="btn-label">Create account</span></button>
+</form>
+<div class="auth-switch">Already have an account? <button class="link-btn" data-goto="login">Sign in</button></div>
+</div>
+<!-- FORGOT PASSWORD -->
+<div class="auth-card hidden" id="view-forgot">
+<div class="auth-logo"><div class="mark"><svg fill="none" viewbox="0 0 24 24"><path d="M4 7C4 5.34 7.58 4 12 4s8 1.34 8 3-3.58 3-8 3-8-1.34-8-3Z" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path><path d="M4 7v10c0 1.66 3.58 3 8 3s8-1.34 8-3V7" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path></svg></div><span>SWIFT CARGO</span></div>
+<h2>Reset your password</h2>
+<div class="sub">We'll email you a secure reset link.</div>
+<div class="auth-alert" id="forgot-alert"></div>
+<form id="forgot-form">
+<div class="field"><label>Email</label><input id="forgot-email" placeholder="you@company.com" required="" type="email"/></div>
+<button class="btn btn-primary" id="forgot-submit" style="width:100%; padding:12px;" type="submit"><span class="btn-label">Send reset link</span></button>
+</form>
+<div class="auth-switch"><button class="link-btn" data-goto="login">← Back to sign in</button></div>
+</div>
+<!-- RESET PASSWORD (arrived via email link) -->
+<div class="auth-card hidden" id="view-reset">
+<div class="auth-logo"><div class="mark"><svg fill="none" viewbox="0 0 24 24"><path d="M4 7C4 5.34 7.58 4 12 4s8 1.34 8 3-3.58 3-8 3-8-1.34-8-3Z" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path><path d="M4 7v10c0 1.66 3.58 3 8 3s8-1.34 8-3V7" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8"></path></svg></div><span>SWIFT CARGO</span></div>
+<h2>Choose a new password</h2>
+<div class="sub">Enter a new password for your account.</div>
+<div class="auth-alert" id="reset-alert"></div>
+<form id="reset-form">
+<div class="field"><label>New password</label><input id="reset-password" minlength="8" placeholder="Minimum 8 characters" required="" type="password"/></div>
+<button class="btn btn-primary" id="reset-submit" style="width:100%; padding:12px;" type="submit"><span class="btn-label">Update password</span></button>
+</form>
+</div>
+</div>
+<!-- ============================== APP SHELL ============================== -->
+<div class="hidden" id="app">
+<aside id="sidebar">
+<div class="side-head">
+<div aria-label="SWIFT CARGO" class="brand-card">
+<img alt="SWIFT CARGO" class="workspace-logo" id="workspace-logo" onerror="this.style.display='none';" onload="this.style.display='block';"/>
+</div>
+</div>
+<nav class="nav" id="nav-list">
+<div class="nav-item active" data-page="dashboard">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><rect height="9" rx="2" width="7" x="3" y="3"></rect><rect height="5" rx="2" width="7" x="14" y="3"></rect><rect height="9" rx="2" width="7" x="14" y="12"></rect><rect height="5" rx="2" width="7" x="3" y="16"></rect></svg>
+<span>Dashboard</span>
+</div>
+<div class="nav-item" data-page="alldata">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><rect height="16" rx="2" width="18" x="3" y="4"></rect><path d="M3 10h18M9 4v16"></path></svg>
+<span>Data Hub</span>
+</div>
+<div class="nav-item" data-page="calendar">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><rect height="16" rx="2" width="18" x="3" y="5"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>
+<span>Calendar</span>
+</div>
+<div class="nav-item" data-page="updates">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M12 20a8 8 0 1 0-8-8"></path><path d="M12 8v4l3 2"></path><path d="M4 4v4h4"></path></svg>
+<span>Updates</span>
+</div>
+<div class="nav-item" data-page="joc" id="nav-joc">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><rect height="18" rx="3" width="18" x="3" y="3"></rect><path d="M8 12h8M8 16h5M8 8h3"></path></svg>
+<span>JOC</span>
+</div>
+<div class="nav-item" data-page="analytics" id="nav-analytics">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M3 3v18h18"></path><rect height="6" rx="1" width="3" x="7" y="12"></rect><rect height="10" rx="1" width="3" x="12.5" y="8"></rect><rect height="13" rx="1" width="3" x="18" y="5"></rect></svg>
+<span>Analytics</span>
+</div>
+<div class="nav-item" data-page="toolkits">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+<span>Toolkits</span>
+</div>
+<div class="nav-item" data-page="settings">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 0 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 0 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"></path></svg>
+<span>Settings</span>
+</div>
+<div class="nav-section-label" id="admin-nav-label">Admin</div>
+<div class="nav-item" data-page="audit" id="nav-audit">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M9 12h6M9 16h6M9 8h6M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"></path></svg>
+<span>Audit Logs</span>
+</div>
+</nav>
+<div class="side-foot">
+<div class="avatar" id="side-avatar">?</div>
+<div class="u-meta"><div class="n" id="side-name">—</div><div class="r" id="side-role">—</div></div>
+<button class="collapse-btn" id="collapse-btn" title="Collapse sidebar">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg>
+</button>
+</div>
+</aside>
+<div id="main">
+<div id="topbar">
+<div class="top-left">
+<button class="icon-btn" id="sidebar-toggle-btn" title="Hide / show sidebar">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="16" rx="3" width="18" x="3" y="4"></rect><path d="M9 4v16"></path></svg>
+</button>
+<h1 id="page-title">Dashboard</h1><button class="top-command-hint" id="top-command-hint" title="Search workspace (Ctrl K)"><span>Search workspace</span><kbd>Ctrl K</kbd></button>
+</div>
+<div class="top-actions">
+<div class="conn-status"><span class="conn-dot" id="conn-dot"></span><span id="conn-label">Connected</span></div>
+<button class="icon-btn" id="notif-btn" title="Notifications">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+<span class="badge-dot hidden" id="notif-dot"></span>
+</button>
+<button class="btn btn-primary btn-sm" id="import-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;" viewbox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>
+          Import Database
+        </button>
+</div>
+</div>
+<div id="page-container">
+<!-- ---------- DASHBOARD ---------- -->
+<section class="page active" id="page-dashboard">
+<div class="kpi-grid" id="kpi-grid"></div>
+<div class="grid-2">
+<div class="panel">
+<div class="panel-head"><h3>Database Distribution</h3><span class="pill pill-blue" id="db-total-pill">0 total</span></div>
+<div class="chart-wrap"><canvas id="chart-db-dist"></canvas></div>
+</div>
+<div class="panel">
+<div class="panel-head"><h3>Customer Distribution</h3><span class="pill pill-blue" id="cust-total-pill">0 total</span></div>
+<div class="chart-wrap"><canvas id="chart-cust-dist"></canvas></div>
+</div>
+</div>
+<div class="grid-2">
+<div class="panel">
+<div class="panel-head"><h3>Recently Imported Databases</h3></div>
+<div id="recent-db-list"></div>
+</div>
+<div class="panel">
+<div class="panel-head"><h3>Top Assigned Users</h3></div>
+<div id="top-assigned-list"></div>
+</div>
+</div>
+<div class="panel">
+<div class="panel-head"><h3>Recent Activity</h3></div>
+<div id="activity-timeline"></div>
+</div>
+<div class="panel">
+<div class="panel-head"><h3>Updates Overview</h3><span class="pill pill-blue">Auto-calculated</span></div>
+<div class="kpi-grid" id="upd-stats-grid" style="margin-bottom:0;"></div>
+</div>
+<div class="panel">
+<div class="panel-head"><h3>🔔 Reminders Overview</h3><span class="pill pill-blue">Click a card to filter</span></div>
+<div class="kpi-grid" id="reminder-stats-grid" style="margin-bottom:0;"></div>
+</div>
+</section>
+<!-- ---------- Data Hub ---------- -->
+<section class="page" id="page-alldata">
+<div class="dh-header">
+<div class="dh-header-titles">
+<div class="section-title" id="alldata-section-title"><span id="alldata-section-title-text">Data Hub</span> <span class="dh-conn-pill" id="dh-conn-pill" title="Live connection to your workspace"><span class="dh-conn-dot"></span><span id="dh-conn-label">Connected</span></span></div>
+<div class="section-desc" id="alldata-desc" style="margin-bottom:0;">Manage, search, filter and access your assigned databases.</div>
+</div>
+<div class="dh-header-actions">
+<div class="dh-bell-wrap">
+<button aria-expanded="false" aria-haspopup="true" class="icon-btn" id="dh-bell-btn" title="Recent changes">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+<span class="dh-bell-badge hidden" id="dh-bell-badge">0</span>
+</button>
+<div class="dh-bell-menu hidden" id="dh-bell-menu"></div>
+</div>
+<button class="icon-btn" id="dbb-refresh-btn" title="Refresh Data Hub">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"></path></svg>
+</button>
+<button class="btn btn-sm" id="dbb-import-btn">Import Database</button>
+</div>
+</div>
+<!-- ---------- Database Browser (default landing view) ---------- -->
+<div id="alldata-db-browser">
+<div class="dbb-subtitle" id="dbb-subtitle-text">Auto-detected databases from your Data Hub Source Folder.</div>
+<div class="dbb-info-banner" id="dbb-info-banner">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01M11 12h1v5h1"></path></svg>
+<span>We automatically detect Excel databases in the selected folder and import only files that match the Data Hub schema.</span>
+</div>
+<div class="dh-stats-row" id="dh-stats-row"></div>
+<div class="dbb-chiprow" id="dbb-chiprow"></div>
+<div class="toolbar">
+<div class="search-box">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input id="dbb-search" placeholder="Search databases, companies, customers…" type="search"/>
+<span class="dh-kbd-hint" id="dh-kbd-hint"><kbd id="dh-kbd-mod">Ctrl</kbd><kbd>K</kbd></span>
+</div>
+<div class="dh-filters-btn-wrap" style="position:relative;">
+<button aria-expanded="false" aria-haspopup="true" class="btn btn-sm dh-filters-btn" id="dh-filters-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;" viewbox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>
+                Filters<span class="dh-filters-count hidden" id="dh-filters-count">0</span>
+</button>
+<div class="dh-filters-popover hidden" id="dh-filters-popover"></div>
+</div>
+<button class="btn btn-sm dh-filters-btn" id="dh-dupcompanies-btn" title="Companies detected in more than one Data Hub database">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;" viewbox="0 0 24 24"><rect height="13" rx="2" width="13" x="8" y="8"></rect><path d="M4 16V4a2 2 0 0 1 2-2h12"></path></svg>
+              Duplicate Companies<span class="dh-filters-count hidden" id="dh-dupcompanies-count">0</span>
+</button>
+<div class="dh-views-btn-wrap">
+<button aria-expanded="false" aria-haspopup="true" class="btn btn-sm" id="dh-views-btn" title="Saved Views">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;" viewbox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+                Views
+              </button>
+<div class="dh-views-menu hidden" id="dh-views-menu"></div>
+</div>
+<select class="dh-sort-select" id="dh-sort-select">
+<option value="updated_desc">Recently Updated</option>
+<option value="imported_desc">Recently Imported</option>
+<option value="name_asc">Database Name A–Z</option>
+<option value="name_desc">Database Name Z–A</option>
+<option value="count_desc">Customer Count: High → Low</option>
+<option value="count_asc">Customer Count: Low → High</option>
+<option value="status">Status</option>
+<option value="assigned">Assigned User</option>
+<option value="quality_desc">Highest Quality</option>
+<option value="quality_asc">Lowest Quality</option>
+</select>
+<div class="toolbar-spacer"></div>
+<button class="icon-btn dh-select-toggle" id="dh-select-toggle" title="Select multiple databases">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="m9 11 3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+</button>
+<div aria-label="Switch view" class="dh-view-switch" id="dh-view-switch" role="group">
+<button aria-label="Grid view" class="active" data-view="grid" title="Grid view">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><rect height="7" rx="1.5" width="7" x="3" y="3"></rect><rect height="7" rx="1.5" width="7" x="14" y="3"></rect><rect height="7" rx="1.5" width="7" x="3" y="14"></rect><rect height="7" rx="1.5" width="7" x="14" y="14"></rect></svg>
+</button>
+<button aria-label="List view" data-view="list" title="List view">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+</button>
+</div>
+</div>
+<div class="dh-active-chips hidden" id="dh-active-chips"></div>
+<div class="dbb-bulk-bar hidden" id="dbb-bulk-bar"></div>
+<div class="dbb-grid" id="dbb-grid"></div>
+<div class="dh-list-wrap hidden" id="dh-list-wrap">
+<table class="dh-list-table" id="dh-list-table">
+<thead><tr id="dh-list-head"></tr></thead>
+<tbody id="dh-list-body"></tbody>
+</table>
+</div>
+</div>
+<!-- ---------- Single-database data view (opened by clicking a database above) ---------- -->
+<div class="hidden" id="alldata-table-view">
+<div class="dbb-breadcrumb">
+<button class="btn btn-sm" id="dbb-back-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2.4" style="width:13px;height:13px;" viewbox="0 0 24 24"><path d="m15 6-6 6 6 6"></path></svg>
+              All Databases
+            </button>
+<span class="dbb-breadcrumb-name" id="dbb-breadcrumb-name" title=""></span>
+</div>
+<div class="toolbar">
+<div class="search-box">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input id="grid-search" placeholder="Search all fields…" type="search"/>
+</div>
+<select class="hidden" id="filter-database" style="width:auto; min-width:160px;"><option value="">All Databases</option></select>
+<button class="icon-btn" id="delete-selected-db-btn" title="Delete selected database's imported data">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"></path><path d="M10 11v6M14 11v6"></path></svg>
+</button>
+<select id="filter-assigned" style="width:auto; min-width:160px;"><option value="">All assignees</option></select>
+<select aria-label="Filter by feedback" class="dh-feedback-filter" id="filter-feedback">
+<option value="">All Feedback</option>
+<option value="filled">Filled</option>
+<option value="not_filled">Not Filled</option>
+</select>
+<label class="checkbox-row" style="font-size:12.5px;"><input id="filter-dup" type="checkbox"/> Duplicates only</label>
+<div class="toolbar-spacer"></div>
+<button class="btn btn-sm" id="export-csv-btn">Export CSV</button>
+<button class="btn btn-sm" id="export-xlsx-btn">Export Excel</button>
+<button class="btn btn-sm" id="print-btn">Print</button>
+<button class="icon-btn" id="grid-fullscreen-btn" title="Expand table to fullscreen">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+</button>
+</div>
+<div class="hidden" id="bulk-bar" style="display:flex; align-items:center; gap:10px; margin-bottom:12px; background:var(--accent-light); padding:10px 14px; border-radius:10px; font-size:13px; font-weight:600; color:var(--accent-dark);">
+<span id="bulk-count">0 selected</span>
+<button class="btn btn-sm" id="bulk-copy-btn">Copy</button>
+<button class="btn btn-sm" id="bulk-export-btn">Export selected</button>
+<button class="btn btn-sm btn-danger hidden" id="bulk-delete-btn">Delete</button>
+</div>
+<div class="grid-shell" id="grid-shell">
+<div class="dh-record-loading hidden" id="dh-record-loading"><span class="spinner dark"></span><span id="dh-record-loading-text">Loading database records…</span></div>
+<div class="fullscreen-topbar">
+<h4>
+<svg fill="none" stroke="currentColor" stroke-width="1.8" style="width:16px;height:16px;" viewbox="0 0 24 24"><rect height="16" rx="2" width="18" x="3" y="4"></rect><path d="M3 10h18M9 4v16"></path></svg>
+              Data Hub — Fullscreen
+            </h4>
+<button class="btn btn-sm" id="grid-exit-fullscreen-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;" viewbox="0 0 24 24"><path d="M9 3v4a1 1 0 0 1-1 1H4M20 9h-4a1 1 0 0 1-1-1V4M15 21v-4a1 1 0 0 1 1-1h4M4 15h4a1 1 0 0 1 1 1v4"></path></svg>
+              Exit Fullscreen
+            </button>
+</div>
+<div class="grid-scroll" id="grid-scroll" style="max-height:calc(100vh - 330px); overflow-y:auto;">
+<table class="grid" id="data-grid">
+<thead><tr id="grid-head-row"></tr></thead>
+<tbody id="grid-body-spacer-wrap"><tr><td colspan="3" id="grid-body-spacer-td" style="padding:0; border:none;"><div id="grid-virtual-spacer" style="position:relative;"><div id="grid-virtual-inner" style="position:absolute; top:0; left:0; right:0;"></div></div></td></tr></tbody>
+</table>
+</div>
+<div class="grid-footbar">
+<span id="grid-range-label">0 records</span>
+<div class="pager" id="grid-pager">
+<button id="grid-page-prev" title="Previous page"><svg fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><path d="m15 6-6 6 6 6"></path></svg></button>
+<div id="grid-page-numbers" style="display:flex; align-items:center; gap:3px;"></div>
+<button id="grid-page-next" title="Next page"><svg fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><path d="m9 6 6 6-6 6"></path></svg></button>
+<span style="margin:0 4px 0 10px; color:var(--border);">|</span>
+<span style="margin-right:4px;">Rows:</span>
+<select id="page-size" style="width:auto; padding:4px 8px; font-size:12.5px;">
+<option selected="">10</option><option>25</option><option>50</option><option>100</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ---------- CALENDAR ---------- -->
+<section class="page" id="page-calendar">
+<div class="cal-premium-head">
+<div class="cal-title-block">
+<div class="eyebrow">WORKSPACE SCHEDULE</div>
+<div class="section-title" id="cal-month-label">—</div>
+<div class="section-desc" style="margin-bottom:0;">Manage imports, reminders, follow-ups and workspace activity.</div>
+</div>
+<div class="cal-actions-top">
+<div class="cal-search"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg><input id="cal-search" placeholder="Search events..." type="search"/></div>
+<div class="cal-filter-wrap"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24"><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="18" y2="18"></line><circle cx="9" cy="6" fill="currentColor" r="1.6" stroke="none"></circle><circle cx="15" cy="12" fill="currentColor" r="1.6" stroke="none"></circle><circle cx="7" cy="18" fill="currentColor" r="1.6" stroke="none"></circle></svg><select class="cal-filter" id="cal-filter-type"><option value="">All Events</option><option value="import">Imports</option><option value="assignment">Assignments</option><option value="reminder">Reminders</option><option value="followup">Follow-ups</option><option value="meeting">Meetings</option><option value="task">Tasks</option><option value="analytics">Analytics</option><option value="system">System Activity</option></select></div>
+<div class="cal-filter-wrap"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" viewbox="0 0 24 24"><rect height="15.5" rx="2.5" width="17" x="3.5" y="5"></rect><line x1="3.5" x2="20.5" y1="9.5" y2="9.5"></line><line x1="8" x2="8" y1="3" y2="6.5"></line><line x1="16" x2="16" y1="3" y2="6.5"></line></svg><select class="cal-filter" id="cal-month-select"></select></div>
+<button aria-label="Previous month" class="btn btn-sm cal-nav-btn" id="cal-prev"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" viewbox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<button class="btn btn-sm" id="cal-today">Today</button>
+<button aria-label="Next month" class="btn btn-sm cal-nav-btn" id="cal-next"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" viewbox="0 0 24 24"><path d="M9 6l6 6-6 6"></path></svg></button>
+<div class="cal-view-switch" id="cal-view-switch"><button class="active" data-view="month">Month</button><button data-view="week">Week</button><button data-view="day">Day</button><button data-view="agenda">Agenda</button></div>
+<button class="btn btn-sm btn-primary cal-new-event" id="cal-new-event"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2.2" viewbox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>New Event</button>
+<button class="btn btn-sm" id="cal-reminders-btn"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M6 8.5a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 12.5 6 8.5Z"></path><path d="M10 19a2 2 0 0 0 4 0"></path></svg>Reminders</button>
+</div>
+</div>
+<div class="cal-layout-premium">
+<div class="cal-main-premium"><div id="cal-body"></div></div>
+<aside class="cal-upcoming-card"><div class="cal-side-head"><div><div class="eyebrow">UP NEXT</div><h3>Upcoming</h3></div><span class="cal-count" id="cal-upcoming-count">0</span></div><div id="cal-upcoming-list"></div></aside>
+</div>
+</section>
+<!-- ---------- UPDATES ---------- -->
+<section class="page" id="page-updates">
+<div class="upd-hero">
+<div>
+<div class="section-title">Updates</div>
+<div class="section-desc">Track assigned databases, customer activity and appointments.</div>
+</div>
+<span class="upd-live-pill"><span class="upd-live-dot"></span>Live workspace</span>
+</div>
+<div class="kpi-grid" id="upd-kpi-summary" style="margin-bottom:18px;"></div>
+<div class="upd-control-bar">
+<div class="toolbar upd-control-row upd-control-row-primary">
+<div class="search-box">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input id="upd-search" placeholder="Search databases…" type="search"/>
+</div>
+<input id="upd-filter-from" style="width:auto;" title="From date" type="date"/>
+<input id="upd-filter-to" style="width:auto;" title="To date" type="date"/>
+<select id="upd-filter-user" style="width:auto; min-width:150px;"><option value="">All assigned users</option></select>
+<select id="upd-filter-quarter" style="width:auto; min-width:110px;">
+<option value="">All Quarters</option><option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option>
+</select>
+<select id="upd-filter-status" style="width:auto; min-width:150px;">
+<option value="">All Progress</option>
+<option value="excellent">Excellent</option><option value="progress">In Progress</option>
+<option value="attention">Needs Attention</option><option value="low">Low Progress</option>
+</select>
+</div>
+<div class="toolbar upd-control-row upd-control-row-secondary">
+<select id="upd-filter-db" style="width:auto; min-width:160px;"><option value="">All Databases</option></select>
+<button class="btn btn-sm" id="upd-reset-filters-btn">↻ Reset</button>
+<div class="toolbar-spacer"></div>
+<button class="btn btn-sm" id="upd-export-btn">Export CSV</button>
+<!-- Additive: per-customer work-status export, kept beside (not replacing) the existing export buttons above -->
+<select class="hidden" id="twu-export-user-select" style="width:auto; min-width:170px;"></select>
+<button class="btn btn-sm" id="twu-export-btn">📁 Export Customer Updates</button>
+<button class="btn btn-sm btn-primary" id="upd-export-xlsx-btn">📊 Export to XLSX</button>
+</div>
+</div>
+<div class="updates-layout">
+<div class="duc-grid" id="upd-card-grid"></div>
+<aside class="updates-sidebar" id="updates-sidebar"></aside>
+</div>
+</section>
+<!-- ---------- JOC ---------- -->
+<section class="page" data-admin-only="true" id="page-joc">
+<div class="section-title">JOC</div>
+<div class="section-desc">Saved JOC workbooks with shipper-level TEU and weight intelligence.</div>
+<div class="joc-page-toolbar">
+<div>
+<div class="joc-page-eyebrow">SAVED WORKBOOKS</div>
+<h2 class="joc-page-heading">JOC Library</h2>
+<div class="joc-page-sub" id="joc-library-summary">Loading saved JOC workbooks…</div>
+</div>
+<div class="joc-page-actions">
+<button class="btn btn-sm" id="joc-library-refresh">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L21 16"></path></svg>
+              Refresh
+            </button>
+</div>
+</div>
+<div aria-label="JOC Library filters" class="joc-library-filters" id="joc-library-filters">
+<div class="joc-library-filters-head">
+<div class="joc-library-filters-title">Filters</div>
+</div>
+<div class="joc-library-filters-grid">
+<div class="joc-library-filter-field">
+<label for="joc-library-filter-source">Source File</label>
+<select id="joc-library-filter-source">
+<option value="">All Source Files</option>
+</select>
+</div>
+<div class="joc-library-filter-field">
+<label>Total Shippers</label>
+<div class="joc-library-filter-range">
+<input aria-label="Minimum Total Shippers" id="joc-library-filter-shipper-min" min="0" placeholder="Min" step="1" type="number"/>
+<input aria-label="Maximum Total Shippers" id="joc-library-filter-shipper-max" min="0" placeholder="Max" step="1" type="number"/>
+</div>
+</div>
+<div class="joc-library-filter-field">
+<label>Total TEUs</label>
+<div class="joc-library-filter-range">
+<input aria-label="Minimum Total TEUs" id="joc-library-filter-teu-min" min="0" placeholder="Min" step="any" type="number"/>
+<input aria-label="Maximum Total TEUs" id="joc-library-filter-teu-max" min="0" placeholder="Max" step="any" type="number"/>
+</div>
+</div>
+<div class="joc-library-filter-field">
+<label>Total Weight (KG)</label>
+<div class="joc-library-filter-range">
+<input aria-label="Minimum Total Weight (KG)" id="joc-library-filter-weight-min" min="0" placeholder="Min" step="any" type="number"/>
+<input aria-label="Maximum Total Weight (KG)" id="joc-library-filter-weight-max" min="0" placeholder="Max" step="any" type="number"/>
+</div>
+</div>
+<div class="joc-library-filter-actions">
+<button class="btn btn-sm" id="joc-library-filter-clear" type="button">Clear Filters</button>
+<button class="btn btn-sm btn-primary" id="joc-library-filter-apply" type="button">Apply</button>
+</div>
+</div>
+<div aria-live="polite" class="joc-library-filter-status" id="joc-library-filter-status"></div>
+</div>
+<div class="joc-library-grid" id="joc-library-grid"></div>
+<div aria-labelledby="joc-name-modal-title" aria-modal="true" class="joc-name-modal hidden" id="joc-name-modal" role="dialog">
+<div class="joc-name-dialog">
+<h3 id="joc-name-modal-title">Save processed JOC</h3>
+<p>Give this processed workbook a name. It will appear in the JOC section immediately after saving.</p>
+<input autocomplete="off" id="joc-name-input" placeholder="Enter JOC name…" type="text"/>
+<div class="joc-name-dialog-actions">
+<button class="btn btn-sm" id="joc-name-cancel">Cancel</button>
+<button class="btn btn-sm btn-primary" id="joc-name-save">Save to JOC</button>
+</div>
+</div>
+</div>
+<div class="joc-detail hidden" id="joc-detail">
+<div class="joc-detail-head">
+<div class="joc-detail-title-wrap">
+<button class="btn btn-sm" id="joc-detail-back">← Back to JOC</button>
+<div>
+<div class="joc-page-eyebrow">JOC WORKBOOK</div>
+<h2 class="joc-detail-title" id="joc-detail-title">—</h2>
+<div class="joc-detail-sub" id="joc-detail-sub">—</div>
+</div>
+</div>
+<div class="joc-detail-actions">
+<button class="btn btn-sm" id="joc-detail-download">Download Workbook</button>
+<button class="btn btn-sm btn-danger" id="joc-detail-delete">Delete JOC</button>
+</div>
+</div>
+<div class="joc-detail-kpis">
+<div class="joc-detail-kpi">
+<div class="joc-detail-kpi-value" id="joc-detail-total-shipper">0</div>
+<div class="joc-detail-kpi-label">Total Shipper</div>
+</div>
+<div class="joc-detail-kpi">
+<div class="joc-detail-kpi-value" id="joc-detail-total-teus">0</div>
+<div class="joc-detail-kpi-label">Total TEUs</div>
+</div>
+<div class="joc-detail-kpi">
+<div class="joc-detail-kpi-value" id="joc-detail-total-weight">0</div>
+<div class="joc-detail-kpi-label">Weight</div>
+</div>
+</div>
+<!-- Port Search Dashboard: only shown when the active filter is Port of Arrival or Port of Departure (spec: Port Search Dashboard) -->
+<div class="joc-port-dashboard hidden" id="joc-port-dashboard">
+<div class="joc-port-dashboard-head">
+<div class="joc-page-eyebrow">PORT SEARCH SUMMARY</div>
+<div class="joc-port-dashboard-title" id="joc-port-dashboard-title">—</div>
+</div>
+<div class="joc-library-card-kpis">
+<div class="joc-library-mini">
+<div class="joc-library-mini-icon"><img alt="Shippers" src="assets/shippers.png"/></div>
+<div class="joc-library-mini-value" id="joc-port-total-shippers">0</div>
+<div class="joc-library-mini-label">Total Shippers</div>
+</div>
+<div class="joc-library-mini">
+<div class="joc-library-mini-icon"><img alt="TEUs" src="assets/teus.png"/></div>
+<div class="joc-library-mini-value" id="joc-port-total-teus">0</div>
+<div class="joc-library-mini-label">Total TEUs</div>
+</div>
+<div class="joc-library-mini">
+<div class="joc-library-mini-icon"><img alt="Weight" src="assets/weight.png"/></div>
+<div class="joc-library-mini-value" id="joc-port-total-weight">0</div>
+<div class="joc-library-mini-label">Total Weight</div>
+</div>
+</div>
+</div>
+<div class="joc-filter-panel">
+<div class="joc-filter-head">
+<div>
+<h3>Advanced Filters</h3>
+<span id="joc-filter-result-summary">0 shippers</span>
+</div>
+<button class="btn btn-sm" id="joc-filter-reset">Reset Filters</button>
+</div>
+<div class="joc-filter-grid">
+<div class="field">
+<label>Shipper</label>
+<input autocomplete="off" id="joc-filter-shipper" list="joc-shipper-suggestions" placeholder="Type to search shipper…" type="search"/><datalist id="joc-shipper-suggestions"></datalist>
+</div>
+<div class="field">
+<label>Port of Arrival</label>
+<div class="joc-tag-field" id="joc-filter-arrival-wrap">
+<input autocomplete="off" id="joc-filter-arrival" list="joc-arrival-suggestions" placeholder="Type a port, press Enter…" type="text"/>
+</div>
+<datalist id="joc-arrival-suggestions"></datalist>
+</div>
+<div class="field">
+<label>Port of Departure</label>
+<div class="joc-tag-field" id="joc-filter-departure-wrap">
+<input autocomplete="off" id="joc-filter-departure" list="joc-departure-suggestions" placeholder="Type a port, press Enter…" type="text"/>
+</div>
+<datalist id="joc-departure-suggestions"></datalist>
+</div>
+<div class="field">
+<label>Min TEUs</label>
+<input id="joc-filter-teu-min" min="0" placeholder="0" step="any" type="number"/>
+</div>
+<div class="field">
+<label>Max TEUs</label>
+<input id="joc-filter-teu-max" min="0" placeholder="∞" step="any" type="number"/>
+</div>
+<div class="field">
+<label>Min Weight</label>
+<input id="joc-filter-weight-min" min="0" placeholder="0" step="any" type="number"/>
+</div>
+<div class="field">
+<label>Max Weight</label>
+<input id="joc-filter-weight-max" min="0" placeholder="∞" step="any" type="number"/>
+</div>
+<div class="field">
+<label>Sort By</label>
+<select id="joc-filter-sort">
+<option value="teus_desc">TEUs — Highest first</option>
+<option value="teus_asc">TEUs — Lowest first</option>
+<option value="weight_desc">Weight — Highest first</option>
+<option value="weight_asc">Weight — Lowest first</option>
+<option value="shipper_asc">Shipper — A to Z</option>
+<option value="shipper_desc">Shipper — Z to A</option>
+</select>
+</div>
+<div class="field">
+<label>Show</label>
+<select id="joc-filter-limit">
+<option value="all">All matching</option>
+<option value="25">Top 25</option>
+<option value="50">Top 50</option>
+<option value="100">Top 100</option>
+<option value="250">Top 250</option>
+<option value="500">Top 500</option>
+</select>
+</div>
+</div>
+</div>
+<div class="joc-table-wrap">
+<div class="joc-table-scroll">
+<table class="joc-data-table">
+<thead>
+<tr>
+<th>Shippers</th>
+<th>TEUs</th>
+<th>Port of Arrival</th>
+<th>Port of Departure</th>
+<th>Weight</th>
+</tr>
+</thead>
+<tbody id="joc-detail-tbody"></tbody>
+</table>
+</div>
+<div class="joc-table-foot">
+<span id="joc-table-foot">0 rows</span>
+<div class="joc-table-pager" id="joc-table-pager">
+<button class="btn btn-sm" id="joc-page-prev" type="button">← Prev</button>
+<span id="joc-page-info">Page 1</span>
+<button class="btn btn-sm" id="joc-page-next" type="button">Next →</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ---------- ANALYTICS ---------- -->
+<section class="page" id="page-analytics">
+<div class="an-ref-header"><div><div class="section-title">Analytics</div><div class="section-desc" id="an-desc">Salesperson-wise Contact &amp; Appointment Intelligence</div></div><div class="an-ref-actions"><span class="an-live-note">Live Supabase data</span></div></div>
+<div class="analytics-filters aw-toolbar">
+<div class="f-field" style="min-width:200px;">
+<label>Search Database</label>
+<div class="search-box" style="width:100%;">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input id="an-search" placeholder="Search database, user, remarks…" type="search"/>
+</div>
+</div>
+<div class="f-field">
+<label>Assigned User</label>
+<select id="an-filter-user"><option value="">All users</option></select>
+</div>
+<div class="f-field">
+<label>Database</label>
+<select id="an-filter-database"><option value="">All databases</option></select>
+</div>
+<div class="f-field">
+<label>Status</label>
+<select id="an-filter-status"><option value="">All statuses</option></select>
+</div>
+<div class="f-field">
+<label>From date</label>
+<input id="an-filter-from" type="date"/>
+</div>
+<div class="f-field">
+<label>To date</label>
+<input id="an-filter-to" type="date"/>
+</div>
+<div class="f-spacer"></div>
+<div class="f-field">
+<label> </label>
+<button class="btn btn-sm" id="an-clear-filters">Reset Filters</button>
+</div>
+<div class="f-field">
+<label> </label>
+<button class="btn btn-sm" id="an-refresh-btn" title="Reload live data">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;" viewbox="0 0 24 24"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+              Refresh
+            </button>
+</div>
+<div class="f-field aw-export-wrap">
+<label> </label>
+<button class="btn btn-sm btn-primary" id="an-export-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;" viewbox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+              Export
+            </button>
+<div class="aw-export-menu hidden" id="an-export-menu">
+<button data-fmt="xlsx">Export as Excel</button>
+<button data-fmt="csv">Export as CSV</button>
+<button data-fmt="pdf">Export as PDF</button>
+</div>
+</div>
+</div>
+<div class="kpi-grid an-ref-kpis" id="an-kpi-grid" style="margin-bottom:14px;"></div>
+<div aria-live="polite" class="an-intelligence-center" id="an-intelligence-center"></div>
+<div class="aw-layout">
+<div class="aw-main">
+<div class="aw-main-head">
+<h3 id="an-list-title">Assigned Databases</h3>
+<span class="pill pill-blue" id="an-list-count">0 databases</span>
+</div>
+<div class="aw-card-list" id="an-card-list"></div>
+</div>
+<div class="aw-sidebar" id="an-sidebar"></div>
+</div>
+</section>
+<!-- ---------- TOOLKITS ---------- -->
+<section class="page" id="page-toolkits">
+<div class="section-title">Toolkits</div>
+<div class="section-desc">Specialized data processing utilities for your workflow.</div>
+<div id="toolkits-landing">
+<!-- ---------- Premium JOC Data Processor card ---------- -->
+<div class="jpc-card" id="toolkit-card-joc">
+<div class="jpc-top">
+<div class="jpc-top-left">
+<div class="jpc-icon">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><rect height="18" rx="3" width="18" x="3" y="3"></rect><path d="M8 12h8M8 16h5M8 8h3"></path></svg>
+</div>
+<div class="jpc-badge">
+<svg fill="currentColor" viewbox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 11-13h-7l0-7z"></path></svg>
+                  AUTOMATED
+                </div>
+</div>
+<button aria-label="Bookmark" class="jpc-bookmark" id="joc-card-bookmark-btn" type="button">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1z"></path></svg>
+</button>
+</div>
+<div class="jpc-title">JOC Data Processor</div>
+<div class="jpc-sub">PIERS Import Records → JOC Ready Excel</div>
+<div class="jpc-divider"></div>
+<p class="jpc-desc">Automated transformation pipeline using JOC Group master lookup, data enrichment, SCAC mapping &amp; pivot generation.</p>
+<div class="jpc-kpis">
+<div class="jpc-kpi jpc-kpi-files">
+<div class="jpc-kpi-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg></div>
+<div><div class="jpc-kpi-val" id="joc-card-kpi-files">0</div><div class="jpc-kpi-label">Files Detected</div></div>
+</div>
+<div class="jpc-kpi jpc-kpi-pending">
+<div class="jpc-kpi-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg></div>
+<div><div class="jpc-kpi-val" id="joc-card-kpi-pending">0</div><div class="jpc-kpi-label">Pending</div></div>
+</div>
+<div class="jpc-kpi jpc-kpi-completed">
+<div class="jpc-kpi-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg></div>
+<div><div class="jpc-kpi-val" id="joc-card-kpi-completed">0</div><div class="jpc-kpi-label">Completed</div></div>
+</div>
+<div class="jpc-kpi jpc-kpi-records">
+<div class="jpc-kpi-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6"></path></svg></div>
+<div><div class="jpc-kpi-val" id="joc-card-kpi-records">0</div><div class="jpc-kpi-label">Records Processed</div></div>
+</div>
+</div>
+<div class="jpc-bottom">
+<div class="jpc-bottom-group">
+<div class="jpc-bottom-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+<div><div class="jpc-bottom-label">Last Run</div><div class="jpc-bottom-val" id="joc-card-lastrun">—</div></div>
+</div>
+<div class="jpc-bottom-group">
+<div class="jpc-bottom-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg></div>
+<div><div class="jpc-bottom-label">Output</div><div class="jpc-bottom-val" id="joc-card-output">—<span class="jpc-ready-badge hidden" id="joc-card-output-badge">READY</span></div></div>
+</div>
+<div class="jpc-open-btn">Open Toolkit
+                <svg fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+</div>
+</div>
+</div>
+<!-- ---------- Premium Swift & Non-Swift Intelligence card ---------- -->
+<div class="jpc-card" id="toolkit-card-swift">
+<div class="jpc-top">
+<div class="jpc-top-left">
+<div class="jpc-icon">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"></path><path d="M14 3v6h6"></path><circle cx="16.5" cy="16.5" r="3.2"></circle><path d="m19.7 19.7 2 2"></path></svg>
+</div>
+<div class="jpc-badge">
+<svg fill="currentColor" viewbox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 11-13h-7l0-7z"></path></svg>
+                  AUTOMATED
+                </div>
+</div>
+<button aria-label="Bookmark" class="jpc-bookmark" id="sw-card-bookmark-btn" type="button">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4-7 4V4.5a1 1 0 0 1 1-1z"></path></svg>
+</button>
+</div>
+<div class="jpc-title">Swift &amp; Non-Swift Intelligence</div>
+<div class="jpc-sub">High-Precision Customer Classification</div>
+<div class="jpc-divider"></div>
+<p class="jpc-desc">Company-name-only entity resolution: classify 100K+ customer records against the permanent Swift customer master using distinctive-token weighting, not simple fuzzy scoring. Same engine JOC Toolkit uses for Auto Swift / Auto Non-Swift.</p>
+<div class="jpc-kpis">
+<div class="jpc-kpi jpc-kpi-master">
+<div class="jpc-kpi-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg></div>
+<div><div class="jpc-kpi-val" id="sw-card-kpi-master">0</div><div class="jpc-kpi-label">Master Customers</div></div>
+</div>
+<div class="jpc-kpi jpc-kpi-checked">
+<div class="jpc-kpi-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+<div><div class="jpc-kpi-val" id="sw-card-kpi-checked">0</div><div class="jpc-kpi-label">Records Checked</div></div>
+</div>
+<div class="jpc-kpi jpc-kpi-swift">
+<div class="jpc-kpi-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg></div>
+<div><div class="jpc-kpi-val" id="sw-card-kpi-swift">0</div><div class="jpc-kpi-label">Swift</div></div>
+</div>
+<div class="jpc-kpi jpc-kpi-manual">
+<div class="jpc-kpi-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l3-4 3 3 4-6"></path></svg></div>
+<div><div class="jpc-kpi-val" id="sw-card-kpi-manual">0</div><div class="jpc-kpi-label">Manual Check</div></div>
+</div>
+</div>
+<div class="jpc-bottom">
+<div class="jpc-bottom-group">
+<div class="jpc-bottom-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
+<div><div class="jpc-bottom-label">Last Run</div><div class="jpc-bottom-val" id="sw-card-lastrun">—</div></div>
+</div>
+<div class="jpc-bottom-group">
+<div class="jpc-bottom-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg></div>
+<div><div class="jpc-bottom-label">Swift Master</div><div class="jpc-bottom-val" id="sw-card-master-name" title="">Not configured<span class="jpc-ready-badge hidden" id="sw-card-master-badge">READY</span></div></div>
+</div>
+<div class="jpc-open-btn">Open Toolkit
+                <svg fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+</div>
+</div>
+</div>
+<!-- ---------- Premium Company Name Exact Lookup & Removal card ---------- -->
+<div class="jpc-card" id="toolkit-card-cx">
+<div class="jpc-top">
+<div class="jpc-top-left">
+<div class="jpc-icon">
+<svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path><path d="M8.5 11h5"></path></svg>
+</div>
+<div class="jpc-badge">
+<svg fill="currentColor" viewbox="0 0 24 24"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="3"></path></svg>
+                  EXACT MATCH ONLY
+                </div>
+</div>
+</div>
+<div class="jpc-title">Company Name Exact Lookup &amp; Removal</div>
+<div class="jpc-sub">Upload company names, find exact matches across Data Hub, and remove matched records.</div>
+<div class="jpc-divider"></div>
+<p class="jpc-desc">Deterministic, trimmed exact matching against the Company Name field in every Data Hub database you can access — no fuzzy, partial or AI matching. Nothing is deleted until you confirm, and removals follow your existing permissions.</p>
+<div class="jpc-bottom">
+<div class="jpc-bottom-group">
+<div class="jpc-bottom-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path></svg></div>
+<div><div class="jpc-bottom-label">Input</div><div class="jpc-bottom-val">Single-column .xlsx</div></div>
+</div>
+<div class="jpc-open-btn">Open Toolkit
+                <svg fill="none" stroke="currentColor" stroke-width="2.4" viewbox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+</div>
+</div>
+</div>
+<div class="toolkit-grid">
+<div class="toolkit-card toolkit-card-more">
+<div style="font-size:12.5px; line-height:1.5;">More toolkits<br/>coming soon</div>
+</div>
+</div>
+</div>
+<div class="hidden" id="toolkits-joc">
+<div class="joc-back" id="joc-back-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg>
+            Back to Toolkits
+          </div>
+<div class="joc-head">
+<div class="joc-head-icon"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><rect height="18" rx="3" width="18" x="3" y="3"></rect><path d="M8 12h8M8 16h5M8 8h3"></path></svg></div>
+<div>
+<h2>JOC Data Processor</h2>
+<p>PIERS Import Records — Automated Transformation Pipeline</p>
+</div>
+</div>
+<div class="joc-simple">
+<!-- ── LOCAL DATA FOLDER — LIVE SOURCE CARD (primary data source) ── -->
+<div class="panel joc-cloud-card" id="joc-folder-card">
+<div class="joc-cloud-head">
+<div class="joc-cloud-head-left">
+<div class="joc-cloud-icon">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"></path></svg>
+</div>
+<div>
+<div class="joc-cloud-title">Data Source</div>
+<div class="joc-cloud-sub" id="joc-folder-status-text">No folder selected</div>
+</div>
+</div>
+<span class="pill pill-gray" id="joc-folder-status-pill">Not selected</span>
+</div>
+<div id="joc-explorer-summary" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+<div class="joc-file-rows" id="joc-explorer-table">
+<div class="joc-file-row-meta" style="padding:14px 2px;">Connect the Data Hub Source Folder in Settings to begin…</div>
+</div>
+<div class="joc-cloud-foot">
+<div class="joc-cloud-synced" id="joc-folder-synced">Not connected</div>
+<div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+<button class="btn btn-sm hidden" id="joc-folder-browse-btn">Connect in Settings</button>
+<button class="btn btn-sm hidden" id="joc-folder-change-btn">Change in Settings</button>
+<button class="btn btn-sm hidden" id="joc-folder-grant-btn">Reconnect</button>
+<button class="btn btn-sm hidden" id="joc-folder-refresh-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;" viewbox="0 0 24 24"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+                    Refresh Data
+                  </button>
+</div>
+</div>
+<div class="joc-cloud-error hidden" id="joc-folder-error">
+<div class="joc-cloud-error-title" id="joc-folder-error-title">Folder access lost.</div>
+<div class="joc-cloud-error-sub" id="joc-folder-error-sub">The selected folder is no longer accessible.</div>
+</div>
+</div>
+<!-- ── LEGACY: SHAREPOINT CLOUD DATA APP (used only if no local folder is configured) ── -->
+<details class="joc-log-details" id="joc-legacy-sharepoint-details">
+<summary>Advanced / Legacy: SharePoint URL <span class="joc-log-chevron">▸</span></summary>
+<div style="margin-top:10px; display:flex; flex-direction:column; gap:16px;">
+<!-- ── CLOUD DATA APP CONNECTION CARD ── -->
+<div class="panel joc-cloud-card">
+<div class="joc-cloud-head">
+<div class="joc-cloud-head-left">
+<div class="joc-cloud-icon">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10Z"></path></svg>
+</div>
+<div>
+<div class="joc-cloud-title">SharePoint Data App</div>
+<div class="joc-cloud-sub" id="joc-cloud-status-text">Connecting…</div>
+</div>
+</div>
+<span class="pill pill-gray" id="joc-cloud-status-pill">Connecting</span>
+</div>
+<div class="joc-file-rows" id="joc-file-rows">
+<div class="joc-file-row" id="joc-file-row-master">
+<div class="joc-file-row-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="18" rx="3" width="18" x="3" y="3"></rect><path d="M8 12h8M8 16h5M8 8h3"></path></svg></div>
+<div class="joc-file-row-body">
+<div class="joc-file-row-label">Master File</div>
+<div class="joc-file-row-name" id="joc-master-name">Looking for Master File - JOC Goup…</div>
+<div class="joc-file-row-meta" id="joc-master-meta"></div>
+</div>
+<div class="joc-file-row-status" id="joc-master-status"></div>
+</div>
+<div class="joc-file-row" id="joc-file-row-piers">
+<div class="joc-file-row-icon"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg></div>
+<div class="joc-file-row-body">
+<div class="joc-file-row-label">PIERS Import</div>
+<div class="joc-file-row-name" id="joc-piers-name">Looking for the latest PIERS import file…</div>
+<div class="joc-file-row-meta" id="joc-piers-meta"></div>
+</div>
+<div class="joc-file-row-status" id="joc-piers-status"></div>
+</div>
+</div>
+<div class="joc-cloud-foot">
+<div class="joc-cloud-synced" id="joc-cloud-synced">Not connected yet</div>
+<div style="display:flex; gap:8px; align-items:center;">
+<label class="joc-toggle">
+<input id="joc-auto-detect-toggle" type="checkbox"/>
+<span class="joc-toggle-track"><span class="joc-toggle-thumb"></span></span>
+<span class="joc-toggle-label">Auto-detect new PIERS files</span>
+</label>
+<button class="btn btn-sm" id="joc-refresh-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;" viewbox="0 0 24 24"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+                    Refresh Files
+                  </button>
+</div>
+</div>
+<div class="joc-cloud-error hidden" id="joc-cloud-error">
+<div class="joc-cloud-error-title" id="joc-cloud-error-title">Unable to connect to Data App.</div>
+<div class="joc-cloud-error-sub" id="joc-cloud-error-sub">Please sign in to SharePoint or refresh the connection.</div>
+<div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+<button class="btn btn-sm btn-primary" id="joc-retry-btn">Retry Connection</button>
+<button class="btn btn-sm" id="joc-connect-ms-btn">Connect to Microsoft</button>
+<button class="btn btn-sm" id="joc-use-local-btn">Use local file instead</button>
+</div>
+</div>
+</div>
+</div>
+</details>
+<!-- ── MANUAL FALLBACK (emergency — hidden unless no live source is connected) ── -->
+<div class="panel hidden" id="joc-manual-panel">
+<div class="joc-panel-label" style="display:flex; align-items:center; justify-content:space-between;">
+<span>Local Files (Advanced / Manual Import)</span>
+<button class="btn btn-sm btn-ghost" id="joc-manual-close-btn">Use live connection</button>
+</div>
+<div class="joc-upload-row">
+<div>
+<div class="joc-upload-label">Main Working File</div>
+<div class="joc-dropzone" id="joc-mainZone">
+<input accept=".xlsx,.xls" id="joc-mainFile" type="file"/>
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>
+<div class="dz-name">PIERS Import Records</div>
+<div class="dz-sub">Drop .xlsx here or click to browse</div>
+<div class="dz-file" id="joc-mainFileName"></div>
+</div>
+</div>
+<div>
+<div class="joc-upload-label">Lookup / Master File</div>
+<div class="joc-dropzone" id="joc-lookupZone">
+<input accept=".xlsx,.xls" id="joc-lookupFile" type="file"/>
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><rect height="16" rx="2" width="18" x="3" y="4"></rect><path d="M3 10h18M9 4v16"></path></svg>
+<div class="dz-name">Master File — JOC Group</div>
+<div class="dz-sub">Drop .xlsx here or click to browse</div>
+<div class="dz-file" id="joc-lookupFileName"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- ── PROCESS + STATUS ── -->
+<div class="panel">
+<div class="joc-status-row">
+<div>
+<div class="joc-panel-label" style="margin-bottom:2px;">Status</div>
+<div class="joc-status-text" id="joc-status-text">Waiting for files…</div>
+</div>
+<button class="btn btn-primary" disabled="" id="joc-runBtn" style="width:auto; padding:11px 22px;">
+<span id="joc-runBtnIcon">▶</span>
+<span id="joc-runBtnText">Process JOC File</span>
+</button>
+</div>
+<div class="progress-outer hidden" id="joc-progressWrap"><div class="progress-inner" id="joc-progressFill"></div></div>
+</div>
+<!-- ── RESULTS ── -->
+<div class="hidden" id="joc-downloadSection">
+<div class="joc-download">
+<div class="joc-download-title">
+<svg fill="none" stroke="#15803D" stroke-width="2.4" style="width:18px;height:18px;" viewbox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+                  Processing Complete
+                </div>
+<div class="joc-download-sub" id="joc-downloadSub"></div>
+<div class="joc-stat-grid" id="joc-result-stats">
+<div class="joc-stat-card"><div class="joc-stat-value" id="joc-statRows">—</div><div class="joc-stat-label">Rows Processed</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="joc-statCarrier">—</div><div class="joc-stat-label">Carrier Matches</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="joc-statSCAC">—</div><div class="joc-stat-label">SCAC Matches</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="joc-statRegion">—</div><div class="joc-stat-label">Region Matches</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="joc-statPivot">—</div><div class="joc-stat-label">Pivot Rows</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="joc-statCols">—</div><div class="joc-stat-label">Total Columns</div></div>
+</div>
+<div id="joc-swift-summary" style="margin-top:14px; padding:12px 14px; border:1px solid #DCE5F8; border-radius:12px; background:#F8FAFF;"></div>
+<div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+<button class="btn btn-primary" id="joc-downloadExcelBtn" style="flex:2; min-width:220px;">Download Classified Excel Workbook</button>
+<button class="btn" id="joc-addToDataHubBtn" style="flex:1; min-width:220px;">Add Classified JOC to Data Hub</button>
+<button class="btn" id="joc-downloadLogBtn" style="flex:1; min-width:160px;">Download Log</button>
+</div>
+</div>
+</div>
+<!-- ── COLLAPSIBLE PROCESSING LOG ── -->
+<details class="joc-log-details">
+<summary>Processing Log <span class="joc-log-chevron">▸</span></summary>
+<div class="panel" style="margin-top:10px;">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+<div style="font-weight:700; font-size:13px;">Log</div>
+<button class="btn btn-sm" id="joc-clearLogBtn">Clear</button>
+</div>
+<div class="joc-log" id="joc-logBox"></div>
+</div>
+</details>
+</div>
+</div>
+<!-- ---------- SWIFT & NON-SWIFT INTELLIGENCE TOOLKIT ---------- -->
+<div class="hidden" id="toolkits-swift">
+<div class="joc-back" id="sw-back-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg>
+            Back to Toolkits
+          </div>
+<div class="joc-head">
+<div class="joc-head-icon"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></div>
+<div>
+<h2>Swift &amp; Non-Swift Intelligence</h2>
+<p>High-Precision Customer Classification</p>
+</div>
+</div>
+<div class="joc-simple">
+<!-- ── PERMANENT SWIFT MASTER ── -->
+<div class="panel joc-cloud-card" id="sw-master-card">
+<div class="joc-cloud-head">
+<div class="joc-cloud-head-left">
+<div class="joc-cloud-icon">
+<svg fill="none" stroke="currentColor" stroke-width="1.8" viewbox="0 0 24 24"><rect height="18" rx="3" width="18" x="3" y="3"></rect><path d="M8 12h8M8 16h5M8 8h3"></path></svg>
+</div>
+<div>
+<div class="joc-cloud-title">Swift Customer Master</div>
+<div class="joc-cloud-sub" id="sw-master-status-text">No permanent master configured yet</div>
+</div>
+</div>
+<span class="pill pill-gray" id="sw-master-status-pill">Not configured</span>
+</div>
+<div id="sw-master-summary" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+<div class="joc-dropzone" id="sw-masterZone">
+<input accept=".xlsx,.xls" id="sw-masterFile" type="file"/>
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>
+<div class="dz-name">Upload Swift Customer Master</div>
+<div class="dz-sub">Drop .xlsx here or click to browse — this becomes the permanent reference list</div>
+<div class="dz-file" id="sw-masterFileName"></div>
+</div>
+<div class="joc-cloud-foot hidden" id="sw-master-foot">
+<div class="joc-cloud-synced" id="sw-master-synced"></div>
+<button class="btn btn-sm" id="sw-master-replace-btn">Replace Master File</button>
+</div>
+<div class="hidden" id="sw-master-quality" style="margin-top:12px; border-top:1px solid var(--border,#e5e7eb); padding-top:12px;"></div>
+</div>
+<!-- ── VERIFIED KNOWLEDGE / GOLDEN TEST ── -->
+<div class="panel" id="sw-knowledge-card">
+<div class="joc-panel-label" style="display:flex; align-items:center; justify-content:space-between;">
+<span>Verified Knowledge &amp; Golden Test</span>
+<button class="btn btn-sm" id="sw-knowledge-toggle" type="button">Show</button>
+</div>
+<div class="hidden" id="sw-knowledge-body" style="margin-top:10px;">
+<div class="joc-cloud-sub" id="sw-knowledge-summary" style="margin-bottom:10px;"></div>
+<div class="joc-dropzone" id="sw-goldenZone" style="padding:16px;">
+<input accept=".xlsx,.xls" id="sw-goldenFile" type="file"/>
+<div class="dz-name">Upload Golden Test Set (.xlsx)</div>
+<div class="dz-sub">Columns: Name, Expected Decision (Swift / Non swift), optional Expected Match</div>
+<div class="dz-file" id="sw-goldenFileName"></div>
+</div>
+<div id="sw-golden-results" style="margin-top:10px;"></div>
+</div>
+</div>
+<!-- ── TARGET CUSTOMER DATABASE ── -->
+<div class="panel" id="sw-target-card">
+<div class="joc-panel-label">Customer Database to Classify</div>
+<div class="joc-dropzone" id="sw-targetZone">
+<input accept=".xlsx,.xls" id="sw-targetFile" type="file"/>
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>
+<div class="dz-name">Target Customer List</div>
+<div class="dz-sub">Single-column .xlsx — the customer name column is detected automatically</div>
+<div class="dz-file" id="sw-targetFileName"></div>
+</div>
+<div class="joc-cloud-sub" id="sw-target-meta" style="margin-top:8px;"></div>
+</div>
+<!-- ── RUN ── -->
+<div class="panel">
+<div class="joc-status-row">
+<div>
+<div class="joc-panel-label" style="margin-bottom:2px;">Status</div>
+<div class="joc-status-text" id="sw-status-text">Upload a Swift master and a target file to begin…</div>
+</div>
+<button class="btn btn-primary" disabled="" id="sw-runBtn" style="width:auto; padding:11px 22px;">
+<span id="sw-runBtnIcon">▶</span>
+<span id="sw-runBtnText">Start Classification</span>
+</button>
+</div>
+<div class="progress-outer hidden" id="sw-progressWrap"><div class="progress-inner" id="sw-progressFill"></div></div>
+<div class="joc-cloud-sub" id="sw-progressText" style="margin-top:6px;"></div>
+</div>
+<!-- ── RESULTS ── -->
+<div class="hidden" id="sw-resultsSection">
+<div class="joc-download">
+<div class="joc-download-title">
+<svg fill="none" stroke="#15803D" stroke-width="2.4" style="width:18px;height:18px;" viewbox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+                  Classification Complete
+                </div>
+<div class="joc-download-sub" id="sw-resultsSub"></div>
+<div class="joc-stat-grid" id="sw-result-stats">
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statTotal">—</div><div class="joc-stat-label">Total Records</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statSwift">—</div><div class="joc-stat-label">Swift</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statNonSwift">—</div><div class="joc-stat-label">Non swift</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statManual">—</div><div class="joc-stat-label">Manual Check (max 50)</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statPending">—</div><div class="joc-stat-label">Pending Verification</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statTime">—</div><div class="joc-stat-label">Processing Time</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statRate">—</div><div class="joc-stat-label">Rows / Second</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statCoverage">—</div><div class="joc-stat-label">Auto Decision Coverage</div></div>
+<div class="joc-stat-card"><div class="joc-stat-value" id="sw-statConflict">—</div><div class="joc-stat-label">Conflict Rate</div></div>
+</div>
+<div class="hidden" id="sw-finalize-banner" style="margin:10px 0; padding:10px 12px; border-radius:8px; background:#FEF3C7; color:#92400E; font-size:13px; font-weight:600;"></div>
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<button class="btn btn-primary" id="sw-downloadBtn" style="flex:2;">Download Output Excel</button>
+<button class="btn hidden" id="sw-reviewBtn" style="flex:1;">Review Manual Check</button>
+<button class="btn hidden" id="sw-finalizeBtn" style="flex:1;">Finalize &amp; Recheck</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ---------- COMPANY NAME EXACT LOOKUP & REMOVAL TOOLKIT ---------- -->
+<div class="hidden" id="toolkits-cx">
+<div class="joc-back" id="cx-back-btn">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M15 6l-6 6 6 6"></path></svg>
+            Back to Toolkits
+          </div>
+<div class="joc-head">
+<div class="joc-head-icon"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path><path d="M8.5 11h5"></path></svg></div>
+<div>
+<h2>Company Name Exact Lookup &amp; Removal</h2>
+<p>Upload company names, find exact matches across Data Hub, and remove matched records.</p>
+</div>
+</div>
+<div class="joc-simple">
+<!-- ── UPLOAD ── -->
+<div class="panel" id="cx-upload-card">
+<div class="joc-panel-label">Upload XLSX → Select File</div>
+<div class="joc-dropzone" id="cx-zone">
+<input accept=".xlsx" id="cx-file" type="file"/>
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>
+<div class="dz-name">Company Names (.xlsx)</div>
+<div class="dz-sub">Exactly one column — any header name. The first row is treated as the header.</div>
+<div class="dz-file" id="cx-fileName"></div>
+</div>
+<div class="joc-cloud-sub" id="cx-fileMeta" style="margin-top:8px;"></div>
+<div class="cx-error hidden" id="cx-error" role="alert"></div>
+<div class="cx-note">Matching is exact after trimming leading/trailing spaces only — letter case, spelling, punctuation and abbreviations must be identical. Your uploaded file is never modified.</div>
+</div>
+<!-- ── PROGRESS ── -->
+<div class="panel hidden" id="cx-progress-card">
+<div class="joc-panel-label">Progress</div>
+<ul class="cx-steps" id="cx-steps"></ul>
+<div class="progress-outer" id="cx-progressWrap"><div class="progress-inner" id="cx-progressFill"></div></div>
+<div class="joc-cloud-sub" id="cx-progressText" style="margin-top:6px;"></div>
+</div>
+<!-- ── PREVIEW (before deletion) ── -->
+<div class="panel hidden" id="cx-preview-card">
+<div class="joc-panel-label">Exact Matches Found</div>
+<div class="joc-stat-grid" id="cx-preview-stats"></div>
+<div id="cx-preview-warn"></div>
+<div id="cx-preview-table"></div>
+<div class="cx-actions">
+<button class="btn btn-danger" id="cx-removeBtn" style="width:auto; padding:11px 22px;" type="button">Remove Matched Records</button>
+<button class="btn" id="cx-cancelBtn" style="width:auto; padding:11px 22px;" type="button">Start Over</button>
+</div>
+</div>
+<!-- ── RESULTS ── -->
+<div class="hidden" id="cx-results">
+<div class="joc-download">
+<div class="joc-download-title">
+<svg fill="none" stroke="#15803D" stroke-width="2.4" style="width:18px;height:18px;" viewbox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+<span id="cx-resultsTitle">Completed</span>
+</div>
+<div class="joc-download-sub" id="cx-resultsSub"></div>
+<div class="joc-stat-grid" id="cx-result-stats"></div>
+<div id="cx-result-warn"></div>
+<div class="cx-actions" style="margin-top:4px;">
+<button class="btn btn-primary" id="cx-downloadBtn" style="flex:2;" type="button">Download Result XLSX</button>
+<button class="btn" id="cx-againBtn" style="flex:1;" type="button">Process Another File</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ---------- SETTINGS ---------- -->
+<section class="page" id="page-settings">
+<div class="section-title">Settings</div>
+<div class="section-desc">Manage your workspace, security, and preferences.</div>
+<div class="settings-shell">
+<div class="settings-nav" id="settings-nav">
+<button class="active" data-pane="general">General</button>
+<button data-pane="datalocation">Data Hub Source</button>
+<button data-pane="datatype">Data-Type Intelligence</button>
+<button data-pane="security">Security</button>
+<button data-pane="feedback">Feedback Options</button>
+<button data-pane="emailautomation" id="settings-nav-emailautomation">Email Automation</button>
+<button data-pane="databases" id="settings-nav-databases">Databases</button>
+<button data-pane="roles" id="settings-nav-roles">Team Members</button>
+<button data-pane="danger">Danger Zone</button>
+</div>
+<div class="settings-content">
+<div class="settings-pane active" id="pane-general">
+<div class="profile-card" id="profile-card">
+<div class="pc-avatar" id="pc-avatar">?</div>
+<div class="pc-meta">
+<div class="pc-name" id="pc-name">—</div>
+<div class="pc-email" id="pc-email">—</div>
+<div class="pc-grid">
+<div class="pc-item"><div class="k">Role</div><div class="v" id="pc-role">—</div></div>
+<div class="pc-item"><div class="k">Account Created</div><div class="v" id="pc-created">—</div></div>
+<div class="pc-item"><div class="k">Last Login</div><div class="v" id="pc-lastlogin">—</div></div>
+<div class="pc-item"><div class="k">User Status</div><div class="v" id="pc-status">—</div></div>
+</div>
+</div>
+</div>
+<div class="storage-card">
+<div class="storage-card-head"><h4>Storage</h4><span class="pill pill-blue" id="storage-db-count-pill">0 databases</span></div>
+<div class="storage-stats">
+<div class="storage-stat"><div class="k">Storage Used</div><div class="v" id="storage-used-val">—</div></div>
+<div class="storage-stat"><div class="k">Storage Available</div><div class="v" id="storage-avail-val">—</div></div>
+<div class="storage-stat"><div class="k">Database Count</div><div class="v" id="storage-dbcount-val">—</div></div>
+</div>
+<div class="storage-progress-track"><div class="storage-progress-fill" id="storage-progress-fill" style="width:0%;"></div></div>
+<div class="storage-progress-label"><span id="storage-progress-pct">0% used</span><span id="storage-progress-remaining">—</span></div>
+</div>
+<div class="panel">
+<div class="setting-row"><div><div class="t">Full name</div><div class="d">Shown across the workspace</div></div><input id="set-fullname" style="width:220px;" type="text"/></div>
+<div class="setting-row"><div><div class="t">Email</div><div class="d">Your account email</div></div><span id="set-email" style="font-weight:600; font-size:13.5px;"></span></div>
+<div class="setting-row"><div><div class="t">Avatar</div><div class="d">Upload a profile photo (stored in Supabase Storage)</div></div><input accept="image/*" id="set-avatar" style="width:180px;" type="file"/></div>
+<div class="setting-row"><div><div class="t">Language</div><div class="d">Interface language</div></div><select style="width:160px;"><option>English (US)</option><option>Español</option><option>Français</option></select></div>
+<div class="setting-row"><div><div class="t">Save changes</div><div class="d">Update your profile in Supabase</div></div><button class="btn btn-primary btn-sm" id="save-profile-btn">Save changes</button></div>
+</div>
+</div>
+<div class="settings-pane" id="pane-datalocation">
+<!-- ── DATA HUB SOURCE FOLDER — the ONE folder connection for the whole app.
+                   Uses the File System Access API (window.showDirectoryPicker) to pick a local /
+                   OneDrive-synced folder once; the handle is remembered in IndexedDB so the folder
+                   never needs to be re-selected. Every .xlsx/.xlsm/.xls file inside is scanned and
+                   classified purely by its COLUMNS: files matching the 17-column database schema are
+                   auto-imported into Data Hub (same pipeline as manual "Import Database" — see
+                   performImport()); the same folder/handle is also shared with Toolkits → JOC Data
+                   Processor for its own Lookup/JOC classification. There is no second folder picker
+                   anywhere in the app. ── -->
+<div class="panel" id="dh-folder-panel">
+<h4 style="font-size:14px; margin-bottom:4px;">Data Hub Source Folder</h4>
+<p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px; line-height:1.5;">
+                  This is the single folder DataVault watches. Every Excel file inside it is inspected —
+                  files whose columns match the Data Hub database schema are detected and imported automatically,
+                  with no "Import Database" click required. The same folder also feeds
+                  <strong>Toolkits → JOC Data Processor</strong>. The app remembers the folder on this device, so
+                  you won't be asked to select it again.
+                </p>
+<div class="field" style="max-width:320px;">
+<label>Default assignee for auto-imported databases</label>
+<select id="dh-folder-default-assignee"><option value="">Leave Unassigned</option></select>
+</div>
+<!-- Disconnected / needs-action states (no folder, permission needed, denied, unavailable, scanning, unsupported) -->
+<div class="joc-dropzone" id="dh-folder-box" style="cursor:default; margin-top:6px;">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"></path></svg>
+<div class="dz-name" id="dh-folder-box-text">No folder selected</div>
+<div class="dz-sub" id="dh-folder-box-sub">Select the Data Hub Source Folder DataVault should watch.</div>
+<div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; justify-content:center;">
+<button class="btn btn-sm btn-primary hidden" id="dh-folder-browse-btn">Select Data Hub Folder</button>
+<button class="btn btn-sm hidden" id="dh-folder-change-btn">Change Folder</button>
+<button class="btn btn-sm btn-primary hidden" id="dh-folder-grant-btn">Reconnect Folder</button>
+<button class="btn btn-sm hidden" id="dh-folder-refresh-btn">Refresh</button>
+</div>
+</div>
+<!-- Connected state: compact status card (spec: no big file table on the main Settings screen) -->
+<div class="dh-source-card hidden" id="dh-folder-summary-card">
+<div class="dh-source-card-top">
+<div class="dh-source-card-icon"><svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" viewbox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"></path></svg></div>
+<div class="dh-source-card-info">
+<div class="dh-source-card-title-row">
+<span class="dh-source-card-title">Data Hub Source Folder</span>
+<span class="pill pill-green" id="dh-folder-summary-badge">Connected</span>
+</div>
+<div class="dh-source-card-path" id="dh-folder-summary-path">—</div>
+</div>
+</div>
+<div class="dh-source-card-stats">
+<div class="dh-source-stat"><span class="dh-source-stat-dot on"></span>Auto scanning enabled</div>
+<div class="dh-source-stat" id="dh-folder-summary-lastscan">Last scanned: —</div>
+<div class="dh-source-stat"><b id="dh-folder-summary-dbcount">0</b> databases detected</div>
+<div class="dh-source-stat"><b id="dh-folder-summary-othercount">0</b> other files ignored</div>
+<div class="dh-source-stat"><b id="dh-folder-summary-newcount">0</b> newly imported databases</div>
+<div class="dh-source-stat"><b id="dh-folder-summary-updatedcount">0</b> updated databases</div>
+<div class="dh-source-stat"><b id="dh-folder-summary-recordscount">0</b> records imported</div>
+<div class="dh-source-stat"><b id="dh-folder-summary-dupcount">0</b> duplicate records skipped</div>
+<div class="dh-source-stat"><b id="dh-folder-summary-errorcount">0</b> errors</div>
+</div>
+<div class="dh-source-card-actions">
+<button class="btn btn-sm" id="dh-folder-card-change-btn">Change Folder</button>
+<button class="btn btn-sm btn-primary hidden" id="dh-folder-card-grant-btn">Reconnect Folder</button>
+<button class="btn btn-sm" id="dh-folder-card-scan-btn">Scan Now</button>
+</div>
+</div>
+<div class="joc-cloud-error hidden" id="dh-folder-error" style="margin-top:12px;">
+<div class="joc-cloud-error-title" id="dh-folder-error-title">Folder access lost.</div>
+<div class="joc-cloud-error-sub" id="dh-folder-error-sub">The connected folder cannot currently be accessed.</div>
+</div>
+<p class="hidden" id="dh-folder-unsupported-msg" style="font-size:12px; color:var(--danger); margin-top:12px; line-height:1.5;">
+                  Folder selection is not supported in this browser. Please use a supported Chromium-based browser
+                  such as Google Chrome or Microsoft Edge.
+                </p>
+<!-- Detailed per-file scan results — kept out of the main Settings view; expand to inspect (spec #1/#10) -->
+<details class="joc-log-details hidden" id="dh-folder-activity-details" style="margin-top:16px;">
+<summary>Detection Activity <span class="joc-log-chevron">▸</span></summary>
+<div id="dh-folder-stats" style="font-size:12.5px; color:var(--text-secondary); margin-top:10px; line-height:1.7;"></div>
+<div id="dh-folder-filelist" style="margin-top:14px;"></div>
+</details>
+</div>
+<!-- ── LEGACY: SHAREPOINT URL (kept as an advanced/legacy fallback) ── -->
+<details class="joc-log-details" id="dl-legacy-sharepoint-details" style="margin-top:16px;">
+<summary>Advanced / Legacy: SharePoint URL <span class="joc-log-chevron">▸</span></summary>
+<div style="margin-top:10px; display:flex; flex-direction:column; gap:16px;">
+<div class="panel">
+<h4 style="font-size:14px; margin-bottom:4px;">Data Location</h4>
+<p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px; line-height:1.5;">
+                  The SharePoint/OneDrive folder used by Toolkits → JOC Data Processor to automatically
+                  find <strong>Master File - JOC Goup</strong> and the latest <strong>PIERS import records</strong> file.
+                  This is saved on this device and used every time the app opens. This legacy method is only used
+                  as a fallback when no local Data Hub Source Folder (above) is configured.
+                </p>
+<div class="field">
+<label>SharePoint / OneDrive folder URL</label>
+<input id="dl-url-input" placeholder="https://yourcompany-my.sharepoint.com/:f:/g/personal/..." type="text"/>
+</div>
+<div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+<button class="btn btn-primary btn-sm" id="dl-save-btn">Save Location</button>
+<button class="btn btn-sm" id="dl-test-btn">Test Connection</button>
+<button class="btn btn-sm btn-ghost" id="dl-reset-btn">Reset to default</button>
+</div>
+<div style="display:flex; align-items:center; gap:7px; margin-top:14px;">
+<span class="joc-status-dot" id="dl-status-dot"></span>
+<span id="dl-status-text" style="font-size:12.5px; font-weight:600;">Not tested yet</span>
+</div>
+<div class="joc-cloud-error hidden" id="dl-status-error" style="margin-top:12px;">
+<div class="joc-cloud-error-title" id="dl-status-error-title">Unable to access the selected data folder.</div>
+<div class="joc-cloud-error-sub" id="dl-status-error-sub"></div>
+</div>
+</div>
+<div class="panel">
+<h4 style="font-size:14px; margin-bottom:4px;">Microsoft Sign-in (optional)</h4>
+<p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px; line-height:1.5;">
+                  A browser can't read a private SharePoint folder from just a link — Microsoft requires an
+                  actual sign-in. Add your organization's Azure AD app details below to enable real automatic
+                  detection. Without this, the app honestly shows "Unable to access" and falls back to local file upload.
+                </p>
+<div class="field">
+<label>Azure AD Application (client) ID</label>
+<input id="ms-client-id-input" placeholder="e.g. 11111111-2222-3333-4444-555555555555" type="text"/>
+</div>
+<div class="field">
+<label>Directory (tenant) ID <span style="font-weight:400; color:var(--text-secondary);">— optional, defaults to "common"</span></label>
+<input id="ms-tenant-id-input" placeholder="e.g. 66666666-7777-8888-9999-000000000000" type="text"/>
+</div>
+<div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+<button class="btn btn-primary btn-sm" id="ms-save-btn">Save &amp; Connect to Microsoft</button>
+<button class="btn btn-sm" id="ms-signout-btn">Sign out</button>
+</div>
+<div style="display:flex; align-items:center; gap:7px; margin-top:14px;">
+<span class="joc-status-dot" id="ms-status-dot"></span>
+<span id="ms-status-text" style="font-size:12.5px; font-weight:600;">Not signed in</span>
+</div>
+</div>
+</div>
+</details>
+</div>
+<div class="settings-pane" id="pane-datatype">
+<div class="dt-smart-shell">
+<div class="dt-smart-hero">
+<div class="dt-eyebrow">SMART DATA IMPORT</div>
+<h4>Data-Type Intelligence</h4>
+<p>Import any customer database and let SWIFT automatically understand, classify and map its columns before the data enters Data Hub.</p>
+<button class="btn btn-primary" id="dt-smart-import-btn" type="button">
+<span style="font-size:16px;">＋</span> Import Database
+      </button>
+<div class="dt-step-strip">
+<div class="dt-step"><b>01</b><span>Select File</span></div>
+<div class="dt-step"><b>02</b><span>Understand Data</span></div>
+<div class="dt-step"><b>03</b><span>Smart Mapping</span></div>
+<div class="dt-step"><b>04</b><span>Confirm Import</span></div>
+</div>
+</div>
+<div class="dt-smart-side">
+<h5>Column Intelligence</h5>
+<div class="dt-signal"><div class="dt-signal-icon">⌁</div><div><b>Header meaning</b><span>Uses names, synonyms and normalized labels.</span></div></div>
+<div class="dt-signal"><div class="dt-signal-icon">✦</div><div><b>Sample values</b><span>Recognizes email, phone, URL and location patterns.</span></div></div>
+<div class="dt-signal"><div class="dt-signal-icon">↔</div><div><b>Confidence</b><span>Shows automatic, review and unmapped states before import.</span></div></div>
+<div class="dt-signal"><div class="dt-signal-icon">✓</div><div><b>Existing model</b><span>Reuses the current Data Hub target fields and phone handling.</span></div></div>
+</div>
+</div>
+<div class="panel" style="margin-top:18px;padding:18px;">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+<div><div style="font-weight:800;font-size:13px;">Existing target model</div><div class="hint">These are the current Data Hub destinations used by the import intelligence engine.</div></div>
+<span class="pill pill-blue">Single mapping engine</span>
+</div>
+<div class="dt-targets" id="dt-targets-list" style="margin-top:14px;"></div>
+</div>
+</div>
+<div class="settings-pane" id="pane-security">
+<div class="panel">
+<h4 style="font-size:14px; margin-bottom:14px;">Change password</h4>
+<div class="field"><label>New password</label><input id="new-password" placeholder="Minimum 8 characters" type="password"/></div>
+<button class="btn btn-primary btn-sm" id="change-password-btn">Update password</button>
+</div>
+<div class="panel" style="margin-top:16px;">
+<div class="setting-row"><div><div class="t">Active session</div><div class="d">You're signed in on this device</div></div><span class="pill pill-green">Active</span></div>
+<div class="setting-row"><div><div class="t">Sign out everywhere</div><div class="d">End all other active sessions</div></div><button class="btn btn-sm" id="signout-all-btn">Sign out all</button></div>
+</div>
+</div>
+<div class="settings-pane" id="pane-feedback">
+<div class="panel feedback-manager-panel">
+<div class="feedback-manager-head">
+<div>
+<div class="feedback-manager-eyebrow">Workspace configuration</div>
+<h4>Feedback Options</h4>
+<p>Manage the choices available in the Data Hub feedback dropdown.</p>
+</div>
+<span class="pill pill-blue">All admins</span>
+</div>
+<div class="feedback-add-card">
+<div class="feedback-add-input-wrap">
+<input autocomplete="off" id="new-feedback-option-input" placeholder="Enter feedback option..." type="text"/>
+<button class="btn btn-primary" id="add-feedback-option-btn" type="button">+ Add Option</button>
+</div>
+<div class="hint">Changes apply to new Data Hub selections. Existing historical feedback values are never deleted.</div>
+</div>
+<div id="feedback-options-list"></div>
+</div>
+</div>
+<div class="settings-pane" id="pane-emailautomation">
+<div class="email-auto-header">
+<span class="pill pill-blue">Admin only</span>
+</div>
+<div class="email-auto-grid">
+<div class="panel email-auto-card">
+<div class="email-auto-card-head"><div><div class="email-auto-kicker">01 · Email Template</div><h5>Company Profile Email</h5></div><span class="email-auto-status-dot" id="email-auto-template-status">Ready</span></div>
+<div class="field"><label>Subject</label><input id="email-auto-subject" type="text" value="Swift Cargo Company Profile"/></div>
+<div class="field"><label>Template</label><div class="email-auto-template-preview">The existing Swift Cargo Company Profile introduction template is used. The recipient name is derived from the recipient email as in the existing Email Composer.</div></div>
+</div>
+<div class="panel email-auto-card">
+<div class="email-auto-card-head"><div><div class="email-auto-kicker">02 · Permanent Attachment</div><h5>Company Profile PDF</h5></div><span class="email-auto-status-badge" id="email-auto-upload-status">Not configured</span></div>
+<div class="email-auto-upload-row">
+<div class="email-auto-file-icon">PDF</div>
+<div class="email-auto-file-meta"><div class="email-auto-file-name" id="email-auto-file-name">No PDF uploaded</div><div class="email-auto-file-sub" id="email-auto-file-sub">Stored permanently in Supabase Storage</div></div>
+<label class="btn btn-sm btn-primary email-auto-upload-btn">Upload / Replace PDF<input accept="application/pdf,.pdf" hidden="" id="email-auto-pdf-input" type="file"/></label>
+</div>
+<div class="email-auto-details">
+<div><span>Storage Path</span><strong id="email-auto-storage-path">email-automation/company-profile.pdf</strong></div>
+<div><span>Last Updated</span><strong id="email-auto-last-updated">—</strong></div>
+<div><span>Storage Bucket</span><strong id="email-auto-storage-bucket">avatars</strong></div>
+</div>
+<div class="email-auto-actions"><button class="btn btn-sm" id="email-auto-test-attachment" type="button">Test Attachment</button><button class="btn btn-sm" id="email-auto-refresh-status" type="button">Refresh Status</button></div>
+</div>
+<div class="panel email-auto-save-panel"><div><div class="email-auto-save-title">Configuration status</div><div class="email-auto-save-sub" id="email-auto-config-summary">Checking Supabase session and stored attachment…</div></div><button class="btn btn-primary" id="email-auto-save" type="button">Save Configuration</button></div>
+</div>
+</div>
+<div class="settings-pane" id="pane-databases">
+<div class="panel">
+<div class="panel-head">
+<h4 style="font-size:14px;">Database Assignments</h4>
+<span class="pill pill-blue" id="db-assign-count-pill">0 databases</span>
+</div>
+<div class="search-box" style="width:280px; margin-bottom:16px;">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input id="db-assign-search" placeholder="Search database or user…" type="search"/>
+</div>
+<div class="upd2-card-grid" id="db-assign-list"></div>
+</div>
+</div>
+<div class="settings-pane" id="pane-roles">
+<div class="panel">
+<div class="panel-head">
+<h4 style="font-size:14px;">Team Members</h4>
+<span class="pill pill-blue" id="team-count-pill">0 users</span>
+</div>
+<div class="search-box" style="width:280px; margin-bottom:16px;">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input id="team-search" placeholder="Search by name or email…" type="search"/>
+</div>
+<div id="roles-list"></div>
+</div>
+</div>
+<div class="settings-pane" id="pane-danger">
+<div class="danger-box">
+<div class="setting-row" style="border-color:#FECACA;"><div><div class="t">Delete a database</div><div class="d">Permanently remove an imported database and its records</div></div>
+<select id="danger-db-select" style="width:200px;"></select>
+</div>
+<div class="setting-row" style="border-color:#FECACA;"><div></div><button class="btn btn-danger btn-sm" id="danger-delete-db-btn">Delete selected database</button></div>
+<div class="setting-row" style="border-color:#FECACA;"><div><div class="t">Delete account</div><div class="d">Permanently delete your account and all owned data</div></div><button class="btn btn-danger btn-sm" id="delete-account-btn">Delete account</button></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ---------- AUDIT LOGS (admin) ---------- -->
+<section class="page" id="page-audit">
+<div class="section-title">Audit Logs</div>
+<div class="section-desc">A record of every sensitive action taken in the workspace.</div>
+<div class="panel"><div id="audit-list"></div></div>
+</section>
+</div>
+</div>
+</div>
+<!-- ============================== COMPANY DETAILS DRAWER ============================== -->
+<div class="drawer-overlay" id="record-drawer-overlay">
+<div aria-label="Company details" class="drawer" id="record-drawer" role="dialog">
+<div class="drawer-head">
+<div class="drawer-head-top">
+<div class="drawer-avatar" id="drawer-avatar">?</div>
+<div class="drawer-head-info">
+<h3 id="drawer-title">—</h3>
+<div class="sub" id="drawer-sub">—</div>
+<div id="drawer-status-wrap"></div>
+</div>
+<button class="drawer-close" id="record-drawer-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+</div>
+<div class="drawer-quick-actions" id="drawer-quick-actions"></div>
+</div>
+<div class="drawer-body" id="record-drawer-body"></div>
+</div>
+</div>
+<!-- ============================== EMAIL ACTION / COMPOSER ============================== -->
+
+<div aria-hidden="true" class="swift-email-overlay hidden" id="swift-email-choice-overlay">
+<div aria-labelledby="swift-email-choice-title" aria-modal="true" class="swift-email-modal" role="dialog">
+<div class="swift-email-head">
+<div>
+<h3 id="swift-email-choice-title">Choose Email Type</h3>
+<p>Select how you want to compose this email.</p>
+</div>
+<button aria-label="Close" class="swift-email-close" id="swift-email-choice-close" type="button">×</button>
+</div>
+<div class="swift-email-options">
+<button class="swift-email-option" data-email-template="company-profile" type="button">
+<span class="ic">✉</span><span class="txt"><span class="title">Swift Cargo Company Profile</span><span class="sub">Predefined introduction template</span></span><span class="arr">›</span>
+</button>
+<button class="swift-email-option" data-email-template="quotation" type="button">
+<span class="ic">▤</span><span class="txt"><span class="title">Quotation</span><span class="sub">Editable quotation template</span></span><span class="arr">›</span>
+</button>
+<button class="swift-email-option" data-email-template="manual" type="button">
+<span class="ic">✎</span><span class="txt"><span class="title">Manual Mail</span><span class="sub">Start with a blank email</span></span><span class="arr">›</span>
+</button>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="swift-email-overlay hidden" id="swift-email-composer-overlay">
+<div aria-labelledby="swift-email-composer-title" aria-modal="true" class="swift-email-composer" role="dialog">
+<div class="swift-email-composer-head">
+<div class="swift-email-composer-title">
+<span class="ic">✉</span>
+<div><h3 id="swift-email-composer-title">Email Composer</h3><p id="swift-email-composer-sub">Compose and review before sending.</p></div>
+</div>
+<button aria-label="Close" class="swift-email-close" id="swift-email-composer-close" type="button">×</button>
+</div>
+<div class="swift-email-form">
+<div class="swift-email-field"><label for="swift-email-to">To</label><input autocomplete="off" id="swift-email-to" type="email"/></div>
+<div class="swift-email-field"><label for="swift-email-subject">Subject</label><input autocomplete="off" id="swift-email-subject" type="text"/></div>
+</div>
+<div class="swift-email-body-wrap">
+<div class="swift-email-editor" contenteditable="true" id="swift-email-editor" spellcheck="true"></div>
+</div>
+<div class="swift-email-toolbar">
+<button class="swift-email-tool" data-email-cmd="bold" type="button"><b>B</b></button>
+<button class="swift-email-tool" data-email-cmd="italic" type="button"><i>I</i></button>
+<button class="swift-email-tool" data-email-cmd="underline" type="button"><u>U</u></button>
+<button class="swift-email-tool" data-email-cmd="hilite" type="button">Highlight</button>
+</div>
+<div class="swift-email-attachment" id="swift-email-attachment"><span class="name" id="swift-email-attachment-name"></span><span class="status" id="swift-email-attachment-status"></span></div>
+<div class="swift-email-error" id="swift-email-error"></div>
+<div class="swift-email-composer-foot">
+<span class="swift-email-foot-left" id="swift-email-foot-note">Templates are editable before sending.</span>
+<div class="swift-email-foot-actions">
+<button class="btn" id="swift-email-cancel" type="button">Cancel</button>
+<button class="btn btn-primary" id="swift-email-send" type="button">Preview &amp; Confirm</button>
+</div>
+</div>
+</div>
+</div>
+<div aria-hidden="true" class="swift-email-overlay hidden" id="swift-email-preview-overlay">
+<div aria-labelledby="swift-email-preview-title" aria-modal="true" class="swift-email-preview-modal" role="dialog">
+<div class="swift-email-composer-head">
+<div class="swift-email-composer-title">
+<span class="ic">✓</span>
+<div><h3 id="swift-email-preview-title">Preview &amp; Confirmation</h3><p>Review the complete email before creating the .eml file.</p></div>
+</div>
+<button aria-label="Close" class="swift-email-close" id="swift-email-preview-close" type="button">×</button>
+</div>
+<div class="swift-email-preview-form">
+<div class="swift-email-field">
+<label for="swift-email-preview-to">To</label>
+<input autocomplete="off" id="swift-email-preview-to" type="email"/>
+</div>
+<div class="swift-email-field">
+<label for="swift-email-preview-subject">Subject</label>
+<input autocomplete="off" id="swift-email-preview-subject" type="text"/>
+</div>
+</div>
+<div class="swift-email-preview-section">
+<div class="swift-email-preview-label">Message</div>
+<div class="swift-email-preview-body" contenteditable="true" id="swift-email-preview-body" spellcheck="true"></div>
+</div>
+<div class="swift-email-preview-section">
+<div class="swift-email-preview-label">Attachment</div>
+<div class="swift-email-preview-attachment">
+<div class="swift-email-preview-file">
+<span class="swift-email-preview-file-icon">PDF</span>
+<div><strong id="swift-email-preview-attachment-name">Swift Cargo Company Profile.pdf</strong><span id="swift-email-preview-attachment-status">Ready to attach</span></div>
+</div>
+<label class="btn btn-sm">Change PDF<input accept="application/pdf,.pdf" hidden="" id="swift-email-preview-attachment-input" type="file"/></label>
+</div>
+</div>
+<div class="swift-email-error" id="swift-email-preview-error"></div>
+<div class="swift-email-preview-foot">
+<span>Nothing is sent automatically. Confirming only downloads the .eml draft.</span>
+<div class="swift-email-foot-actions">
+<button class="btn" id="swift-email-preview-edit" type="button">Edit</button>
+<button class="btn btn-primary" id="swift-email-confirm-download" type="button">Confirm &amp; Download</button>
+</div>
+</div>
+</div>
+</div>
+
+
+<!-- ============================== ADD DAILY ENTRY MODAL ============================== -->
+<!-- ============================== CALENDAR EVENT MODAL ============================== -->
+<div class="modal-overlay hidden" id="cal-event-overlay">
+<div class="modal wide cal-event-modal">
+<div class="modal-head"><div><div class="eyebrow">WORKSPACE EVENT</div><h3 id="cal-event-modal-title">Create Event</h3></div><button class="modal-close" id="cal-event-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<form class="cal-event-form" id="cal-event-form">
+<div class="form-grid-2"><div class="field"><label>Event title</label><input id="evt-title" placeholder="e.g. Weekly analytics review" required=""/></div><div class="field"><label>Event type</label><select id="evt-type"><option value="task">Task</option><option value="import">Import</option><option value="reminder">Reminder</option><option value="followup">Follow-up</option><option value="meeting">Meeting</option><option value="analytics">Analytics</option><option value="system">System Activity</option></select></div></div>
+<div class="form-grid-4"><div class="field"><label>Date</label><input id="evt-date" required="" type="date"/></div><div class="field"><label>Start time</label><input id="evt-start" type="time" value="10:00"/></div><div class="field"><label>End time</label><input id="evt-end" type="time" value="11:00"/></div><div class="field"><label>Priority</label><select id="evt-priority"><option>Normal</option><option>High</option><option>Urgent</option></select></div></div>
+<div class="field"><label>Description</label><textarea id="evt-description" placeholder="Add context, notes or next steps..." rows="4"></textarea></div>
+<div class="form-grid-2"><div class="field"><label>Related company / contact</label><input id="evt-related" placeholder="Optional"/></div><div class="field"><label>Reminder</label><select id="evt-reminder"><option value="none">No reminder</option><option value="10">10 minutes before</option><option value="30">30 minutes before</option><option value="60">1 hour before</option><option value="1440">1 day before</option></select></div></div>
+<div class="field"><label>Color / Category</label><select id="evt-color"><option value="blue">Blue</option><option value="violet">Violet</option><option value="cyan">Cyan</option><option value="orange">Orange</option><option value="green">Green</option><option value="red">Red</option><option value="amber">Amber</option></select></div>
+<div class="form-repeat-row" id="evt-repeat-row">
+<div class="field"><label>Repeat</label><select id="evt-repeat"><option value="none">Does not repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="custom">Custom…</option></select></div>
+<div class="field hidden" id="evt-repeat-custom-wrap"><label>Repeat every</label><div style="display:flex;gap:6px;"><input id="evt-repeat-interval" min="1" style="width:70px;" type="number" value="1"/><select id="evt-repeat-unit"><option value="day">Day(s)</option><option value="week">Week(s)</option><option value="month">Month(s)</option></select></div></div>
+<div class="field hidden" id="evt-repeat-until-wrap"><label>Repeat until</label><input id="evt-repeat-until" type="date"/></div>
+</div>
+<div class="cal-event-form-foot"><button class="btn" id="cal-event-cancel" type="button">Cancel</button><button class="btn btn-primary" id="cal-event-submit-btn" type="submit">Create Event</button></div>
+</form>
+</div>
+</div>
+<div class="modal-overlay hidden" id="cal-event-detail-overlay">
+<div class="modal wide cal-event-detail-modal"><div class="modal-head"><div><div class="eyebrow" id="evt-detail-type">EVENT</div><h3 id="evt-detail-title">—</h3></div><button class="modal-close" id="cal-event-detail-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div><div id="cal-event-detail-body"></div></div>
+</div>
+<!-- ============================== GLOBAL COMMAND PALETTE ============================== -->
+<div class="modal-overlay hidden" id="command-overlay"><div class="command-palette"><div class="command-search"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg><input id="command-search" placeholder="Search workspace..."/><kbd>Ctrl K</kbd></div><div class="command-section"><div class="command-label">QUICK ACCESS</div><div id="command-results"></div></div></div></div>
+<!-- ============================== CALENDAR DAY-DETAIL MODAL ============================== -->
+<div class="modal-overlay hidden" id="day-modal-overlay">
+<div class="modal" id="day-modal">
+<div class="modal-head"><h3 id="day-modal-title">—</h3><button class="modal-close" id="day-modal-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div id="day-modal-body"></div>
+</div>
+</div>
+<!-- ============================== REMINDER CENTER ============================== -->
+<div class="modal-overlay hidden" id="reminder-center-overlay">
+<div class="modal reminder-center-modal" id="reminder-center-modal">
+<div class="modal-head"><h3>🔔 Reminder Center</h3><button class="modal-close" id="reminder-center-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="reminder-kpi-strip" id="reminder-kpi-strip"></div>
+<div class="reminder-center-toolbar">
+<div class="search-box" style="flex:1; min-width:180px;">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input id="rem-search" placeholder="Search company, database, remarks…" type="search"/>
+</div>
+<select id="rem-filter-status">
+<option value="">All Status</option>
+<option value="upcoming">Upcoming</option>
+<option value="today">Today</option>
+<option value="overdue">Overdue</option>
+<option value="completed">Completed</option>
+</select>
+<select id="rem-filter-quarter">
+<option value="">All Quarters</option>
+<option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option>
+</select>
+<select id="rem-filter-db"><option value="">All Databases</option></select>
+<select id="rem-filter-user"><option value="">All Users</option></select>
+<select id="rem-filter-range">
+<option value="">All Dates</option>
+<option value="today">Today</option>
+<option value="week">This Week</option>
+<option value="month">This Month</option>
+</select>
+<label class="checkbox-row" style="font-size:12.5px;"><input id="rem-filter-mine" type="checkbox"/> My Reminders</label>
+<div class="toolbar-spacer"></div>
+<button class="btn btn-sm" id="rem-reset-filters">Reset</button>
+<button class="btn btn-sm" id="rem-export-csv">Export CSV</button>
+<button class="btn btn-sm" id="rem-export-xlsx">Export Excel</button>
+<button class="btn btn-sm" id="rem-export-pdf">Export PDF</button>
+</div>
+<div class="reminder-table-wrap">
+<table class="reminder-table">
+<thead><tr>
+<th>Company</th><th>Database</th><th>Assigned User</th><th>Reminder Date</th><th>Quarter</th>
+<th>Feedback Status</th><th>Remarks</th><th>Created</th><th>Last Updated</th><th>Status</th><th>Actions</th>
+</tr></thead>
+<tbody id="reminder-table-body"></tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- ============================== REMINDER VIEW/EDIT MODAL ============================== -->
+<div class="modal-overlay hidden" id="reminder-edit-overlay">
+<div class="modal" style="max-width:460px;">
+<div class="modal-head"><h3 id="reminder-edit-title">Reminder</h3><button class="modal-close" id="reminder-edit-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="field"><label>Company</label><input disabled="" id="rem-edit-company" type="text"/></div>
+<div class="field"><label>Reminder Date</label><input id="rem-edit-date" type="date"/></div>
+<div class="field"><label>Quarter</label>
+<select id="rem-edit-quarter"><option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option></select>
+</div>
+<div class="field"><label>Additional Remarks</label><textarea id="rem-edit-remarks" rows="4"></textarea></div>
+<div style="display:flex; gap:10px;">
+<button class="btn" id="rem-edit-cancel" style="flex:1;">Cancel</button>
+<button class="btn btn-primary" id="rem-edit-save" style="flex:1;">Save Changes</button>
+</div>
+</div>
+</div>
+<!-- ============================== SNOOZE CUSTOM DATE MODAL ============================== -->
+<div class="modal-overlay hidden" id="rem-snooze-custom-overlay">
+<div class="modal" style="max-width:360px;">
+<div class="modal-head"><h3>Snooze to date</h3><button class="modal-close" id="rem-snooze-custom-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="field"><label>New reminder date</label><input id="rem-snooze-custom-date" type="date"/></div>
+<div style="display:flex; gap:10px;">
+<button class="btn" id="rem-snooze-custom-cancel" style="flex:1;">Cancel</button>
+<button class="btn btn-primary" id="rem-snooze-custom-save" style="flex:1;">Snooze</button>
+</div>
+</div>
+</div>
+<!-- ============================== POST-LOGIN REMINDER POPUP ============================== -->
+<div class="modal-overlay hidden reminder-popup" id="reminder-popup-overlay">
+<div class="modal">
+<div class="modal-head"><h3>🔔 Today's Reminders</h3><button class="modal-close" id="reminder-popup-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div id="reminder-popup-body"></div>
+<div style="display:flex; gap:10px; margin-top:16px;">
+<button class="btn" id="reminder-popup-dismiss" style="flex:1;">Dismiss</button>
+<button class="btn btn-primary" id="reminder-popup-view-all" style="flex:1;">View All</button>
+</div>
+</div>
+</div>
+<!-- ============================== IMPORT MODAL ============================== -->
+<div class="modal-overlay hidden" id="import-modal-overlay">
+<div class="modal" id="import-modal">
+<div class="modal-head"><h3 id="import-modal-title">Import Database</h3><button class="modal-close" id="import-modal-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div id="import-step-drop">
+<div class="dropzone" id="dropzone">
+<svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8" viewbox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path></svg>
+<div style="font-weight:700; font-size:14px;">Drag &amp; drop your .xlsx file</div>
+<div class="hint">or click to browse — .xlsx only</div>
+<input accept=".xlsx" class="hidden" id="file-input" type="file"/>
+</div>
+</div>
+<div class="hidden" id="import-step-form">
+<div class="field"><label>Database Name</label><input id="import-db-name" type="text"/></div>
+<div class="field hidden" id="import-assigned-field">
+<label>Assigned To</label>
+<select id="import-assigned"></select>
+</div>
+<div class="field hidden" id="import-assign-user-field">
+<label>Assign to User <span style="color:#DC2626;">*</span></label>
+<select id="import-assign-user"></select>
+<div class="hint" style="margin-top:4px;">Only this user will be able to see this database in their Data Hub.</div>
+</div>
+<div class="field hidden" id="new-name-field"><label>New name</label><input id="import-new-name" placeholder="Enter a new name" type="text"/></div>
+<div class="panel import-intelligence-preview" style="padding:14px; margin-bottom:16px;">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;">
+<div><div style="font-weight:700;font-size:12.5px;">Intelligent Column Mapping</div><div class="hint" style="margin-top:3px;">High-confidence columns are mapped automatically. Review ambiguous mappings before import.</div></div>
+<span class="pill pill-blue" id="import-mapping-summary">0 mapped</span>
+</div>
+<div class="map-table-wrap"><table class="map-table" id="map-preview-table"></table></div>
+</div>
+<div style="display:flex; gap:10px;">
+<button class="btn" id="import-back-btn" style="flex:1;">Back</button>
+<button class="btn btn-primary" id="import-confirm-btn" style="flex:2;">Import <span id="import-row-count"></span></button>
+</div>
+</div>
+<div class="hidden" id="import-step-progress">
+<div style="text-align:center; padding:10px 0;">
+<div class="spinner dark" style="margin:0 auto 16px; width:26px; height:26px;"></div>
+<div id="import-progress-label" style="font-weight:700; font-size:14px;">Importing rows…</div>
+<div class="progress-outer"><div class="progress-inner" id="import-progress-bar"></div></div>
+<div class="hint" id="import-progress-sub"></div>
+</div>
+</div>
+<div class="hidden" id="import-step-done" style="text-align:center; padding:10px 0;">
+<div style="width:52px; height:52px; border-radius:50%; background:#F0FDF4; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+<svg fill="none" stroke="#16A34A" stroke-width="2.4" style="width:26px;height:26px;" viewbox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+</div>
+<div style="font-weight:700; font-size:15px; margin-bottom:4px;">Import complete</div>
+<div class="hint" id="import-done-summary"></div>
+<button class="btn btn-primary" id="import-done-btn" style="width:100%; margin-top:18px; padding:11px;">Done</button>
+</div>
+<!-- Failed step: the database row already exists with status:'error', so
+         Retry re-runs the same rows against the SAME database id instead of creating a
+         second card (spec #14) — no need to reselect the file or start over. -->
+<div class="hidden" id="import-step-failed" style="text-align:center; padding:10px 0;">
+<div style="width:52px; height:52px; border-radius:50%; background:#FEF2F2; display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+<svg fill="none" stroke="#DC2626" stroke-width="2.4" style="width:26px;height:26px;" viewbox="0 0 24 24"><path d="M12 9v4M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle></svg>
+</div>
+<div style="font-weight:700; font-size:15px; margin-bottom:4px;">Import failed</div>
+<div class="hint" id="import-failed-summary"></div>
+<div style="display:flex; gap:10px; margin-top:18px;">
+<button class="btn" id="import-failed-close-btn" style="flex:1;">Close</button>
+<button class="btn btn-primary" id="import-failed-retry-btn" style="flex:1;">Retry</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-overlay hidden" id="assign-db-modal-overlay">
+<div class="modal" id="assign-db-modal">
+<div class="modal-head"><h3 id="assign-db-modal-title">Assign Database</h3><button class="modal-close" id="assign-db-modal-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="field">
+<label>Database</label>
+<input disabled="" id="assign-db-name" style="background:#F7F7FB; color:var(--text-secondary);" type="text"/>
+</div>
+<div class="field">
+<label>Assign To User <span style="color:var(--danger);">*</span></label>
+<select id="assign-db-user"></select>
+</div>
+<div class="hint" id="assign-db-current" style="margin-bottom:14px;"></div>
+<div class="auth-alert" id="assign-db-error"></div>
+<div style="display:flex; gap:10px;">
+<button class="btn btn-danger hidden" id="assign-db-remove-btn" style="flex:1;">Remove Assignment</button>
+<button class="btn btn-primary" id="assign-db-save-btn" style="flex:2;">Save Assignment</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay hidden" id="dh-rename-modal-overlay">
+<div class="modal" id="dh-rename-modal" style="max-width:420px;">
+<div class="modal-head"><h3>Rename Database</h3><button class="modal-close" id="dh-rename-modal-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="field">
+<label>Database Name <span style="color:var(--danger);">*</span></label>
+<input id="dh-rename-input" maxlength="120" type="text"/>
+</div>
+<div class="auth-alert" id="dh-rename-error"></div>
+<button class="btn btn-primary" id="dh-rename-save-btn" style="width:100%;">Save Name</button>
+</div>
+</div>
+<div class="modal-overlay hidden" id="dh-details-modal-overlay">
+<div class="modal" id="dh-details-modal" style="max-width:460px;">
+<div class="modal-head"><h3>Database Details</h3><button class="modal-close" id="dh-details-modal-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div id="dh-details-body" style="display:flex; flex-direction:column; gap:12px;"></div>
+</div>
+</div>
+<!-- ---------- Data Hub: generic bulk-action modal (Assign / Change Status / Add Tag on N selected databases) ---------- -->
+<div class="modal-overlay hidden" id="dbb-bulk-modal-overlay">
+<div class="modal" id="dbb-bulk-modal" style="max-width:420px;">
+<div class="modal-head"><h3 id="dbb-bulk-modal-title">Bulk Action</h3><button class="modal-close" id="dbb-bulk-modal-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="hint" id="dbb-bulk-modal-sub" style="margin-bottom:14px;"></div>
+<div id="dbb-bulk-modal-body"></div>
+<div class="auth-alert" id="dbb-bulk-modal-error"></div>
+<button class="btn btn-primary" id="dbb-bulk-modal-save" style="width:100%; margin-top:6px;">Apply</button>
+</div>
+</div>
+<!-- ---------- Data Hub: Saved Views — save current view under a name ---------- -->
+<div class="modal-overlay hidden" id="dh-save-view-modal-overlay">
+<div class="modal" id="dh-save-view-modal" style="max-width:400px;">
+<div class="modal-head"><h3>Save Current View</h3><button class="modal-close" id="dh-save-view-modal-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="field">
+<label>View Name <span style="color:var(--danger);">*</span></label>
+<input id="dh-save-view-input" maxlength="60" placeholder="e.g. Unassigned Databases" type="text"/>
+</div>
+<div class="auth-alert" id="dh-save-view-error"></div>
+<button class="btn btn-primary" id="dh-save-view-save-btn" style="width:100%;">Save View</button>
+</div>
+</div>
+<div class="modal-overlay hidden" id="dh-new-db-modal-overlay">
+<div class="modal" id="dh-new-db-modal">
+<div class="modal-head">
+<h3>New database detected</h3>
+</div>
+<div class="hint" id="dh-new-db-modal-count" style="margin-top:-6px; margin-bottom:14px;">New database detected</div>
+<div class="field">
+<label>File</label>
+<input disabled="" id="dh-new-db-modal-name" style="background:#F7F7FB; color:var(--text-secondary); text-overflow:ellipsis; white-space:nowrap; overflow:hidden;" type="text"/>
+</div>
+<div class="field">
+<label>Who should this database be assigned to?</label>
+<select id="dh-new-db-modal-user"></select>
+<div class="hint" style="margin-top:4px;">Source Folder imports are automatic and do not require confirmation.</div>
+</div>
+<div class="auth-alert" id="dh-new-db-modal-error"></div>
+<div style="display:flex; gap:10px; margin-top:4px;">
+<button class="btn btn-sm" id="dh-new-db-modal-skip-btn" style="flex:1;">Skip for now</button>
+<button class="btn btn-primary" id="dh-new-db-modal-import-btn" style="flex:2;">Import Database</button>
+</div>
+</div>
+</div>
+<!-- ---------- Data Hub: Removed Duplicate values report ---------- -->
+<div class="modal-overlay hidden" id="dh-removed-duplicates-modal-overlay">
+<div class="modal" id="dh-removed-duplicates-modal" style="max-width:820px;">
+<div class="modal-head">
+<h3>Removed Duplicate Companies</h3>
+<button aria-label="Close" class="modal-close" id="dh-removed-duplicates-modal-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+</div>
+<div class="hint" id="dh-removed-duplicates-modal-sub" style="margin-top:-6px; margin-bottom:14px;">Company Names that were repeated, showing which database was kept and where the duplicate was removed.</div>
+<div id="dh-removed-duplicates-modal-body" style="max-height:62vh; overflow:auto;"></div>
+<div style="display:flex; gap:10px; margin-top:16px;"><button class="btn btn-primary" id="dh-removed-duplicates-modal-close-btn" style="flex:1;">Close</button></div>
+</div>
+</div>
+<!-- ---------- Data Hub: Duplicate Companies panel (spec: Source Folder dedupe) ----------
+     Lists every Company Name detected in 2+ Data Hub databases, with the occurrence count and
+     the exact source database(s) for each — opened from the "Duplicate Companies" toolbar
+     button and kept in sync with computeDuplicateCompanyGroups(). ---------- -->
+<div class="modal-overlay hidden" id="dh-dupcompanies-modal-overlay">
+<div class="modal" id="dh-dupcompanies-modal" style="max-width:640px;">
+<div class="modal-head">
+<h3>Duplicate Companies</h3>
+</div>
+<div class="hint" id="dh-dupcompanies-modal-sub" style="margin-top:-6px; margin-bottom:14px;">Companies detected in more than one Data Hub database.</div>
+<div id="dh-dupcompanies-modal-body" style="max-height:56vh; overflow:auto;"></div>
+<div style="display:flex; gap:10px; margin-top:16px;">
+<button class="btn btn-primary" id="dh-dupcompanies-modal-close-btn" style="flex:1;">Close</button>
+</div>
+</div>
+</div>
+<!-- ============================== CONFIRM MODAL ============================== -->
+<div class="modal-overlay hidden" id="joc-file-details-overlay">
+<div class="modal" style="max-width:560px;">
+<div class="modal-head"><h3 id="joc-file-details-title">File</h3><button class="modal-close" id="joc-file-details-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div id="joc-file-details-body"></div>
+</div>
+</div>
+<div class="modal-overlay hidden" id="sw-review-overlay">
+<div class="modal" style="max-width:820px; max-height:86vh; overflow:auto;">
+<div class="modal-head"><h3>Manual Verification — Highest Risk Records</h3><button class="modal-close" id="sw-review-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="hint" id="sw-review-hint" style="margin-bottom:10px;">Zero-Risk Decision Mode: at most 50 highest-risk records are shown here. Use ✓ Swift / ✕ Non-Swift / → Skip, or keyboard shortcuts 1 / 2 / 3.</div>
+<div id="sw-review-progress" style="margin-bottom:14px;"></div>
+<div id="sw-review-list"></div>
+</div>
+</div>
+<!-- ============================== COMPANY EXACT LOOKUP & REMOVAL — CONFIRM MODAL ============================== -->
+<div class="modal-overlay hidden" id="cx-confirm-overlay">
+<div aria-labelledby="cx-confirm-title" aria-modal="true" class="modal" role="dialog" style="max-width:460px;">
+<div class="modal-head"><h3 id="cx-confirm-title">Permanent removal</h3></div>
+<div class="hint" style="margin-bottom:16px;">Exact matches found. Do you want to permanently remove these Data Hub records?</div>
+<div class="cx-modal-stats">
+<div class="cx-modal-stat"><span>Uploaded companies</span><b id="cx-confirm-uploaded">0</b></div>
+<div class="cx-modal-stat"><span>Exact matches</span><b id="cx-confirm-matches">0</b></div>
+<div class="cx-modal-stat danger"><span>Records that will be removed</span><b id="cx-confirm-records">0</b></div>
+</div>
+<div style="display:flex; gap:10px;">
+<button class="btn" id="cx-confirm-cancel" style="flex:1;" type="button">Cancel</button>
+<button class="btn btn-danger" id="cx-confirm-ok" style="flex:1;" type="button">Remove Matched Records</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay hidden" id="confirm-overlay">
+<div class="modal" style="max-width:400px;">
+<div class="modal-head"><h3 id="confirm-title">Are you sure?</h3></div>
+<div class="hint" id="confirm-body" style="margin-bottom:20px;"></div>
+<div style="display:flex; gap:10px;">
+<button class="btn" id="confirm-cancel" style="flex:1;">Cancel</button>
+<button class="btn btn-danger" id="confirm-ok" style="flex:1;">Confirm</button>
+</div>
+</div>
+</div>
+<!-- ============================== ADMIN DELETE USER MODAL ============================== -->
+<div aria-hidden="true" class="modal-overlay hidden" id="delete-user-overlay">
+<div aria-labelledby="delete-user-title" aria-modal="true" class="modal delete-user-modal" role="dialog">
+<div class="modal-head">
+<div>
+<div class="eyebrow" style="color:#B91C1C;">PERMANENT ACCOUNT ACTION</div>
+<h3 id="delete-user-title">Delete User</h3>
+</div>
+<button aria-label="Close" class="modal-close" id="delete-user-close" type="button">
+<svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+</button>
+</div>
+<div class="delete-user-identity">
+<div class="delete-user-avatar" id="delete-user-avatar">?</div>
+<div>
+<div class="delete-user-name" id="delete-user-name">—</div>
+<div class="delete-user-email" id="delete-user-email">—</div>
+</div>
+</div>
+<div class="delete-user-warning">
+<div class="delete-user-warning-icon">!</div>
+<div>
+<strong>This action is permanent and cannot be undone.</strong>
+<div>The user's Supabase Authentication account, profile, and dependent application ownership references will be permanently handled by the secure server-side deletion process.</div>
+</div>
+</div>
+<div class="auth-alert" id="delete-user-alert"></div>
+<div style="display:flex;gap:10px;margin-top:20px;">
+<button class="btn" id="delete-user-cancel" style="flex:1;" type="button">Cancel</button>
+<button class="btn btn-danger" id="delete-user-confirm" style="flex:1;" type="button">
+<span class="delete-user-confirm-label">Delete User Permanently</span>
+</button>
+</div>
+</div>
+</div>
+<div class="modal-overlay hidden" id="feedback-other-overlay">
+<div class="modal" style="max-width:420px;">
+<div class="modal-head"><h3>Custom Feedback</h3><button class="modal-close" id="feedback-other-close"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
+<div class="field" style="margin-bottom:6px;">
+<label>Enter custom feedback</label>
+<textarea id="feedback-other-input" placeholder="Enter detailed custom feedback..." rows="7" style="resize:vertical; min-height:150px; line-height:1.5;"></textarea>
+</div>
+<div style="display:flex; gap:10px; margin-top:16px;">
+<button class="btn" id="feedback-other-cancel" style="flex:1;">Cancel</button>
+<button class="btn btn-primary" id="feedback-other-save" style="flex:1;">Save Feedback</button>
+</div>
+</div>
+</div>
+<!-- ============================== RATING MODAL (additive) ============================== -->
+<div class="modal-overlay hidden" id="rating-modal-overlay">
+<div aria-labelledby="rating-modal-title-text" aria-modal="true" class="modal rating-modal" id="rating-modal" role="dialog">
+<div class="modal-head" style="margin-bottom:8px; justify-content:flex-end;">
+<button aria-label="Close and skip rating" class="modal-close" id="rating-modal-close" title="Skip for now"><svg fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"></path></svg></button>
+</div>
+<div class="rating-modal-icon">🎉</div>
+<div class="rating-modal-title" id="rating-modal-title-text">Database Completed 🎉</div>
+<div class="rating-modal-sub">You've completed this database. How was your experience?</div>
+<div class="rating-modal-dbname" id="rating-modal-dbname">—</div>
+<div aria-label="Rate your experience, 1 to 5 stars" class="rating-stars-row" role="radiogroup">
+<button aria-checked="false" aria-label="1 star — Not great" class="rating-star-btn" data-value="1" role="radio" type="button"><span class="emoji">😞</span><span class="stars">★</span><span class="num">1</span></button>
+<button aria-checked="false" aria-label="2 stars — Could be better" class="rating-star-btn" data-value="2" role="radio" type="button"><span class="emoji">😕</span><span class="stars">★★</span><span class="num">2</span></button>
+<button aria-checked="false" aria-label="3 stars — Okay" class="rating-star-btn" data-value="3" role="radio" type="button"><span class="emoji">😐</span><span class="stars">★★★</span><span class="num">3</span></button>
+<button aria-checked="false" aria-label="4 stars — Good" class="rating-star-btn" data-value="4" role="radio" type="button"><span class="emoji">😊</span><span class="stars">★★★★</span><span class="num">4</span></button>
+<button aria-checked="false" aria-label="5 stars — Amazing" class="rating-star-btn" data-value="5" role="radio" type="button"><span class="emoji">🤩</span><span class="stars">★★★★★</span><span class="num">5</span></button>
+</div>
+<div class="rating-review-field">
+<label for="rating-review-input">Add your review</label>
+<textarea id="rating-review-input" maxlength="1000" placeholder="Share your feedback (optional)"></textarea>
+</div>
+<div class="rating-btn-row">
+<button class="btn" id="rating-skip-btn" style="flex:1;">Skip for Now</button>
+<button class="btn btn-primary" disabled="" id="rating-submit-btn" style="flex:1;">Submit Rating</button>
+</div>
+</div>
+</div>
+<div id="toast-stack"></div>
+
+
+
+
+<script src="/legacy/scripts/legacy-app.js"></script></body>
+</html>

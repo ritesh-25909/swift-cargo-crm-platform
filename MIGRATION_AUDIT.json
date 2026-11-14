@@ -1,0 +1,20 @@
+{
+  "source_file": "index(20261114-052931).html",
+  "source_size_bytes": 1598527,
+  "unique_dom_ids": 849,
+  "named_function_declarations": 895,
+  "inline_app_script_bytes": 1075654,
+  "style_blocks_extracted": 19,
+  "sections": [
+    "Dashboard",
+    "All Data / Data Hub",
+    "Calendar",
+    "Updates",
+    "JOC",
+    "Analytics",
+    "Toolkits",
+    "Settings",
+    "Audit"
+  ],
+  "migration_status": "Complete compatibility package; React feature rewrite remains outstanding."
+}
