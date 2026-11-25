@@ -6278,3 +6278,5 @@ body.upd-abv-open{overflow:hidden!important}
 @media(hover:none){#page-alldata .dbb-grid > .dbb-card:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){#page-alldata .dbb-grid > .dbb-card,#page-alldata .dbb-view-name-btn{transition:none !important}#page-alldata .dbb-grid > .dbb-card:hover,#page-alldata .dbb-view-name-btn:hover{transform:none}}
 /* Backup centre styling is embedded in legacy index.html. */
+
+.br-bin-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border-bottom:1px solid #ddd;overflow-wrap:anywhere}
