@@ -6277,3 +6277,4 @@ body.upd-abv-open{overflow:hidden!important}
 #page-alldata .dbb-view-name-btn:focus-visible{outline:2px solid var(--dbb-accent);outline-offset:3px}
 @media(hover:none){#page-alldata .dbb-grid > .dbb-card:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){#page-alldata .dbb-grid > .dbb-card,#page-alldata .dbb-view-name-btn{transition:none !important}#page-alldata .dbb-grid > .dbb-card:hover,#page-alldata .dbb-view-name-btn:hover{transform:none}}
+/* Backup centre styling is embedded in legacy index.html. */
