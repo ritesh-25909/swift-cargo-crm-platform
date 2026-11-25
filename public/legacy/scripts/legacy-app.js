@@ -2731,6 +2731,7 @@ async function loadWorkspace(){
 
   $('#admin-nav-label').classList.toggle('hidden', !S.isAdmin);
   $('#nav-audit').classList.toggle('hidden', !S.isAdmin);
+  $('#nav-backup').classList.toggle('hidden', !S.isAdmin);
   $('#nav-analytics').classList.toggle('hidden', !S.isAdmin);
   $('#nav-joc').classList.toggle('hidden', !S.isAdmin);
   $('#nav-joc').style.display = S.isAdmin ? '' : 'none';
@@ -3676,7 +3677,7 @@ function dbbDuplicateCompanySummary(d){
 /* ==========================================================================
    NAVIGATION / ROUTER
    ========================================================================== */
-const PAGE_TITLES = { dashboard:'Dashboard', alldata:'Data Hub', calendar:'Calendar', updates:'Updates', joc:'JOC', analytics:'Analytics', toolkits:'Toolkits', settings:'Settings', audit:'Audit Logs' };
+const PAGE_TITLES = { dashboard:'Dashboard', alldata:'Data Hub', calendar:'Calendar', updates:'Updates', joc:'JOC', analytics:'Analytics', toolkits:'Toolkits', settings:'Settings', audit:'Audit Logs', backup:'Backup & Recovery' };
 $all('.nav-item').forEach(item=>{
   item.addEventListener('click', ()=>{
     // Clicking "Data Hub" in the sidebar always returns to the database browser
@@ -3690,7 +3691,7 @@ function goPage(page){
   // Analytics is Admin-only. Block navigation at the router level (not just
   // CSS/nav-item hiding) so a non-admin can never land on the page — via a
   // stale link, dev tools, or any other path that bypasses the sidebar click.
-  if ((page === 'analytics' || page === 'joc') && !S.isAdmin){
+  if ((page === 'analytics' || page === 'joc' || page === 'backup') && !S.isAdmin){
     goPage('dashboard');
     return;
   }
