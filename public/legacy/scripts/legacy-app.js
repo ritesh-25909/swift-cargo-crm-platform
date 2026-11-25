@@ -7275,15 +7275,15 @@ function dbbExportDatabaseCsv(db){
 }
 function dbbDeleteDatabase(db){
   if (!S.isAdmin){ toast('Only Admins can delete databases.', 'error'); return; }
-  confirmAction('Delete this database?', `This permanently deletes "${esc(db.name)}" and all its imported records. Its Daily Update card (if any) is removed too.`, async ()=>{
-    const { error } = await supa.from('databases').delete().eq('id', db.id);
+  confirmAction('Delete this database?', `This archives "${esc(db.name)}" and hides its imported records. Feedback is retained.`, async ()=>{
+    const { error } = await supa.rpc('crm_archive_rows',{k:'databases',ids:[String(db.id)]});
     if (error){ toast(error.message,'error'); return; }
     await Promise.all([loadDatabases(), loadRecords(), loadUpdates()]);
     if (S.grid.dbFilter === db.name){ S.grid.dbFilter=''; S.grid.dbIdFilter=''; $('#filter-database').value=''; }
     renderDashboard(); renderAllDataFilters(); refreshAllDataView(); renderCalendar(); renderAnalyticsFilters(); renderAnalyticsPage();
     if ($('#page-updates').classList.contains('active')) renderUpdatesPage();
-    toast('Database and its data were deleted', 'success');
-    logAudit('delete_database', { database_id:db.id, name:db.name });
+    toast('Database archived', 'success');
+    logAudit('archive_database', { database_id:db.id, name:db.name });
   });
 }
 // ---------- Rename (spec #6) ----------
@@ -8093,7 +8093,7 @@ async function dhRemoveDuplicates(){
       });
       const ids=duplicates.map(r=>r.id).filter(Boolean), BATCH=500;
       for(let i=0;i<ids.length;i+=BATCH){
-        const {error}=await supa.from('records').delete().in('id',ids.slice(i,i+BATCH));
+        const {error}=await supa.rpc('crm_archive_rows',{k:'records',ids:ids.slice(i,i+BATCH).map(String)});
         if(error){ toast(error.message,'error'); return; }
       }
       saveRemovedDuplicatesReport(report);
@@ -9442,15 +9442,15 @@ $('#delete-selected-db-btn').addEventListener('click', ()=>{
   const dbs = myAssignedDatabases();
   const db = dbs.find(d=>d.name===dbName);
   if (!db){ toast('Database not found.', 'error'); return; }
-  confirmAction('Delete this database?', `This permanently deletes "${db.name}" and all its imported records. Its Daily Update card (if any) is removed too.`, async ()=>{
-    const { error } = await supa.from('databases').delete().eq('id', db.id);
+  confirmAction('Delete this database?', `This archives "${db.name}" and hides its imported records. Feedback is retained.`, async ()=>{
+    const { error } = await supa.rpc('crm_archive_rows',{k:'databases',ids:[String(db.id)]});
     if (error){ toast(error.message,'error'); return; }
     await Promise.all([loadDatabases(), loadRecords(), loadUpdates()]);
     S.grid.dbFilter=''; S.grid.dbIdFilter=''; $('#filter-database').value='';
     renderDashboard(); renderAllDataFilters(); refreshAllDataView(); renderCalendar(); renderAnalyticsFilters(); renderAnalyticsPage();
     if ($('#page-updates').classList.contains('active')) renderUpdatesPage();
-    toast('Database and its data were deleted', 'success');
-    logAudit('delete_database', { database_id:db.id, name:db.name });
+    toast('Database archived', 'success');
+    logAudit('archive_database', { database_id:db.id, name:db.name });
   });
 });
 
@@ -9558,15 +9558,15 @@ $('#bulk-copy-btn').addEventListener('click', ()=>{
 $('#bulk-export-btn').addEventListener('click', ()=> download('datavault-selected.csv', toCSV(selectedRecords()), 'text/csv'));
 $('#bulk-delete-btn').addEventListener('click', ()=>{
   if (!S.isAdmin){ toast('Only Admins can delete records.', 'error'); return; }
-  confirmAction('Delete selected records?', `This will permanently delete ${S.grid.selected.size} record(s).`, async ()=>{
+  confirmAction('Delete selected records?', `This will archive ${S.grid.selected.size} record(s).`, async ()=>{
     const ids = Array.from(S.grid.selected);
-    const { error } = await supa.from('records').delete().in('id', ids);
+    const { error } = await supa.rpc('crm_archive_rows',{k:'records',ids:ids.map(String)});
     if (error){ toast(error.message, 'error'); return; }
     S.grid.selected.clear();
     dhOnRecordsRemoved(ids);
     await loadRecords();
     refreshAllDataView(); renderDashboard();
-    toast('Records deleted', 'success');
+    toast('Records archived', 'success');
     logAudit('bulk_delete_records', { count: ids.length });
   });
 });
@@ -13524,14 +13524,14 @@ if (teamSearchInput) teamSearchInput.addEventListener('input', debounce(e=>{ S.t
 $('#danger-delete-db-btn').addEventListener('click', ()=>{
   const id = $('#danger-db-select').value; if(!id) return;
   const db = S.databases.find(d=>d.id===id);
-  confirmAction('Delete this database?', `This permanently deletes "${db?.name}" and all its records. Its Daily Update card (if any) is removed too.`, async ()=>{
-    const { error } = await supa.from('databases').delete().eq('id', id);
+  confirmAction('Delete this database?', `This archives "${db?.name}" and hides its records. Feedback is retained.`, async ()=>{
+    const { error } = await supa.rpc('crm_archive_rows',{k:'databases',ids:[String(id)]});
     if (error){ toast(error.message,'error'); return; }
     await Promise.all([loadDatabases(), loadRecords(), loadUpdates()]);
     renderDashboard(); renderAllDataFilters(); refreshAllDataView(); renderCalendar(); renderAnalyticsFilters(); renderAnalyticsPage();
     if ($('#page-updates').classList.contains('active')) renderUpdatesPage();
-    toast('Database deleted', 'success');
-    logAudit('delete_database', { database_id:id, name:db?.name });
+    toast('Database archived', 'success');
+    logAudit('archive_database', { database_id:id, name:db?.name });
   });
 });
 $('#delete-account-btn').addEventListener('click', ()=>{
@@ -18289,7 +18289,7 @@ const CompanyExactRemovalToolkit = (() => {
         try {
           // .select('id') returns only the rows actually deleted, so a delete that RLS
           // silently blocks is reported honestly instead of being counted as removed.
-          const { data, error } = await supa.from('records').delete().in('id', batch).select('id');
+          const { data, error } = await supa.rpc('crm_archive_rows',{k:'records',ids:batch.map(String)});
           if (error) throw error;
           (data || []).forEach(d => removed.add(String(d.id)));
         } catch (e){
