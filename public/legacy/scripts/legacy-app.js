@@ -1,3 +1,12 @@
+// Preserve explicit classification states; never coerce an unknown result to Non-Swift.
+function crmJocClassification(remark){
+  const value = String(remark ?? '').trim().toLowerCase().replace(/[-\s]+/g, ' ');
+  if (value === 'swift') return 'Swift';
+  if (value === 'non swift') return 'Non-Swift';
+  if (value === 'manual check') return 'Manual Check';
+  return 'Pending Verification';
+}
+
 
 // V3: parse spreadsheet matrices off the UI thread; fallback preserves compatibility.
 async function crmReadMatrices(buffer, readOptions, jsonOptions, firstOnly=false){
@@ -14735,14 +14744,14 @@ function finishSteps(){
     swiftResults.forEach(r => swiftMap.set(jocNorm(r.original), r));
     state.jocAnalytics.rows = state.jocAnalytics.rows.map(g => {
       const r = swiftMap.get(jocNorm(g.shipper));
-      return { ...g, swiftClassification: r?.remark === 'Swift' ? 'Swift' : 'Non-Swift', swiftMatchedMaster: r?.bestName || '', swiftMatchScore: r?.bestScore ?? '', swiftMatchMethod: r?.method || '', swiftConfidence: r?.strength || '', swiftEvidence: r?.evidence || [] };
+      return { ...g, swiftClassification: crmJocClassification(r?.remark), swiftMatchedMaster: r?.bestName || '', swiftMatchScore: r?.bestScore ?? '', swiftMatchMethod: r?.method || '', swiftConfidence: r?.strength || '', swiftEvidence: r?.evidence || [] };
     });
     state.jocAnalytics.swift = {
-      total: swiftResults.length,
-      swift: swiftResults.filter(r => r.remark === 'Swift').length,
-      nonSwift: swiftResults.filter(r => r.remark === 'Non swift').length,
-      manual: swiftResults.filter(r => r.remark === 'Manual Check').length,
-      pending: swiftResults.filter(r => r.remark === 'Pending Verification').length
+      total: state.jocAnalytics.rows.length,
+      swift: state.jocAnalytics.rows.filter(g => g.swiftClassification === 'Swift').length,
+      nonSwift: state.jocAnalytics.rows.filter(g => g.swiftClassification === 'Non-Swift').length,
+      manual: state.jocAnalytics.rows.filter(g => g.swiftClassification === 'Manual Check').length,
+      pending: state.jocAnalytics.rows.filter(g => g.swiftClassification === 'Pending Verification').length
     };
     state.swiftClassification = { results: swiftResults, map: swiftMap, summary: state.jocAnalytics.swift };
     log('INFO', `Swift classification complete: ${state.jocAnalytics.swift.swift.toLocaleString()} Swift · ${state.jocAnalytics.swift.nonSwift.toLocaleString()} Non Swift · ${state.jocAnalytics.swift.manual.toLocaleString()} Manual Check · ${state.jocAnalytics.swift.pending.toLocaleString()} Pending Verification`);
@@ -15054,7 +15063,7 @@ function finishSteps(){
         i + 2,
         shipper,
         result?.bestName || 'No reliable master match',
-        result?.remark === 'Swift' ? 'Swift' : 'Non-Swift',
+        crmJocClassification(result?.remark),
         result?.bestScore ?? '',
         result?.secondScore ?? '',
         result?.margin ?? '',
@@ -16038,6 +16047,13 @@ async function addClassifiedJOCToDataHub(){
     return false;
   }
 
+  // Fail closed before any database write if classification is unresolved.
+  if (analytics.rows.some(g => !['Swift','Non-Swift'].includes(crmJocClassification(g.swiftClassification)))){
+    toast('Resolve all unverified JOC classifications before adding to Data Hub.', 'error');
+    if(button){button.dataset.busy='';button.disabled=true;button.textContent='Add Classified JOC to Data Hub';}
+    return false;
+  }
+
   // JOC DUPLICATE PROTECTION
   // Exact company identity only: trim, collapse whitespace, uppercase.
   // No fuzzy matching, similarity scoring, partial matching, or AI decisions.
@@ -16152,7 +16168,7 @@ async function addClassifiedJOCToDataHub(){
   const headers = ['Contact Person','Position','Company Name','Location','Personal Email 1','Personal Email 2','Business Email 1','Business Email 2','Mobile Phone 1','Mobile Phone 2','Work Phone 1','Work Phone 2','Numbers From Company Website 1','Numbers From Company Website 2','Linkedin 1','Company Website 1','Remark'];
 
   const rows = newAnalyticsRows.map(g => {
-    const classification = g.swiftClassification === 'Swift' ? 'Swift' : 'Non-Swift';
+    const classification = crmJocClassification(g.swiftClassification);
     const match = g.swiftMatchedMaster ? `Matched: ${g.swiftMatchedMaster}` : 'No Swift master match';
     const score = g.swiftMatchScore !== '' && g.swiftMatchScore != null ? `Score: ${g.swiftMatchScore}%` : 'Score: —';
     const remark = `JOC • ${classification} • ${match} • ${score} • Contact numbers required`;
