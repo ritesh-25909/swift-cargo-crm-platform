@@ -1,4 +1,24 @@
 
+// V3: parse spreadsheet matrices off the UI thread; fallback preserves compatibility.
+async function crmReadMatrices(buffer, readOptions, jsonOptions, firstOnly=false){
+  if(typeof Worker !== 'undefined'){
+    try {
+      return await new Promise((resolve,reject)=>{
+        const worker=new Worker(new URL('scripts/workbook-worker.js',document.baseURI));
+        const timer=setTimeout(()=>{worker.terminate();reject(new Error('Workbook worker timed out'));},120000);
+        const finish=(fn,value)=>{clearTimeout(timer);worker.terminate();fn(value);};
+        worker.onmessage=({data})=>data.error?finish(reject,new Error(data.error)):finish(resolve,data.result);
+        worker.onerror=e=>finish(reject,new Error(e.message||'Workbook worker failed'));
+        worker.onmessageerror=()=>finish(reject,new Error('Workbook worker response failed'));
+        try{const copy=buffer.slice(0);worker.postMessage({buffer:copy,readOptions,jsonOptions,firstOnly},[copy]);}catch(e){finish(reject,e);}
+      });
+    } catch(e){console.warn('[Workbook worker fallback]',e.message);}
+  }
+  const wb=XLSX.read(buffer,readOptions);
+  const names=firstOnly?wb.SheetNames.slice(0,1):wb.SheetNames;
+  return {names,matrices:names.map(n=>XLSX.utils.sheet_to_json(wb.Sheets[n],jsonOptions))};
+}
+
 /* ==========================================================================
    CONFIG — paste your Supabase project credentials here.
    ========================================================================== */
@@ -2890,13 +2910,13 @@ async function loadDatabases(){
 }
 async function loadRecords(){
   const { data, error } = await supa.from('records').select('*').order('import_date', { ascending:false }).limit(50000);
-  if (error) logSupaError('select', 'records', error);
-  S.records = error ? [] : data;
+  if (error) { logSupaError('select', 'records', error); throw error; }
+  S.records = data || [];
   await dhAutoSetNoNumbers(S.records);
   // Repair only the incorrect system label; preserve every phone, note, assignment,
   // custom field, and every feedback value other than the erroneous "No numbers".
   await dhReconcileIncorrectNoNumbers(S.records);
-  flagDuplicates();
+  await dhFlagDuplicatesYielding();
   syncFeedbackLabels();
 }
 /* ---------- Targeted per-database record fetch (Data Hub → database detail) ----------
@@ -5055,12 +5075,12 @@ async function syncDatabaseContactedToUpdate(databaseId, opts={}){
 
 async function dhAutoSetNoNumbers(rows){
   const candidates=(Array.isArray(rows)?rows:[]).filter(r=>r?.id!=null && !dhFeedbackIsFilled(r) && !dhHasAnyPhone(r));
-  for(const r of candidates){
+  const applyCandidate=async r=>{
     let updateQuery=supa.from('records').update({feedback:'no_numbers',feedback_custom:''}).eq('id',r.id);
     // Match the exact previously-read blank value (including whitespace), so concurrent feedback is never overwritten.
     updateQuery = (r.feedback == null) ? updateQuery.is('feedback',null) : updateQuery.eq('feedback',r.feedback);
     const {data,error}=await updateQuery.select('*').maybeSingle();
-    if(error){ console.warn('[AUTO NO NUMBERS FEEDBACK FAILED]',r.id,error); continue; }
+    if(error){ console.warn('[AUTO NO NUMBERS FEEDBACK FAILED]',r.id,error); return; }
     // Only patch rows if Supabase confirmed the conditional update; protects concurrent user feedback.
     if(data){
       r.feedback=data.feedback; r.feedback_custom=data.feedback_custom||''; r.feedback_label=feedbackDisplayLabel(r);
@@ -5071,7 +5091,8 @@ async function dhAutoSetNoNumbers(rows){
       patch(S.dbHub?.openDbRecords?.find(x=>String(x.id)===String(r.id)));
       if(S.dbHub?.recordCache instanceof Map) for(const cached of S.dbHub.recordCache.values()) if(Array.isArray(cached)) patch(cached.find(x=>String(x.id)===String(r.id)));
     }
-  }
+  };
+  for(let i=0;i<candidates.length;i+=4) await Promise.all(candidates.slice(i,i+4).map(applyCandidate));
   return candidates.length;
 }
 
@@ -12236,7 +12257,7 @@ function initAnalyticsRealtime(){
   if(S._analyticsPollTimer) clearInterval(S._analyticsPollTimer);
   S._analyticsPollTimer=setInterval(analyticsPollForChanges,30000);
   if(S._assignmentSyncTimer) clearInterval(S._assignmentSyncTimer);
-  S._assignmentSyncTimer=setInterval(pollAssignmentSync,6000);
+  S._assignmentSyncTimer=setInterval(pollAssignmentSync,15000);
 }
 async function pollAssignmentSync(){
   if(document.hidden || !S.session || S._assignmentPollInFlight) return;
@@ -13876,6 +13897,7 @@ const JOCToolkit = (() => {
     div.className = 'joc-log-entry';
     div.innerHTML = `<span class="joc-log-ts">${ts}</span><span class="joc-log-lvl ${level}">${level}</span><span class="joc-log-msg${level==='ERROR'?' err':''}">${jocEscHtml(msg)}</span>`;
     box.appendChild(div);
+    while (box.childElementCount > 500) box.firstElementChild.remove();
     box.scrollTop = box.scrollHeight;
   }
 
@@ -13893,14 +13915,14 @@ const JOCToolkit = (() => {
       const f = e.dataTransfer.files[0];
       if (f) handleFile(f);
     });
-    input.addEventListener('change', () => { if (input.files[0]) handleFile(input.files[0]); });
+    input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) handleFile(f); });
 
     function handleFile(f){
       nameEl.textContent = f.name;
       zone.classList.add('loaded');
       const status = byId('joc-status-text');
       if (status) status.textContent = `Loading ${f.name}…`;
-      onFile(f);
+      Promise.resolve().then(() => onFile(f)).catch(e => toast(e.message || String(e), "error"));
     }
   }
 
@@ -13916,6 +13938,9 @@ const JOCToolkit = (() => {
   // Microsoft Graph loader, so there is exactly one code path that loads a file
   // into the pipeline regardless of where the file came from.
   async function loadMainFileObject(f){
+    if (state.processing) throw new Error("Processing is in progress.");
+    state.mainData = null; state.jocDetection = null; state.outputBlob = null;
+    setVal("mainLoaded", false); setVal("mainCols", false); checkRunReady();
     state.mainFile = f;
     markZoneLoaded('joc-mainZone','joc-mainFileName', f.name);
     log('INFO', `Main file selected: ${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`);
@@ -13923,6 +13948,9 @@ const JOCToolkit = (() => {
     checkRunReady();
   }
   async function loadLookupFileObject(f){
+    if (state.processing) throw new Error("Processing is in progress.");
+    state.lookupSheets = null; state.outputBlob = null;
+    setVal("lookupLoaded", false); checkRunReady();
     state.lookupFile = f;
     markZoneLoaded('joc-lookupZone','joc-lookupFileName', f.name);
     log('INFO', `Lookup file selected: ${f.name} (${(f.size/1024/1024).toFixed(1)} MB)`);
@@ -13960,23 +13988,16 @@ const JOCToolkit = (() => {
       const buf = await readFileAsBuffer(file);
       // Keep parsing in the browser, but avoid the expensive ExcelJS
       // worksheet/row/cell object walk during file selection.
-      const wb = XLSX.read(buf, {
-        type: 'array',
-        cellDates: true,
-        dense: true
-      });
-
-      const sheetName = wb.SheetNames[0];
-      const ws = sheetName ? wb.Sheets[sheetName] : null;
-      if (!ws) throw new Error('No worksheet found in source workbook');
+      const parsed = await crmReadMatrices(buf,{type:'array',cellDates:true,dense:true},{header:1,defval:null,raw:true,blankrows:false},true);
+      if (!parsed.names.length) throw new Error('No worksheet found in source workbook');
 
       // IMPORTANT PERFORMANCE PATH:
       // sheet_to_json(header:1) already gives us the row matrix. The previous
       // implementation walked every cell a second time just to copy/filter
       // the matrix. On large PIERS files that duplicate O(rows × columns)
       // pass was one of the biggest causes of the long "Loading…" delay.
-      const matrix = sheetJsMatrixToRows(ws);
-      const headers = (matrix[0] || []).map(v => v != null ? String(v) : '');
+      const matrix = parsed.matrices[0];
+      const headers = (matrix[0] || []).map(v => { const raw = v == null ? "" : String(v).trim(); return JOC_ALL_COLUMNS.find(c => normalizeColName(c) === normalizeColName(raw)) || raw; });
       if (!headers.length) throw new Error('The source worksheet has no header row');
 
       // `blankrows:false` has already removed completely blank worksheet rows,
@@ -14012,13 +14033,8 @@ const JOCToolkit = (() => {
       log('INFO', `Reading lookup file quickly (${(file.size/1024/1024).toFixed(1)} MB)...`);
 
       const buf = await readFileAsBuffer(file);
-      const wb = XLSX.read(buf, {
-        type: 'array',
-        cellDates: true,
-        dense: true
-      });
-
-      const sheetNames = wb.SheetNames || [];
+      const parsed = await crmReadMatrices(buf,{type:'array',cellDates:true,dense:true},{header:1,defval:null,raw:true,blankrows:false});
+      const sheetNames = parsed.names;
       log('INFO', `Lookup sheets found: ${sheetNames.join(', ')}`);
 
       const sheets = {};
@@ -14027,11 +14043,10 @@ const JOCToolkit = (() => {
         const actualName = sheetNames.find(s => normalizeColName(s) === normalizeColName(name));
         if (!actualName) return null;
 
-        const ws = wb.Sheets[actualName];
-        if (!ws) return null;
-
-        const matrix = sheetJsMatrixToRows(ws);
-        const hdrs = (matrix[0] || []).map(v => v != null ? String(v) : '');
+        const matrix = parsed.matrices[sheetNames.indexOf(actualName)];
+        if (!matrix) return null;
+        const known = ['Carrier','Carrier Group','SCAC','SCAC Full Name','Place of Receipt','Region Wise','Forwarder'];
+        const hdrs = (matrix[0] || []).map(v => { const raw = v == null ? '' : String(v).trim(); return known.find(c => normalizeColName(c) === normalizeColName(raw)) || raw; });
         const rows = [];
 
         for (let i = 1; i < matrix.length; i++){
@@ -14184,7 +14199,7 @@ const JOCToolkit = (() => {
 
   function checkRunReady(){
     const mode = getEffectiveDataTypeMode();
-    const allOk = valState.mainLoaded && valState.lookupLoaded && mode === 'joc';
+    const allOk = valState.mainLoaded && valState.mainCols && !!state.mainData?.headers.includes('Shipper') && valState.lookupLoaded && valState.carrierSheet && valState.scacSheet && valState.porSheet && valState.top10Sheet && mode === 'joc';
     const btn = byId('joc-runBtn');
     if (btn) btn.disabled = !allOk || state.processing;
   }
@@ -15078,7 +15093,7 @@ function finishSteps(){
     const swiftSummaryEl = byId('joc-swift-summary');
     if (swiftSummaryEl){
       const blocked = Number(swiftSummary.manual||0) + Number(swiftSummary.pending||0);
-      swiftSummaryEl.innerHTML = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;"><div style="font-weight:800; color:#172033;">Swift & Non-Swift shipper segregation</div><span style="padding:3px 8px; border-radius:999px; background:${blocked?'#FFF7ED':'#ECFDF5'}; color:${blocked?'#C2410C':'#15803D'}; font-size:11px; font-weight:800;">'Ready for Data Hub'</span></div><div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:7px; font-size:12px; color:#475569;"><span><b style="color:#2563EB;">${Number(swiftSummary.swift||0).toLocaleString()}</b> Swift</span><span><b style="color:#15803D;">${Number(swiftSummary.nonSwift||0).toLocaleString()}</b> Non-Swift</span><span><b style="color:#64748B;">0</b> Review</span></div><div style="margin-top:7px; font-size:11.5px; color:#64748B;">The Data Hub version is marked <b>JOC</b> and <b>Contact numbers required</b>. Unverified classifications are never silently treated as Swift or Non-Swift.</div>`;
+      swiftSummaryEl.innerHTML = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;"><div style="font-weight:800; color:#172033;">Swift & Non-Swift shipper segregation</div><span style="padding:3px 8px; border-radius:999px; background:${blocked?'#FFF7ED':'#ECFDF5'}; color:${blocked?'#C2410C':'#15803D'}; font-size:11px; font-weight:800;">${blocked ? 'Review required' : 'Ready for Data Hub'}</span></div><div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:7px; font-size:12px; color:#475569;"><span><b style="color:#2563EB;">${Number(swiftSummary.swift||0).toLocaleString()}</b> Swift</span><span><b style="color:#15803D;">${Number(swiftSummary.nonSwift||0).toLocaleString()}</b> Non-Swift</span><span><b style="color:#64748B;">${blocked.toLocaleString()}</b> Review</span></div><div style="margin-top:7px; font-size:11.5px; color:#64748B;">The Data Hub version is marked <b>JOC</b> and <b>Contact numbers required</b>. Unverified classifications are never silently treated as Swift or Non-Swift.</div>`;
     }
     const addBtn = byId('joc-addToDataHubBtn');
     if (addBtn){
@@ -15126,12 +15141,9 @@ function finishSteps(){
     const missingMainColumns = REQUIRED_MAIN_COLS.filter(
       col => !state.mainData.headers.includes(col)
     );
-    if (missingMainColumns.length) {
-      throw new Error(
-        `Source workbook is missing required columns: ${missingMainColumns.join(', ')}`
-      );
-    }
-    log('INFO', '✓ Required source columns validated.');
+    if (!state.jocDetection?.isJoc || !state.mainData.headers.includes('Shipper')) throw new Error('Source workbook is not JOC-compatible.');
+    if (missingMainColumns.length) log('INFO', `Optional source fields absent: ${missingMainColumns.join(', ')}`);
+    else log('INFO', '✓ Required source columns validated.');
 
     const requiredLookups = [
       ['carrier_group', 'Carrier Group'],
@@ -17207,6 +17219,7 @@ const SwiftToolkit = (() => {
     const rawRows = []; // full original row values, keyed by header, for pass-through export
     const totalRows = ws.rowCount;
     for (let r = 2; r <= totalRows; r++){
+      if(r % 500 === 0) await new Promise(resolve=>setTimeout(resolve,0));
       const row = ws.getRow(r);
       const s = cellText(row.getCell(colIdx + 1)).trim();
       if (!s) continue;
@@ -17881,8 +17894,8 @@ const SwiftToolkit = (() => {
       e.preventDefault(); zone.classList.remove('drag');
       const f = e.dataTransfer.files[0]; if (f) handle(f);
     });
-    input.addEventListener('change', () => { if (input.files[0]) handle(input.files[0]); });
-    function handle(f){ nameEl.textContent = f.name; zone.classList.add('loaded'); onFile(f); }
+    input.addEventListener('change', () => { const f = input.files[0]; input.value = ''; if (f) handle(f); });
+    function handle(f){ if (running) return; nameEl.textContent = f.name; zone.classList.add('loaded'); Promise.resolve().then(() => onFile(f)).catch(e => toast(e.message || String(e), 'error')); }
   }
 
   /* ---------- view switching (landing ↔ toolkit) ---------- */
@@ -18019,10 +18032,10 @@ const CompanyExactRemovalToolkit = (() => {
   // ── 1. READ + VALIDATE the workbook (never modifies the file) ────────────
   async function parseWorkbook(file){
     const buf = await file.arrayBuffer(); await tick();
-    const wb = XLSX.read(buf, { type:'array' });
-    if (!wb.SheetNames.length) throw new Error('The workbook contains no sheets.');
-    const sheetName = wb.SheetNames[0];
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header:1, defval:'', blankrows:false, raw:true });
+    const parsed = await crmReadMatrices(buf,{type:'array'},{header:1,defval:'',blankrows:false,raw:true},true);
+    if (!parsed.names.length) throw new Error('The workbook contains no sheets.');
+    const sheetName = parsed.names[0];
+    const rows = parsed.matrices[0];
     await tick();
 
     // Columns that actually hold data (fully blank columns/rows are ignored).
