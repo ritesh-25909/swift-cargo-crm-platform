@@ -6035,7 +6035,7 @@ body.upd-abv-open{overflow:hidden!important}
 @media(max-width:650px){#page-analytics .an-ref-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}#page-analytics .kpi-card.an-ref-kpi{height:128px!important;min-height:128px!important;padding:14px 9px 10px 55px!important}#page-analytics .an-ref-icon{left:9px!important;top:13px!important;width:36px!important;height:36px!important;font-size:20px!important}#page-analytics .an-ref-kpi-label{font-size:11px!important;min-height:31px!important}#page-analytics .an-ref-kpi-value{font-size:22px!important}#page-analytics .analytics-filters{grid-template-columns:repeat(2,minmax(0,1fr))!important}#page-analytics .an-ref-grid{grid-template-columns:1fr!important}#page-analytics .an-ref-donut-body{flex-direction:column!important}#page-analytics .an-ref-chart{width:100%!important;height:205px!important}#page-analytics .an-ref-legend{width:100%!important}}
 
 </style>
-</head>
+<style>.br-panel{padding:24px;border:1px solid var(--border,#dce2ea);border-radius:12px}.br-panel p{margin:12px 0}.br-panel button{margin:8px 8px 8px 0}.br-panel pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;background:rgba(128,128,128,.08);border-radius:8px}</style></head>
 <body>
 
 <!-- ============================== INTRO ANIMATION ============================== -->
@@ -6199,7 +6199,8 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
         <span>Settings</span>
       </div>
       <div class="nav-section-label" id="admin-nav-label">Admin</div>
-      <div class="nav-item" data-page="audit" id="nav-audit">
+      <div class="nav-item hidden" data-page="backup" id="nav-backup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/><path d="m9 12 2 2 4-4"/></svg><span>Backup &amp; Recovery</span></div>
+<div class="nav-item" data-page="audit" id="nav-audit">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 12h6M9 16h6M9 8h6M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/></svg>
         <span>Audit Logs</span>
       </div>
@@ -7731,7 +7732,8 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
       </section>
 
       <!-- ---------- AUDIT LOGS (admin) ---------- -->
-      <section class="page" id="page-audit">
+      <section class="page" id="page-backup"><div class="br-panel"><h2>Backup &amp; Recovery Centre</h2><p>Download a private user-wise ZIP with database workbooks, current feedback, historical feedback and original record IDs.</p><button class="btn btn-primary" id="br-download">Download CRM backup ZIP</button><button class="btn" id="br-compare">Inspect recovery ZIP</button><input type="file" id="br-file" accept=".zip" hidden><pre id="br-status" role="status" aria-live="polite">Ready. No records will be modified.</pre><p>Recovery inspection is read-only. Scheduled backups and live restoration are not enabled.</p></div></section>
+<section class="page" id="page-audit">
         <div class="section-title">Audit Logs</div>
         <div class="section-desc">A record of every sensitive action taken in the workspace.</div>
         <div class="panel"><div id="audit-list"></div></div>
@@ -8453,7 +8455,9 @@ stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 
 
 <div id="toast-stack"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="scripts/legacy-app.js"></script>
+<script src="scripts/backup-recovery.js"></script>
 
 <style id="datahub-premium-multicolor-accents">
 /* Data Hub card accents: restrained multicolor tints; layout and behavior unchanged. */
@@ -8589,4 +8593,3 @@ stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 
 </style>
 </body>
 </html>
-
