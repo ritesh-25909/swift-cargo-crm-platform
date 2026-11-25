@@ -7732,7 +7732,7 @@ stroke-linejoin="round"/></svg></div><span>SWIFT CARGO</span></div>
       </section>
 
       <!-- ---------- AUDIT LOGS (admin) ---------- -->
-      <section class="page" id="page-backup"><div class="br-panel"><h2>Backup &amp; Recovery Centre</h2><p>Download a private user-wise ZIP with database workbooks, current feedback, historical feedback and original record IDs.</p><button class="btn btn-primary" id="br-download">Download CRM backup ZIP</button><button class="btn" id="br-compare">Inspect recovery ZIP</button><input type="file" id="br-file" accept=".zip" hidden><pre id="br-status" role="status" aria-live="polite">Ready. No records will be modified.</pre><p>Recovery inspection is read-only. Scheduled backups and live restoration are not enabled.</p></div></section>
+      <section class="page" id="page-backup"><div class="br-panel"><h2>Backup &amp; Recovery Centre</h2><p>Download a private user-wise ZIP with database workbooks, current feedback, historical feedback and original record IDs.</p><button class="btn btn-primary" id="br-download">Download CRM backup ZIP</button><button class="btn" id="br-compare">Inspect recovery ZIP</button><input type="file" id="br-file" accept=".zip" hidden><button class="btn" id="br-bin">Open Recycle Bin</button><div id="br-bin-list"></div><pre id="br-status" role="status" aria-live="polite">Ready. No records will be modified.</pre><p>Recovery inspection is read-only. Scheduled backups and live restoration are not enabled.</p></div></section>
 <section class="page" id="page-audit">
         <div class="section-title">Audit Logs</div>
         <div class="section-desc">A record of every sensitive action taken in the workspace.</div>
@@ -8346,8 +8346,8 @@ stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 
 <!-- ============================== COMPANY EXACT LOOKUP & REMOVAL — CONFIRM MODAL ============================== -->
 <div class="modal-overlay hidden" id="cx-confirm-overlay">
   <div class="modal" style="max-width:460px;" role="dialog" aria-modal="true" aria-labelledby="cx-confirm-title">
-    <div class="modal-head"><h3 id="cx-confirm-title">Permanent removal</h3></div>
-    <div class="hint" style="margin-bottom:16px;">Exact matches found. Do you want to permanently remove these Data Hub records?</div>
+    <div class="modal-head"><h3 id="cx-confirm-title">Recoverable archive</h3></div>
+    <div class="hint" style="margin-bottom:16px;">Exact matches found. Do you want to archive these Data Hub records?</div>
     <div class="cx-modal-stats">
       <div class="cx-modal-stat"><span>Uploaded companies</span><b id="cx-confirm-uploaded">0</b></div>
       <div class="cx-modal-stat"><span>Exact matches</span><b id="cx-confirm-matches">0</b></div>
